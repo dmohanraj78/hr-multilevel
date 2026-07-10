@@ -282,6 +282,15 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     return { clans, tiers, scores };
   }, [globalData]);
 
+  // Deduplicated sortedAndFiltered list
+  const deduplicatedFiltered = useMemo(() => {
+    return sortedAndFiltered.reduce((acc, current) => {
+      const x = acc.find(item => item.email?.trim().toLowerCase() === current.email?.trim().toLowerCase());
+      if (!x) return acc.concat([current]);
+      return acc;
+    }, []);
+  }, [sortedAndFiltered]);
+
   // Header field value extractors
   const getFieldVal = {
     id: (c) => c.id,
@@ -417,7 +426,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       'R3 Verdict', 'R3 Executive Comments'
     ];
 
-    const rows = sortedAndFiltered.map(c => {
+    const rows = deduplicatedFiltered.map(c => {
       const r1 = getR1(c);
       const r2 = getR2(c);
       const r3 = getR3(c);
@@ -468,11 +477,11 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
             AI Builder Intern — Applicant Funnel
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            <strong className="text-[#800020]">{sortedAndFiltered.length} applicants</strong> processed · v2 evaluation rubric (max score 30)
+            <strong className="text-[#800020]">{deduplicatedFiltered.length} applicants</strong> processed · v2 evaluation rubric (max score 30)
           </p>
         </div>
         <Button onClick={exportToCSV} className="bg-[#800020] hover:bg-[#800020]/90 text-white rounded-xl shadow-md shrink-0">
-          <Download className="mr-2 h-4 w-4 stroke-[1.5]" /> Export Filtered ({sortedAndFiltered.length}) Records (CSV)
+          <Download className="mr-2 h-4 w-4 stroke-[1.5]" /> Export Filtered ({deduplicatedFiltered.length}) Records (CSV)
         </Button>
       </div>
 
@@ -489,10 +498,10 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
           <CardContent className="pt-4 pb-3 flex flex-col gap-1">
             <span className="text-xs font-mono text-muted-foreground uppercase tracking-wider block">Applicants</span>
             <div className="flex items-baseline justify-between mt-1">
-              <span className="text-3xl font-extrabold font-mono text-foreground">{sortedAndFiltered.length}</span>
+              <span className="text-3xl font-extrabold font-mono text-foreground">{deduplicatedFiltered.length}</span>
               <Users className="h-5 w-5 text-slate-400 stroke-[1.5]" />
             </div>
-            <span className="text-[10px] text-muted-foreground">Total submissions</span>
+            <span className="text-[10px] text-muted-foreground">Deduplicated applicants</span>
           </CardContent>
         </Card>
 
