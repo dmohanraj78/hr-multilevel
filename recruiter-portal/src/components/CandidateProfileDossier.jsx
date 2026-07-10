@@ -28,6 +28,7 @@ export default function CandidateProfileDossier({ candidate, round, onSave, onCa
       ...valParsed,
       app_status: c.app_status !== undefined ? c.app_status : valParsed?.app_status,
       eval_group: c.eval_group !== undefined ? c.eval_group : valParsed?.eval_group,
+      tier: c.tier !== undefined ? c.tier : valParsed?.tier,
       review_comments: c.review_comments !== undefined ? c.review_comments : valParsed?.review_comments,
       total: c.total !== undefined ? c.total : valParsed?.total,
       edu: c.edu !== undefined ? c.edu : valParsed?.edu,
