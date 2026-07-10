@@ -584,9 +584,9 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
         <Card className="rounded-[1.5rem] border shadow-sm lg:col-span-1">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-bold flex items-center gap-2">
-              <TrendingUp className="h-4.5 w-4.5 text-[#800020]" /> Funnel Conversion Rates
+              <TrendingUp className="h-4.5 w-4.5 text-[#800020]" /> Candidate Pipeline
             </CardTitle>
-            <CardDescription className="text-xs">Candidate dropoff rates by pipeline stage</CardDescription>
+            <CardDescription className="text-xs">Recruitment Funnel</CardDescription>
           </CardHeader>
                     <CardContent className="pt-4 flex flex-col gap-4">
             {(() => {
@@ -599,9 +599,9 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
               const hiredCount = deduplicatedFiltered.filter(c => getR3(c).verdict === 'Yes').length;
 
               return [
-                { label: '1. Applications', count: applicationsCount, percent: 100, color: 'bg-slate-400' },
-                { label: '2. Cleared Round 1', count: clearedR1Count, percent: Math.round((clearedR1Count / (applicationsCount || 1)) * 100), color: 'bg-blue-500' },
-                { label: '3. Moved to Round 3', count: movedR3Count, percent: Math.round((movedR3Count / (applicationsCount || 1)) * 100), color: 'bg-purple-500' },
+                { label: '1. Applied', count: applicationsCount, percent: 100, color: 'bg-slate-400' },
+                { label: '2. Cleared HR Round', count: clearedR1Count, percent: Math.round((clearedR1Count / (applicationsCount || 1)) * 100), color: 'bg-blue-500' },
+                { label: '3. Selected for Executive Review', count: movedR3Count, percent: Math.round((movedR3Count / (applicationsCount || 1)) * 100), color: 'bg-purple-500' },
                 { label: '4. Hired', count: hiredCount, percent: Math.round((hiredCount / (applicationsCount || 1)) * 100), color: 'bg-[#800020]' }
               ].map((stage, idx) => (
               <div key={idx} className="flex flex-col gap-1.5">
@@ -629,7 +629,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
             <CardDescription className="text-xs">Candidates assigned to technical evaluators</CardDescription>
           </CardHeader>
           <CardContent className="pt-4 flex items-end justify-between gap-2 h-44">
-            {Object.entries(chartData.clans).map(([clan, count]) => {
+            {Object.entries(chartData.clans).filter(([clan]) => clan !== 'Unassigned').map(([clan, count]) => {
               const max = Math.max(...Object.values(chartData.clans), 1);
               const heightPercent = Math.round((count / max) * 100);
               return (

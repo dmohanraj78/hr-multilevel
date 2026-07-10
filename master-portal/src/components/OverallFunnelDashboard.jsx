@@ -628,7 +628,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
               </thead>
               <tbody className="divide-y font-mono">
                 {Object.entries(chartData.clans)
-                  .filter(([_, count]) => count > 0)
+                .filter(([clan, count]) => count > 0 && clan !== 'Unassigned')
                   .sort((a, b) => b[1] - a[1])
                   .map(([clan, count]) => (
                     <tr key={clan} className="hover:bg-muted/10">
@@ -645,9 +645,9 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
         <Card className="rounded-[1.5rem] border shadow-sm lg:col-span-1">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-bold flex items-center gap-2">
-              <TrendingUp className="h-4.5 w-4.5 text-[#800020]" /> Funnel Conversion Rates
+              <TrendingUp className="h-4.5 w-4.5 text-[#800020]" /> Candidate Pipeline
             </CardTitle>
-            <CardDescription className="text-xs">Candidate dropoff rates by pipeline stage</CardDescription>
+            <CardDescription className="text-xs">Recruitment Funnel</CardDescription>
           </CardHeader>
                     <CardContent className="pt-4 flex flex-col gap-4">
             {(() => {
@@ -660,9 +660,9 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
               const hiredCount = deduplicatedFiltered.filter(c => getR3(c).verdict === 'Yes').length;
 
               return [
-                { label: '1. Applications', count: applicationsCount, percent: 100, color: 'bg-slate-400' },
-                { label: '2. Cleared Round 1', count: clearedR1Count, percent: Math.round((clearedR1Count / (applicationsCount || 1)) * 100), color: 'bg-blue-500' },
-                { label: '3. Moved to Round 3', count: movedR3Count, percent: Math.round((movedR3Count / (applicationsCount || 1)) * 100), color: 'bg-purple-500' },
+                { label: '1. Applied', count: applicationsCount, percent: 100, color: 'bg-slate-400' },
+                { label: '2. Cleared HR Round', count: clearedR1Count, percent: Math.round((clearedR1Count / (applicationsCount || 1)) * 100), color: 'bg-blue-500' },
+                { label: '3. Selected for Executive Review', count: movedR3Count, percent: Math.round((movedR3Count / (applicationsCount || 1)) * 100), color: 'bg-purple-500' },
                 { label: '4. Hired', count: hiredCount, percent: Math.round((hiredCount / (applicationsCount || 1)) * 100), color: 'bg-[#800020]' }
               ].map((stage, idx) => (
               <div key={idx} className="flex flex-col gap-1.5">
