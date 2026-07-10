@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recruiting Agent Funnel Workspace</title>
+  <meta name="description" content="Manage candidate screening, evaluation clans, and technical demo vetting.">
+  
+  <!-- Premium Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- App Header -->
+  <header class="app-header">
+    <div class="logo-area">
+      <img src="tabhi_logo.png" alt="Tabhi Logo" class="brand-logo-img">
+      <div class="logo-divider"></div>
+      <img src="aviators_logo.png" alt="Aviators Logo" class="brand-logo-img arched-logo">
+    </div>
+
+    <!-- Right Controls -->
+    <div class="header-controls">
+      <div class="db-status-badge" id="dbStatusBadge">
+        <span class="status-dot"></span>
+        <span class="status-text">Connecting...</span>
+      </div>
+      <button class="btn btn-secondary btn-icon" id="btnSettings" title="Database Configuration">
+        <i class="fa-solid fa-database"></i>
+        <span>Settings</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <main class="main-container">
+    
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-tab="round1">
+          <i class="fa-solid fa-address-book"></i>
+          <span>Recruiter Workspace</span>
+        </button>
+        <button class="nav-item" data-tab="evalportal">
+          <i class="fa-solid fa-users-gear"></i>
+          <span>Evaluator Portal</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="credits">
+          <p>HR Funnel Database Portal</p>
+          <span class="version">v2.0.0</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Page Content Area -->
+    <section class="content-viewport">
+      
+      <!-- TAB 1: RECRUITER WORKSPACE (ROUND 1 SCREENING) -->
+      <div class="tab-pane active" id="tab-round1">
+        <div class="section-header">
+          <div class="header-left">
+            <h1>Recruiter Workspace: Round 1 Screening</h1>
+            <p>Review candidate profiles, check Claude AI summaries, assign clans, and screen applications.</p>
+          </div>
+          <!-- Filter Actions -->
+          <div class="filter-controls">
+            <div class="search-box">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="r1Search" placeholder="Search by candidate or college...">
+            </div>
+            <select id="r1FilterTier" class="form-select">
+              <option value="">All Tiers</option>
+              <option value="T1">Tier 1</option>
+              <option value="T1+">Tier 1+</option>
+              <option value="T2">Tier 2</option>
+              <option value="T2+">Tier 2+</option>
+              <option value="T3">Tier 3</option>
+              <option value="T4">Tier 4</option>
+            </select>
+            <select id="r1FilterStatus" class="form-select">
+              <option value="">All Statuses</option>
+              <option value="pending">Pending Screening</option>
+              <option value="Yes">Yes (Round 2)</option>
+              <option value="Reject">Reject</option>
+              <option value="Maybe">Maybe</option>
+              <option value="Duplicate">Duplicate</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Priority Categories Lists -->
+        <div class="priority-queues-container">
+          
+          <!-- Category: Strong -->
+          <div class="priority-group" id="priority-strong-group">
+            <div class="priority-group-header bg-strong">
+              <i class="fa-solid fa-star"></i>
+              <span>Strong Candidates</span>
+              <span class="badge-count" id="count-strong">0</span>
+            </div>
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Candidate</th>
+                    <th>Tier / Score</th>
+                    <th>Sub-Scores</th>
+                    <th>Claude AI Summary</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="table-strong-body">
+                  <tr><td colspan="7" class="loading-state">No candidates found in this priority level.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Category: Good -->
+          <div class="priority-group" id="priority-good-group">
+            <div class="priority-group-header bg-good">
+              <i class="fa-solid fa-thumbs-up"></i>
+              <span>Good Candidates</span>
+              <span class="badge-count" id="count-good">0</span>
+            </div>
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Candidate</th>
+                    <th>Tier / Score</th>
+                    <th>Sub-Scores</th>
+                    <th>Claude AI Summary</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="table-good-body">
+                  <tr><td colspan="7" class="loading-state">No candidates found in this priority level.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Category: Need Clarity -->
+          <div class="priority-group" id="priority-clarity-group">
+            <div class="priority-group-header bg-clarity">
+              <i class="fa-solid fa-circle-question"></i>
+              <span>Need Clarity</span>
+              <span class="badge-count" id="count-clarity">0</span>
+            </div>
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Candidate</th>
+                    <th>Tier / Score</th>
+                    <th>Sub-Scores</th>
+                    <th>Claude AI Summary</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="table-clarity-body">
+                  <tr><td colspan="7" class="loading-state">No candidates found in this priority level.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Category: Invalid -->
+          <div class="priority-group" id="priority-invalid-group">
+            <div class="priority-group-header bg-invalid">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+              <span>Invalid Applications</span>
+              <span class="badge-count" id="count-invalid">0</span>
+            </div>
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Candidate</th>
+                    <th>Tier / Score</th>
+                    <th>Sub-Scores</th>
+                    <th>Claude AI Summary</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="table-invalid-body">
+                  <tr><td colspan="7" class="loading-state">No candidates found in this priority level.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- TAB 2: EVALUATOR PORTAL (HUB & CLAN WORKSHEETS) -->
+      <div class="tab-pane" id="tab-evalportal">
+        
+        <!-- HUB VIEW: Clan Grid Tiles -->
+        <div id="evalPortalHubView">
+          <div class="section-header">
+            <div class="header-left">
+              <h1>Evaluator Portal: Clan Hub</h1>
+              <p>Select your assigned clan to view and perform Round 2 technical demo vettings.</p>
+            </div>
+          </div>
+
+          <div class="clan-hub-grid">
+            <!-- Dharti -->
+            <div class="clan-card" onclick="app.enterClan('Dharti')">
+              <div class="clan-icon text-muted"><i class="fa-solid fa-mountain"></i></div>
+              <div class="clan-name">Dharti</div>
+              <div class="clan-desc">Earth Clan technical demo queue</div>
+              <span class="clan-badge" id="badge-Dharti">0 Candidates</span>
+            </div>
+
+            <!-- Jal -->
+            <div class="clan-card" onclick="app.enterClan('Jal')">
+              <div class="clan-icon text-muted"><i class="fa-solid fa-water"></i></div>
+              <div class="clan-name">Jal</div>
+              <div class="clan-desc">Water Clan technical demo queue</div>
+              <span class="clan-badge" id="badge-Jal">0 Candidates</span>
+            </div>
+
+            <!-- Agni -->
+            <div class="clan-card" onclick="app.enterClan('Agni')">
+              <div class="clan-icon text-muted"><i class="fa-solid fa-fire"></i></div>
+              <div class="clan-name">Agni</div>
+              <div class="clan-desc">Fire Clan technical demo queue</div>
+              <span class="clan-badge" id="badge-Agni">0 Candidates</span>
+            </div>
+
+            <!-- Vayu -->
+            <div class="clan-card" onclick="app.enterClan('Vayu')">
+              <div class="clan-icon text-muted"><i class="fa-solid fa-wind"></i></div>
+              <div class="clan-name">Vayu</div>
+              <div class="clan-desc">Air Clan technical demo queue</div>
+              <span class="clan-badge" id="badge-Vayu">0 Candidates</span>
+            </div>
+
+            <!-- Akash -->
+            <div class="clan-card" onclick="app.enterClan('Akash')">
+              <div class="clan-icon text-muted"><i class="fa-solid fa-globe"></i></div>
+              <div class="clan-name">Akash</div>
+              <div class="clan-desc">Space Clan technical demo queue</div>
+              <span class="clan-badge" id="badge-Akash">0 Candidates</span>
+            </div>
+
+            <!-- Bijli -->
+            <div class="clan-card" onclick="app.enterClan('Bijli')">
+              <div class="clan-icon text-muted"><i class="fa-solid fa-bolt"></i></div>
+              <div class="clan-name">Bijli</div>
+              <div class="clan-desc">Lightning Clan technical demo queue</div>
+              <span class="clan-badge" id="badge-Bijli">0 Candidates</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- QUEUE VIEW: Selected Clan Worksheet -->
+        <div id="evalPortalQueueView" style="display: none;">
+          <div class="section-header">
+            <div class="header-left">
+              <div class="breadcrumbs-row">
+                <button class="btn btn-secondary btn-small" onclick="app.exitClan()"><i class="fa-solid fa-arrow-left"></i> Back to Clans Hub</button>
+              </div>
+              <h1 style="margin-top: 10px;" id="selectedClanTitle">Clan Worksheet</h1>
+              <p>Performing Round 2 tech demo evaluations for assigned candidates.</p>
+            </div>
+            
+            <div class="filter-controls">
+              <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="r2Search" placeholder="Search clan candidates...">
+              </div>
+            </div>
+          </div>
+
+          <!-- Clan Table List -->
+          <div class="table-container">
+            <table class="data-table" id="evalPortalTable">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Candidate</th>
+                  <th>Tech Stack</th>
+                  <th>Complexity</th>
+                  <th>Solves Problem?</th>
+                  <th>Next Step Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="evalPortalTableBody">
+                <tr>
+                  <td colspan="7" class="loading-state">Loading clan candidates...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- TAB 3: CANDIDATE DETAIL WORKSPACE (FULL PAGE VIEW) -->
+      <div class="tab-pane" id="tab-candidate-detail">
+        <div class="section-header">
+          <div class="header-left">
+            <div class="breadcrumbs-row">
+              <button class="btn btn-secondary btn-small" id="btnDetailBack"><i class="fa-solid fa-arrow-left"></i> Back</button>
+            </div>
+            <h1 style="margin-top: 10px;" id="detailCandName">Candidate Name</h1>
+            <div class="cand-badges-row" style="margin-top: 6px; display: flex; gap: 8px;">
+              <span class="badge badge-tier" id="detailCandTier">T1</span>
+              <span class="badge badge-group" id="detailCandGroup">No Clan Assigned</span>
+              <span class="badge badge-status" id="detailCandStatus">Round 1</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="split-body" style="grid-template-columns: 1.1fr 0.9fr; gap: 20px; overflow: visible;">
+          <!-- Left Panel: Profile Context -->
+          <div class="modal-panel-left" style="height: auto; border-right: 1px solid var(--border); padding-right: 20px;">
+            <div class="detail-section">
+              <h3>Contact Info & Academic</h3>
+              <div class="detail-grid">
+                <div class="detail-item"><strong>Email:</strong> <span id="detailEmail">-</span></div>
+                <div class="detail-item"><strong>Phone:</strong> <span id="detailPhone">-</span></div>
+                <div class="detail-item"><strong>Location:</strong> <span id="detailLocation">-</span></div>
+                <div class="detail-item"><strong>Start Date:</strong> <span id="detailStartDate">-</span></div>
+                <div class="detail-item"><strong>Education:</strong> <span id="detailEduLevel">-</span></div>
+                <div class="detail-item"><strong>Graduation Year:</strong> <span id="detailGradYear">-</span></div>
+                <div class="detail-item span-all" style="grid-column: span 2;"><strong>Colleges:</strong> <span id="detailColleges">-</span></div>
+                <div class="detail-item span-all" style="grid-column: span 2;"><strong>Role applied:</strong> <span id="detailRole">-</span></div>
+              </div>
+            </div>
+
+            <div class="detail-section">
+              <h3>Attachments & Links</h3>
+              <div class="links-row">
+                <a href="#" target="_blank" class="btn btn-small btn-secondary" id="detailLinkResume"><i class="fa-solid fa-file-pdf"></i> Resume Drive</a>
+                <a href="#" target="_blank" class="btn btn-small btn-secondary" id="detailLinkGithub"><i class="fa-solid fa-code-fork"></i> GitHub</a>
+                <a href="#" target="_blank" class="btn btn-small btn-secondary" id="detailLinkDemo"><i class="fa-solid fa-play"></i> Live Demo</a>
+              </div>
+            </div>
+
+            <div class="detail-section">
+              <h3>Project Summary & Category</h3>
+              <div class="project-box">
+                <p><strong>Category:</strong> <span id="detailProjectCategory">-</span> (<span id="detailProjectState">-</span>)</p>
+                <p class="description-text" id="detailProjectExplanation">-</p>
+              </div>
+            </div>
+
+            <div class="detail-section">
+              <h3>Self-Reported AI/ML Skills</h3>
+              <div class="skills-bar-grid" id="detailSkillsGrid">
+                <!-- Dynamically populated skills progress bars -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Panel: Vetting Actions & Claude AI -->
+          <div class="modal-panel-right" style="height: auto; background-color: transparent; padding: 0;">
+            <!-- Claude AI Rubrics Box -->
+            <div class="detail-section highlight-section">
+              <h3><i class="fa-solid fa-wand-magic-sparkles text-gradient"></i> Claude AI Evaluation</h3>
+              <div class="ai-review-content">
+                <div class="scores-pills">
+                  <span class="pill-score">Total: <strong id="detailScoreTotal">0</strong>/21</span>
+                  <span class="pill-score">Edu: <strong id="detailScoreEdu">0</strong></span>
+                  <span class="pill-score">Exp: <strong id="detailScoreExp">0</strong></span>
+                  <span class="pill-score">Proj: <strong id="detailScoreProj">0</strong></span>
+                  <span class="pill-score">Skills: <strong id="detailScoreSkills">0</strong></span>
+                </div>
+                <p class="description-text ai-notes" id="detailScoreClaudeNotes">Loading Claude review notes...</p>
+              </div>
+            </div>
+
+            <!-- ROUND 1 SCREENING FORM (Visible in Recruiter context) -->
+            <div class="detail-section workflow-box" id="detailR1FormSection" style="display: none;">
+              <h3>Round 1 Screening Verdict</h3>
+              
+              <div class="form-group">
+                <label for="detailR1Status">App Status</label>
+                <select id="detailR1Status" class="form-select">
+                  <option value="">Select Status</option>
+                  <option value="Yes">Yes</option>
+                  <option value="Reject">Reject</option>
+                  <option value="Maybe">Maybe</option>
+                  <option value="Duplicate">Duplicate</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="detailR1Group">Assigned Evaluation Clan</label>
+                <select id="detailR1Group" class="form-select">
+                  <option value="">Select Clan</option>
+                  <option value="Dharti">Dharti</option>
+                  <option value="Jal">Jal</option>
+                  <option value="Agni">Agni</option>
+                  <option value="Vayu">Vayu</option>
+                  <option value="Akash">Akash</option>
+                  <option value="Bijli">Bijli</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="detailR1Comments">Recruiter comments</label>
+                <textarea id="detailR1Comments" class="form-textarea" rows="4" placeholder="Enter comments here..."></textarea>
+              </div>
+            </div>
+
+            <!-- ROUND 2 VETTING FORM (Visible in Evaluator context) -->
+            <div class="detail-section workflow-box" id="detailR2FormSection" style="display: none;">
+              <h3>Round 2 Vetting Inputs</h3>
+              
+              <div class="form-group-row">
+                <div class="form-group">
+                  <label for="detailR2Start">When can they start?</label>
+                  <input type="text" id="detailR2Start" class="form-input" placeholder="e.g. 15-08-2026">
+                </div>
+                <div class="form-group">
+                  <label for="detailR2Duration">Duration (months)</label>
+                  <input type="text" id="detailR2Duration" class="form-input" placeholder="e.g. 6 months">
+                </div>
+              </div>
+
+              <div class="form-group-row">
+                <div class="form-group">
+                  <label for="detailR2Complexity">Complexity</label>
+                  <select id="detailR2Complexity" class="form-select">
+                    <option value="">Select complexity</option>
+                    <option value="High">High</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Low">Low</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="detailR2SolvesProblem">Solves Biz Problem?</label>
+                  <select id="detailR2SolvesProblem" class="form-select">
+                    <option value="">Select</option>
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="detailR2Stack">Tech Stack</label>
+                <input type="text" id="detailR2Stack" class="form-input" placeholder="e.g. React, FastAPI, Supabase">
+              </div>
+
+              <div class="form-group">
+                <label for="detailR2Comments">Demo Vetting Comments</label>
+                <textarea id="detailR2Comments" class="form-textarea" rows="4" placeholder="Enter comments about code, depth, quality..."></textarea>
+              </div>
+
+              <div class="form-group">
+                <label for="detailR2NextStep">Promote to Round 3?</label>
+                <select id="detailR2NextStep" class="form-select">
+                  <option value="">Select Action</option>
+                  <option value="Yes">Yes (Move to R3)</option>
+                  <option value="Maybe">Maybe</option>
+                  <option value="No">No (Decline)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Page actions footer -->
+            <div style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 20px;">
+              <span class="save-status-text" id="detailSaveStatusText"></span>
+              <button class="btn btn-secondary" id="btnDetailCancel">Cancel</button>
+              <button class="btn btn-primary" id="btnDetailSave">Save Decisions</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- DATABASE SETTINGS MODAL -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal-box card">
+      <div class="modal-header">
+        <h2>Database Connection Settings</h2>
+        <button class="modal-close" id="btnSettingsClose">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-intro">Enter your Supabase credentials to access the active recruiter database live.</p>
+        
+        <div class="form-group">
+          <label for="settingsDbUrl">Supabase API URL</label>
+          <input type="url" id="settingsDbUrl" class="form-input" placeholder="https://yourproject.supabase.co">
+          <span class="field-hint">Format: https://[project-id].supabase.co</span>
+        </div>
+
+        <div class="form-group">
+          <label for="settingsDbKey">Supabase Publishable Key</label>
+          <input type="text" id="settingsDbKey" class="form-input" placeholder="sb_publishable_...">
+        </div>
+
+        <div class="modal-alert-box warning-box">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <span>Verify that RLS (Row Level Security) settings on your Supabase tables permit read and update access using the publishable API key.</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="btnSettingsClear">Reset defaults</button>
+        <button class="btn btn-primary" id="btnSettingsSave">Save & Reconnect</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast-notification" id="toastNotification">
+    <span id="toastMessage">Changes saved successfully!</span>
+  </div>
+
+  <!-- Javascript Modules -->
+  <script src="supabase.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
