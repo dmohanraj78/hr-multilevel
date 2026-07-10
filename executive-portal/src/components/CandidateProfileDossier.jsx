@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem, SelectGroup } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { FileText, Github, ExternalLink, ArrowLeft, Sparkles } from 'lucide-react';
+import { FileText, Github, ExternalLink, ArrowLeft, Sparkles, Linkedin } from 'lucide-react';
 
 const formatExternalLink = (url) => {
   if (!url) return '';
@@ -261,6 +261,13 @@ export default function CandidateProfileDossier({ candidate, round, onSave, onCa
                     <Button variant="outline" size="sm" asChild className="rounded-md">
                       <a href={formatExternalLink(getBio('github_url'))} target="_blank" rel="noopener noreferrer">
                         <Github className="mr-2 h-4 w-4 stroke-[1.5]" /> GitHub
+                      </a>
+                    </Button>
+                  )}
+                  {(getBio('linkedin') || getBio('linkedin_url')) && (
+                    <Button variant="outline" size="sm" asChild className="rounded-md">
+                      <a href={formatExternalLink(getBio('linkedin') || getBio('linkedin_url'))} target="_blank" rel="noopener noreferrer">
+                        <Linkedin className="mr-2 h-4 w-4 stroke-[1.5]" /> LinkedIn
                       </a>
                     </Button>
                   )}
