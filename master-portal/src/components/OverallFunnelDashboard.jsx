@@ -670,7 +670,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
           </CardHeader>
                     <CardContent className="pt-4 flex flex-col gap-4">
             {(() => {
-              const applicationsCount = deduplicatedFiltered.length; // unique applicants
+              const applicationsCount = evaluatedFiltered.length; // total count of round 1 evaluation
               // Use filteredApplicants (pre-dedup) so counts match round_1_evaluation actuals (137 cleared)
               const clearedR1Count = filteredApplicants.filter(c => getR1(c).app_status === 'Yes').length;
               const movedR3Count = filteredApplicants.filter(c => {
