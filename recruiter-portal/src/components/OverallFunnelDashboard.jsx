@@ -232,16 +232,28 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     return 'Pending Review';
   };
 
-  // 1. Calculate Metrics
+  // Deduplicate globalData first (before stats) so all counts are in sync
+  const deduplicatedGlobal = useMemo(() => {
+    return globalData.reduce((acc, current) => {
+      const x = acc.find(item => item.email?.trim().toLowerCase() === current.email?.trim().toLowerCase());
+      if (!x) return acc.concat([current]);
+      return acc;
+    }, []);
+  }, [globalData]);
+
+  const rawTotal = globalData.length; // includes duplicates
+  const duplicatesRemoved = rawTotal - deduplicatedGlobal.length;
+
+  // 1. Calculate Metrics — computed from deduplicatedGlobal for perfect sync
   const stats = useMemo(() => {
-    let total = globalData.length;
+    let total = deduplicatedGlobal.length;
     let hired = 0;
     let rejected = 0;
     let review = 0;
     let pendingScreening = 0;
     let maybeCount = 0;
 
-    globalData.forEach(c => {
+    deduplicatedGlobal.forEach(c => {
       const stage = getFunnelStage(c);
       if (stage === 'Hired') hired++;
       else if (stage.startsWith('Declined')) rejected++;
@@ -251,7 +263,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     });
 
     return { total, hired, rejected, review, pendingScreening, maybeCount };
-  }, [globalData]);
+  }, [deduplicatedGlobal]);
 
   // 2. Chart Calculations
   const chartData = useMemo(() => {
@@ -387,6 +399,9 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     }, []);
   }, [sortedAndFiltered]);
 
+  // Filtered duplicates removed count (for the APPLICANTS card)
+  const filteredDuplicatesRemoved = sortedAndFiltered.length - deduplicatedFiltered.length;
+
   // Tile Clicks Map to Header Filter
   const handleTileClick = (stageType) => {
     setActiveFilters(prev => {
@@ -479,7 +494,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
             AI Builder Intern — Applicant Funnel
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            <strong className="text-[#800020]">{stats.total} applicants</strong> processed · v2 evaluation rubric (max score 30)
+            <strong className="text-[#800020]">{rawTotal} applications</strong> processed · {duplicatesRemoved} duplicates removed · v2 rubric (max score 30)
           </p>
         </div>
         <Button onClick={exportToCSV} className="bg-[#800020] hover:bg-[#800020]/90 text-white rounded-xl shadow-md shrink-0">
@@ -503,7 +518,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
               <span className="text-3xl font-extrabold font-mono text-foreground">{stats.total}</span>
               <Users className="h-5 w-5 text-slate-400 stroke-[1.5]" />
             </div>
-            <span className="text-[10px] text-muted-foreground">Deduplicated applicants</span>
+            <span className="text-[10px] text-muted-foreground">{filteredDuplicatesRemoved} duplicates removed</span>
           </CardContent>
         </Card>
 
@@ -532,12 +547,12 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
           }`}
         >
           <CardContent className="pt-4 pb-3 flex flex-col gap-1">
-            <span className="text-xs font-mono text-blue-700 dark:text-blue-400 uppercase tracking-wider block">In Review</span>
+            <span className="text-xs font-mono text-blue-700 dark:text-blue-400 uppercase tracking-wider block">Review</span>
             <div className="flex items-baseline justify-between mt-1">
               <span className="text-3xl font-extrabold font-mono text-blue-600 dark:text-blue-400">{stats.review}</span>
               <Flame className="h-5 w-5 text-blue-500 stroke-[1.5]" />
             </div>
-            <span className="text-[10px] text-blue-600/80">Review passed</span>
+            <span className="text-[10px] text-blue-600/80">HR Round Cleared</span>
           </CardContent>
         </Card>
 
