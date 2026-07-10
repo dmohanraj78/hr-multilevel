@@ -491,7 +491,7 @@ export default function App() {
                   <TabsContent value="all" className="mt-0">
                     <CandidateListTable
                       candidates={candidates}
-                      actionLabel="Review & Screen"
+                      actionLabel="Review"
                       onActionClick={(cand) => setSelectedCandidate(cand)}
                       showTechEvaluatorFilter={true}
                       round={1}
@@ -502,7 +502,7 @@ export default function App() {
                   <TabsContent value="strong" className="mt-0">
                     <CandidateListTable
                       candidates={categories.strong}
-                      actionLabel="Review & Screen"
+                      actionLabel="Review"
                       onActionClick={(cand) => setSelectedCandidate(cand)}
                       showTechEvaluatorFilter={true}
                       round={1}
@@ -513,7 +513,7 @@ export default function App() {
                   <TabsContent value="good" className="mt-0">
                     <CandidateListTable
                       candidates={categories.good}
-                      actionLabel="Review & Screen"
+                      actionLabel="Review"
                       onActionClick={(cand) => setSelectedCandidate(cand)}
                       showTechEvaluatorFilter={true}
                       round={1}
@@ -524,7 +524,7 @@ export default function App() {
                   <TabsContent value="clarity" className="mt-0">
                     <CandidateListTable
                       candidates={categories.clarity}
-                      actionLabel="Review & Screen"
+                      actionLabel="Review"
                       onActionClick={(cand) => setSelectedCandidate(cand)}
                       showTechEvaluatorFilter={true}
                       round={1}
@@ -535,7 +535,7 @@ export default function App() {
                   <TabsContent value="invalid" className="mt-0">
                     <CandidateListTable
                       candidates={categories.invalid}
-                      actionLabel="Review & Screen"
+                      actionLabel="Review"
                       onActionClick={(cand) => setSelectedCandidate(cand)}
                       showTechEvaluatorFilter={true}
                       round={1}
@@ -546,7 +546,7 @@ export default function App() {
                   <TabsContent value="hired" className="mt-0">
                     <CandidateListTable
                       candidates={categories.hired}
-                      actionLabel="Review & Screen"
+                      actionLabel="Review"
                       onActionClick={(cand) => setSelectedCandidate(cand)}
                       showTechEvaluatorFilter={true}
                       round={1}
@@ -557,7 +557,7 @@ export default function App() {
                   <TabsContent value="review" className="mt-0">
                     <CandidateListTable
                       candidates={categories.review}
-                      actionLabel="Review & Screen"
+                      actionLabel="Review"
                       onActionClick={(cand) => setSelectedCandidate(cand)}
                       showTechEvaluatorFilter={true}
                       round={1}
@@ -568,7 +568,7 @@ export default function App() {
                   <TabsContent value="declined" className="mt-0">
                     <CandidateListTable
                       candidates={categories.declined}
-                      actionLabel="Review & Screen"
+                      actionLabel="Review"
                       onActionClick={(cand) => setSelectedCandidate(cand)}
                       showTechEvaluatorFilter={true}
                       round={1}
@@ -579,7 +579,7 @@ export default function App() {
                   <TabsContent value="unscreened" className="mt-0">
                     <CandidateListTable
                       candidates={categories.unscreened}
-                      actionLabel="Review & Screen"
+                      actionLabel="Review"
                       onActionClick={(cand) => setSelectedCandidate(cand)}
                       showTechEvaluatorFilter={true}
                       round={1}
