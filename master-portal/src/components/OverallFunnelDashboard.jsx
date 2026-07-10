@@ -244,16 +244,16 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
   const rawTotal = globalData.length; // includes duplicates
   const duplicatesRemoved = rawTotal - deduplicatedGlobal.length;
 
-  // 1. Calculate Metrics — computed from deduplicatedGlobal for perfect sync
+  // 1. Calculate Metrics — use globalData (reflects actual round_1_evaluation records, 137 passed is correct)
   const stats = useMemo(() => {
-    let total = deduplicatedGlobal.length;
+    let total = deduplicatedGlobal.length; // unique applicants count for the APPLICANTS tile
     let hired = 0;
     let rejected = 0;
     let review = 0;
     let pendingScreening = 0;
     let maybeCount = 0;
 
-    deduplicatedGlobal.forEach(c => {
+    globalData.forEach(c => {
       const stage = getFunnelStage(c);
       if (stage === 'Hired') hired++;
       else if (stage.startsWith('Declined')) rejected++;
@@ -263,15 +263,15 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     });
 
     return { total, hired, rejected, review, pendingScreening, maybeCount };
-  }, [deduplicatedGlobal]);
+  }, [globalData, deduplicatedGlobal]);
 
-  // 2. Chart Calculations — use deduplicatedGlobal so all charts are in sync
+  // 2. Chart Calculations — use globalData so Technical Reviewer counts reflect actual eval records
   const chartData = useMemo(() => {
     const clans = { Tejaswini: 0, Sohan: 0, Basvaraj: 0, Pushkaraj: 0, Akash: 0, Anmol: 0, Sachin: 0, 'Akhil L': 0, Vedant: 0, 'Akhil M': 0, Samit: 0, Snehanshu: 0, Ankita: 0, Kaushik: 0, Unassigned: 0 };
     const tiers = { 'T1+': 0, 'T1': 0, 'T2+': 0, 'T2': 0, 'T3': 0, 'N/A': 0 };
     const scores = { '0-5': 0, '6-10': 0, '11-15': 0, '16-20': 0, '21-25': 0, '26-30': 0 };
 
-    deduplicatedGlobal.forEach(c => {
+    globalData.forEach(c => {
       const r1 = getR1(c);
       
       const clan = r1.eval_group || 'Unassigned';
@@ -292,7 +292,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     });
 
     return { clans, tiers, scores };
-  }, [deduplicatedGlobal]);
+  }, [globalData]);
 
 
 
@@ -666,13 +666,14 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
           </CardHeader>
                     <CardContent className="pt-4 flex flex-col gap-4">
             {(() => {
-              const applicationsCount = deduplicatedFiltered.length;
-              const clearedR1Count = deduplicatedFiltered.filter(c => getR1(c).app_status === 'Yes').length;
-              const movedR3Count = deduplicatedFiltered.filter(c => {
+              const applicationsCount = deduplicatedFiltered.length; // unique applicants
+              // Use filteredApplicants (pre-dedup) so counts match round_1_evaluation actuals (137 cleared)
+              const clearedR1Count = filteredApplicants.filter(c => getR1(c).app_status === 'Yes').length;
+              const movedR3Count = filteredApplicants.filter(c => {
                 const m = getR2(c).moved_to_round_3;
                 return m && typeof m === 'string' && !m.endsWith('_draft') && (m === 'Yes' || m === 'Maybe');
               }).length;
-              const hiredCount = deduplicatedFiltered.filter(c => getR3(c).verdict === 'Yes').length;
+              const hiredCount = filteredApplicants.filter(c => getR3(c).verdict === 'Yes').length;
 
               return [
                 { label: '1. Applied', count: applicationsCount, percent: 100, color: 'bg-slate-400' },
