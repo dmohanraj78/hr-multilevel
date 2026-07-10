@@ -173,7 +173,8 @@ export default function App() {
   const [globalData, setGlobalData] = useState([]);
   const [activeTab, setActiveTab] = useState('pipeline');
   const [selectedUnivName, setSelectedUnivName] = useState(null);
-  const [univSearch, setUnivSearch] = useState(''); // 'pipeline' | 'overall'
+  const [univSearch, setUnivSearch] = useState('');
+  const [showAllUnis, setShowAllUnis] = useState(false); // 'pipeline' | 'overall'
   const [activeWorksheetTab, setActiveWorksheetTab] = useState('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -709,7 +710,7 @@ export default function App() {
                         No universities found.
                       </div>
                     ) : (
-                      uniDataList.slice(0, 4).map((uni) => {
+                      (showAllUnis ? uniDataList : uniDataList.slice(0, 4)).map((uni) => {
                         return (
                           <Card key={uni.name} className="border rounded-[1.25rem] overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
                             <CardHeader className="pb-3 bg-muted/20 border-b">
@@ -767,6 +768,18 @@ export default function App() {
                       })
                     )}
                   </div>
+
+                  {uniDataList.length > 4 && (
+                    <div className="flex justify-center mt-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowAllUnis(!showAllUnis)}
+                        className="rounded-xl border-[#800020] text-[#800020] hover:bg-[#800020]/10 font-bold px-6 py-2"
+                      >
+                        {showAllUnis ? "View Less Universities" : `View More Universities (${uniDataList.length - 4} more)`}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )
             )}
