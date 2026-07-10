@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Header from '@/components/Header';
 import StatsBanner from '@/components/StatsBanner';
 import CandidateListTable from '@/components/CandidateListTable';
