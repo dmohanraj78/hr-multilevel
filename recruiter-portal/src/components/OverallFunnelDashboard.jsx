@@ -256,6 +256,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     let maybeCount = 0;
 
     globalData.forEach(c => {
+      if (c.round_1_evaluation === null) return; // Skip unevaluated submissions (the 15 duplicates/drafts)
       const stage = getFunnelStage(c);
       if (stage === 'Hired') hired++;
       else if (stage.startsWith('Declined')) rejected++;
