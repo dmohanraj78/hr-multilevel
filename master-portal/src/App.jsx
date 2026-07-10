@@ -320,27 +320,27 @@ export default function App() {
 
   const r1Stats = {
     total: deduplicatedCount,
-    pending: globalData.filter(c => {
+    pending: deduplicatedCandidates.filter(c => {
       const r = getR1(c);
       return !r.app_status || r.app_status === 'Pending';
     }).length,
-    passed: globalData.filter(c => getR1(c).app_status === 'Yes').length,
-    rejected: globalData.filter(c => getR1(c).app_status === 'Reject').length,
+    passed: deduplicatedCandidates.filter(c => getR1(c).app_status === 'Yes').length,
+    rejected: deduplicatedCandidates.filter(c => getR1(c).app_status === 'Reject').length,
   };
 
   const r2Stats = {
     total: r1Stats.passed,
-    promoted: globalData.filter(c => {
+    promoted: deduplicatedCandidates.filter(c => {
       const r = getR2(c);
       const m = r.moved_to_round_3;
       return m && !m.endsWith('_draft') && (m === 'Yes' || m === 'Maybe');
     }).length,
-    declined: globalData.filter(c => {
+    declined: deduplicatedCandidates.filter(c => {
       const r = getR2(c);
       const m = r.moved_to_round_3;
       return m && !m.endsWith('_draft') && (m === 'No' || m === 'Declined');
     }).length,
-    pending: globalData.filter(c => {
+    pending: deduplicatedCandidates.filter(c => {
       const r = getR2(c);
       const m = r.moved_to_round_3;
       return getR1(c).app_status === 'Yes' && (!m || m.endsWith('_draft'));
@@ -349,9 +349,9 @@ export default function App() {
 
   const r3Stats = {
     total: r2Stats.promoted,
-    hired: globalData.filter(c => getR3(c).verdict === 'Yes').length,
-    declined: globalData.filter(c => getR3(c).verdict === 'No').length,
-    pending: globalData.filter(c => {
+    hired: deduplicatedCandidates.filter(c => getR3(c).verdict === 'Yes').length,
+    declined: deduplicatedCandidates.filter(c => getR3(c).verdict === 'No').length,
+    pending: deduplicatedCandidates.filter(c => {
       const r2 = getR2(c);
       const r3 = getR3(c);
       const m = r2.moved_to_round_3;
@@ -365,7 +365,7 @@ export default function App() {
     'Sachin', 'Akhil L', 'Vedant', 'Akhil M', 'Samit', 'Snehanshu',
     'Ankita', 'Kaushik'
   ].map(techEvaluatorId => {
-    const assigned = globalData.filter(c => getR1(c).eval_group === techEvaluatorId);
+    const assigned = deduplicatedCandidates.filter(c => getR1(c).eval_group === techEvaluatorId);
     return {
       name: techEvaluatorId,
       total: assigned.length,
