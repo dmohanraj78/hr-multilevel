@@ -86,8 +86,8 @@ export default function StatsBanner({ candidates, round = 1, rawCount = 0 }) {
     }).length;
 
     stats = [
-      { title: 'Total Candidates', value: total, icon: Users, color: 'text-blue-500 bg-blue-500/10', subtitle: rawCount > total ? `${rawCount - total} duplicates filtered` : null },
-      { title: 'Review Passed (R2)', value: approvedR1, icon: CheckCircle2, color: 'text-green-500 bg-green-500/10' },
+      { title: 'Applications Evaluated', value: total, icon: Users, color: 'text-blue-500 bg-blue-500/10', subtitle: 'in round_1_evaluation table' },
+      { title: 'HR Round Cleared', value: approvedR1, icon: CheckCircle2, color: 'text-green-500 bg-green-500/10' },
       { title: 'Pending Reviews', value: pendingScreen, icon: Hourglass, color: 'text-amber-500 bg-amber-500/10' },
       { title: 'Rejected Submissions', value: rejected, icon: XCircle, color: 'text-red-500 bg-red-500/10' }
     ];
