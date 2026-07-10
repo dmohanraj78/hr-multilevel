@@ -282,14 +282,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     return { clans, tiers, scores };
   }, [globalData]);
 
-  // Deduplicated sortedAndFiltered list
-  const deduplicatedFiltered = useMemo(() => {
-    return sortedAndFiltered.reduce((acc, current) => {
-      const x = acc.find(item => item.email?.trim().toLowerCase() === current.email?.trim().toLowerCase());
-      if (!x) return acc.concat([current]);
-      return acc;
-    }, []);
-  }, [sortedAndFiltered]);
+
 
   // Header field value extractors
   const getFieldVal = {
@@ -384,6 +377,15 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
         : String(valB).localeCompare(String(valA));
     });
   }, [filteredApplicants, sortConfig]);
+
+  // Deduplicated sortedAndFiltered list
+  const deduplicatedFiltered = useMemo(() => {
+    return sortedAndFiltered.reduce((acc, current) => {
+      const x = acc.find(item => item.email?.trim().toLowerCase() === current.email?.trim().toLowerCase());
+      if (!x) return acc.concat([current]);
+      return acc;
+    }, []);
+  }, [sortedAndFiltered]);
 
   // Tile Clicks Map to Header Filter
   const handleTileClick = (stageType) => {
