@@ -113,7 +113,7 @@ export default function App() {
           </div>
         )}
 
-        {loading ? (
+        {loading && candidates.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center min-h-[400px]">
             <div className="text-muted-foreground font-mono animate-pulse">Querying live applicant records...</div>
           </div>
@@ -135,7 +135,7 @@ export default function App() {
                 <Award className="h-8 w-8 text-[#800020]" /> Executive Verdict Dashboard
               </h1>
               <p className="text-sm text-muted-foreground">
-                Vetted candidates currently approved by the technical evaluators (Moved to R3: Yes/Maybe) awaiting your final verdict.
+                Reviewed candidates currently approved by the technical evaluators (Moved to R3: Yes/Maybe) awaiting your final verdict.
               </p>
             </div>
 

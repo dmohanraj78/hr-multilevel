@@ -237,7 +237,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     let total = globalData.length;
     let hired = 0;
     let rejected = 0;
-    let vetting = 0;
+    let review = 0;
     let pendingScreening = 0;
     let maybeCount = 0;
 
@@ -245,12 +245,12 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       const stage = getFunnelStage(c);
       if (stage === 'Hired') hired++;
       else if (stage.startsWith('Declined')) rejected++;
-      else if (stage === 'Tech Review') vetting++;
+      else if (stage === 'Tech Review') review++;
       else if (stage === 'Pending Review') pendingScreening++;
       else if (stage.startsWith('Maybe')) maybeCount++;
     });
 
-    return { total, hired, rejected, vetting, pendingScreening, maybeCount };
+    return { total, hired, rejected, review, pendingScreening, maybeCount };
   }, [globalData]);
 
   // 2. Chart Calculations
@@ -384,7 +384,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
         delete next.funnelStage;
       } else if (stageType === 'Hired') {
         next.funnelStage = ['Hired'];
-      } else if (stageType === 'Vetting') {
+      } else if (stageType === 'Review') {
         next.funnelStage = ['Tech Review'];
       } else if (stageType === 'Declined') {
         next.funnelStage = ['Declined (Offer)', 'Declined (Review)'];
@@ -400,7 +400,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     const fs = activeFilters.funnelStage;
     if (!fs) return 'ALL';
     if (fs.includes('Hired') && fs.length === 1) return 'Hired';
-    if (fs.includes('Tech Review') && fs.length === 1) return 'Vetting';
+    if (fs.includes('Tech Review') && fs.length === 1) return 'Review';
     if (fs.includes('Pending Review') && fs.length === 1) return 'Pending';
     if (fs.includes('Declined (Offer)')) return 'Declined';
     return 'CUSTOM';
@@ -515,15 +515,15 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
 
         {/* In Review Tile */}
         <Card 
-          onClick={() => handleTileClick('Vetting')}
+          onClick={() => handleTileClick('Review')}
           className={`rounded-2xl border border-blue-500/20 bg-blue-500/5 shadow-sm hover:shadow-md transition-all cursor-pointer hover:scale-[1.02] ${
-            currentActiveTile === 'Vetting' ? 'ring-2 ring-blue-500 border-transparent' : ''
+            currentActiveTile === 'Review' ? 'ring-2 ring-blue-500 border-transparent' : ''
           }`}
         >
           <CardContent className="pt-4 pb-3 flex flex-col gap-1">
             <span className="text-xs font-mono text-blue-700 dark:text-blue-400 uppercase tracking-wider block">In Review</span>
             <div className="flex items-baseline justify-between mt-1">
-              <span className="text-3xl font-extrabold font-mono text-blue-600 dark:text-blue-400">{stats.vetting}</span>
+              <span className="text-3xl font-extrabold font-mono text-blue-600 dark:text-blue-400">{stats.review}</span>
               <Flame className="h-5 w-5 text-blue-500 stroke-[1.5]" />
             </div>
             <span className="text-[10px] text-blue-600/80">Review passed</span>

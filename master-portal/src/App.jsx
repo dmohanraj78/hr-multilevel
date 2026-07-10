@@ -423,7 +423,7 @@ export default function App() {
           </div>
         )}
 
-        {loading ? (
+        {loading && globalData.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center min-h-[400px] gap-2">
             <div className="text-muted-foreground font-mono animate-pulse">Quering all pipeline stages...</div>
           </div>

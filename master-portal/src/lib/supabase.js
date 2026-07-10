@@ -61,14 +61,14 @@ export const fetchRound2Candidates = async () => {
   if (r1Error) throw r1Error;
   if (!r1Data || r1Data.length === 0) return [];
 
-  // 2. Fetch all tech vetting records (round_2_evaluation)
+  // 2. Fetch all tech review records (round_2_evaluation)
   const { data: r2Data, error: r2Error } = await supabase
     .from('round_2_evaluation')
     .select('*');
     
   if (r2Error) throw r2Error;
 
-  // 3. Map tech vetting by ID and merge in JS to bypass relationship restrictions
+  // 3. Map tech review by ID and merge in JS to bypass relationship restrictions
   const r2Map = {};
   (r2Data || []).forEach(row => {
     r2Map[row.id] = row;
@@ -150,7 +150,7 @@ export const fetchRound3Candidates = async () => {
   if (r1Error) throw r1Error;
   if (!r1Data || r1Data.length === 0) return [];
 
-  // 2. Fetch round 2 tech vetting records
+  // 2. Fetch round 2 tech review records
   const { data: r2Data, error: r2Error } = await supabase
     .from('round_2_evaluation')
     .select('*');
@@ -179,7 +179,7 @@ export const fetchRound3Candidates = async () => {
     round_3_evaluation: r3Map[c.id] || null
   }));
 
-  // 5. Filter for candidates who passed round 2 vetting
+  // 5. Filter for candidates who passed round 2 review
   return merged.filter(c => {
     const r2 = c.round_2_evaluation;
     const move = r2?.moved_to_round_3 || '';

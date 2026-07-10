@@ -484,7 +484,7 @@ export default function CandidateProfileDossier({ candidate, round, onSave, onCa
                 </div>
               )}
 
-              {/* Round 2 Vetting Form */}
+              {/* Round 2 Review Form */}
               {round === 2 && (
                 <div className="flex flex-col gap-3 text-sm">
                   
