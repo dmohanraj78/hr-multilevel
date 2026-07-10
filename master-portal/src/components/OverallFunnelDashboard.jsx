@@ -655,7 +655,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
               const clearedR1Count = deduplicatedFiltered.filter(c => getR1(c).app_status === 'Yes').length;
               const movedR3Count = deduplicatedFiltered.filter(c => {
                 const m = getR2(c).moved_to_round_3;
-                return m && !m.endsWith('_draft') && (m === 'Yes' || m === 'Maybe');
+                return m && typeof m === 'string' && !m.endsWith('_draft') && (m === 'Yes' || m === 'Maybe');
               }).length;
               const hiredCount = deduplicatedFiltered.filter(c => getR3(c).verdict === 'Yes').length;
 

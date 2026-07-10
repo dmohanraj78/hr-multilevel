@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Header from '@/components/Header';
 import StatsBanner from '@/components/StatsBanner';
 import CandidateListTable from '@/components/CandidateListTable';
@@ -8,7 +8,165 @@ import { fetchCandidates, upsertRound1, fetchGlobalFunnelData } from '@/lib/supa
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Users, ShieldAlert, KanbanSquare, BarChart } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Users, ShieldAlert, KanbanSquare, BarChart, Building } from 'lucide-react';
+
+function normalizeUniversity(rawName) {
+  if (!rawName) return 'Other/Unspecified';
+  
+  let clean = rawName.trim();
+  
+  // Remove suffix ", India", " , India", ",India", " and India", " & India", etc.
+  clean = clean.replace(/[,]?\s*india/gi, '');
+  clean = clean.replace(/\s+and\s*$/i, '');
+  clean = clean.replace(/\s+&\s*$/i, '');
+  clean = clean.replace(/[,]$/, '');
+  clean = clean.trim();
+  
+  if (!clean) return 'Other/Unspecified';
+  
+  const lower = clean.toLowerCase();
+  
+  // 1. Vardhaman College of Engineering
+  if (lower.includes('vardhaman')) {
+    return 'Vardhaman College of Engineering';
+  }
+  
+  // 2. IIIT Nagpur
+  if (lower.includes('iiit nagpur') || (lower.includes('information technology') && lower.includes('nagpur'))) {
+    return 'IIIT Nagpur';
+  }
+  
+  // 3. IIIT Kottayam
+  if (lower.includes('iiit kottayam') || (lower.includes('information technology') && lower.includes('kottayam'))) {
+    return 'IIIT Kottayam';
+  }
+  
+  // 4. IIIT Kurnool
+  if (lower.includes('iiit kurnool') || (lower.includes('information technology') && lower.includes('kurnool'))) {
+    return 'IIIT Kurnool';
+  }
+  
+  // 5. IIIT Manipur
+  if (lower.includes('iiit manipur') || (lower.includes('information technology') && lower.includes('manipur'))) {
+    return 'IIIT Manipur';
+  }
+
+  // 6. IIIT Jabalpur
+  if (lower.includes('iiit jabalpur') || lower.includes('pdpm') || (lower.includes('information technology') && lower.includes('jabalpur'))) {
+    return 'IIIT Jabalpur';
+  }
+  
+  // 7. Vellore Institute of Technology (VIT)
+  if (lower.includes('vellore institute') || lower.includes('vit-ap') || lower.includes('vit ap') || lower.includes('vit bhopal') || lower.includes('vit chennai') || lower.match(/\bvit\b/)) {
+    return 'Vellore Institute of Technology (VIT)';
+  }
+  
+  // 8. KL University
+  if (lower.includes('koneru lakshmaiah') || lower.includes('kl university') || lower.includes('k l university') || lower.match(/\bklu\b/)) {
+    return 'KL University';
+  }
+  
+  // 9. MIT World Peace University
+  if (lower.includes('world peace university') || lower.includes('mit-wpu') || lower.includes('mit wpu')) {
+    return 'MIT World Peace University';
+  }
+  
+  // 10. SRM University
+  if (lower.includes('srm university') || lower.includes('srm institute')) {
+    return 'SRM University';
+  }
+
+  // 11. Annamacharya University
+  if (lower.includes('annamacharya')) {
+    return 'Annamacharya University';
+  }
+
+  // 12. Osmania University
+  if (lower.includes('osmania')) {
+    return 'Osmania University';
+  }
+
+  // 13. JNTU
+  if (lower.includes('jawaharlal nehru technological') || lower.includes('jntu')) {
+    if (lower.includes('jntuh') || lower.includes('hyderabad')) return 'JNTU Hyderabad';
+    if (lower.includes('jntuk') || lower.includes('kakinada')) return 'JNTU Kakinada';
+    if (lower.includes('jntua') || lower.includes('anantapur')) return 'JNTU Anantapur';
+    return 'JNTU';
+  }
+
+  // 14. BITS Pilani
+  if (lower.includes('birla institute of technology and science') || lower.includes('bits pilani') || lower.match(/\bbits\b/)) {
+    return 'BITS Pilani';
+  }
+
+  // 15. Amrita
+  if (lower.includes('amrita vishwa') || lower.includes('amrita university')) {
+    return 'Amrita Vishwa Vidyapeetham';
+  }
+
+  // 16. SPPU / Pune University
+  if (lower.includes('savitribai phule') || lower.includes('pune university') || lower.includes('sppu')) {
+    return 'Savitribai Phule Pune University (SPPU)';
+  }
+
+  // 17. Mumbai University
+  if (lower.includes('mumbai university') || lower.includes('university of mumbai')) {
+    return 'Mumbai University';
+  }
+
+  // 18. IIT Patna
+  if (lower.includes('iit patna') || (lower.includes('indian institute of technology') && lower.includes('patna'))) {
+    return 'IIT Patna';
+  }
+
+  // 19. Newton School of Technology
+  if (lower.includes('newton school')) {
+    return 'Newton School of Technology';
+  }
+  
+  // 20. ICFAI University
+  if (lower.includes('icfai')) {
+    return 'ICFAI University';
+  }
+
+  // 21. Dr. A.P.J. Abdul Kalam Technical University (AKTU)
+  if (lower.includes('aktu') || lower.includes('abdul kalam technical') || lower.includes('technical university, uttar pradesh')) {
+    return 'Dr. A.P.J. Abdul Kalam Technical University (AKTU)';
+  }
+
+  // 22. Rajiv Gandhi University of Knowledge Technologies (RGUKT)
+  if (lower.includes('rgukt') || lower.includes('rajiv gandhi university of knowledge')) {
+    return 'Rajiv Gandhi University of Knowledge Technologies (RGUKT)';
+  }
+
+  // 23. Mody University
+  if (lower.includes('mody university')) {
+    return 'Mody University of Science and Technology';
+  }
+
+  // 24. Woxsen University
+  if (lower.includes('woxsen')) {
+    return 'Woxsen University';
+  }
+
+  // 25. Vivekananda Global University
+  if (lower.includes('vivekananda global')) {
+    return 'Vivekananda Global University';
+  }
+
+  // 26. Manipal University
+  if (lower.includes('manipal university') || lower.includes('mit manipal') || lower.includes('mahe')) {
+    return 'Manipal University';
+  }
+
+  // 27. M Ramaiah
+  if (lower.includes('ramaiah')) {
+    return 'M.S. Ramaiah Institute of Technology';
+  }
+
+  return clean.replace(/\b\w/g, c => c.toUpperCase());
+}
 
 export default function App() {
   const [candidates, setCandidates] = useState([]);
