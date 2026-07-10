@@ -531,6 +531,19 @@ export default function App() {
             <div className="flex flex-wrap items-center gap-2 border-b pb-3 justify-between">
               <div className="flex items-center gap-2">
                 <Button
+                  variant={activeTab === 'university' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setActiveTab('university')}
+                  className={`rounded-lg px-4 font-bold text-xs transition-all ${
+                    activeTab === 'university' 
+                      ? 'bg-[#800020] text-white hover:bg-[#800020]/90 border-transparent' 
+                      : 'border border-[#800020]/30 text-[#800020] hover:bg-[#800020]/5 hover:text-[#800020]'
+                  }`}
+                >
+                  <GraduationCap className="mr-2 h-4 w-4 stroke-[1.5]" /> University Overview
+                </Button>
+
+                <Button
                   variant={activeTab === 'overview' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setActiveTab('overview')}
@@ -580,19 +593,6 @@ export default function App() {
                   }`}
                 >
                   <Award className="mr-2 h-4 w-4 stroke-[1.5]" /> R3: Executive Review
-                </Button>
-                
-                <Button
-                  variant={activeTab === 'university' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setActiveTab('university')}
-                  className={`rounded-lg px-4 font-bold text-xs transition-all ${
-                    activeTab === 'university' 
-                      ? 'bg-[#800020] text-white hover:bg-[#800020]/90 border-transparent' 
-                      : 'border border-[#800020]/30 text-[#800020] hover:bg-[#800020]/5 hover:text-[#800020]'
-                  }`}
-                >
-                  <GraduationCap className="mr-2 h-4 w-4 stroke-[1.5]" /> University Overview
                 </Button>
               </div>
             </div>
@@ -1015,7 +1015,7 @@ export default function App() {
                 <div className="flex flex-col gap-6 animate-in fade-in duration-300">
                   <div className="flex flex-col gap-1">
                     <h2 className="text-xl font-extrabold tracking-tight flex items-center gap-2">
-                      <GraduationCap className="h-5 w-5 text-[#800020]" /> University Overview & Vibe Checks
+                      <GraduationCap className="h-5 w-5 text-[#800020]" /> University Overview
                     </h2>
                     <p className="text-xs text-muted-foreground">Monitor candidate distributions and screen applicants grouped by their academic institutions.</p>
                   </div>
