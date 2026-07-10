@@ -478,7 +478,7 @@ export default function App() {
                       : 'border border-[#800020]/30 text-[#800020] hover:bg-[#800020]/5 hover:text-[#800020]'
                   }`}
                 >
-                  <Flame className="mr-2 h-4 w-4 stroke-[1.5]" /> R2: Technical Evaluator Technical Review
+                  <Flame className="mr-2 h-4 w-4 stroke-[1.5]" /> R2: Technical Review
                 </Button>
                 
                 <Button
@@ -491,7 +491,7 @@ export default function App() {
                       : 'border border-[#800020]/30 text-[#800020] hover:bg-[#800020]/5 hover:text-[#800020]'
                   }`}
                 >
-                  <Award className="mr-2 h-4 w-4 stroke-[1.5]" /> R3: Executive Verdicts
+                  <Award className="mr-2 h-4 w-4 stroke-[1.5]" /> R3: Executive Review
                 </Button>
                 
                 <Button
@@ -504,7 +504,7 @@ export default function App() {
                       : 'border border-[#800020]/30 text-[#800020] hover:bg-[#800020]/5 hover:text-[#800020]'
                   }`}
                 >
-                  <GraduationCap className="mr-2 h-4 w-4 stroke-[1.5]" /> University Review
+                  <GraduationCap className="mr-2 h-4 w-4 stroke-[1.5]" /> University Overview
                 </Button>
               </div>
             </div>
@@ -632,7 +632,7 @@ export default function App() {
                     <div>
                       <CardHeader className="pb-3 border-b">
                         <CardTitle className="text-base font-bold flex items-center justify-between">
-                          <span>Round 3: Executive Verdicts</span>
+                          <span>Round 3: Executive Review</span>
                           <Badge variant="outline" className="font-mono text-[10px] px-2 py-0.5 border-purple-500/30 text-purple-600 bg-purple-500/5">R3 Queue</Badge>
                         </CardTitle>
                       </CardHeader>
@@ -710,7 +710,7 @@ export default function App() {
 
                 <CandidateListTable
                   candidates={r1Candidates}
-                  actionLabel="Screen Candidate"
+                  actionLabel="Review"
                   onActionClick={(cand) => {
                     setSelectedRound(1);
                     setSelectedCandidate(cand);
@@ -770,7 +770,7 @@ export default function App() {
               </div>
             )}
 
-            {/* University Review tab content */}
+            {/* University Overview tab content */}
             {activeTab === 'university' && (() => {
               // Helper to get distinctive words for adaptive merging
               const getDistinctiveWords = (str) => {
@@ -963,7 +963,7 @@ export default function App() {
                 <div className="flex flex-col gap-6 animate-in fade-in duration-300">
                   <div className="flex flex-col gap-1">
                     <h2 className="text-xl font-extrabold tracking-tight flex items-center gap-2">
-                      <GraduationCap className="h-5 w-5 text-[#800020]" /> University Review & Vibe Checks
+                      <GraduationCap className="h-5 w-5 text-[#800020]" /> University Overview & Vibe Checks
                     </h2>
                     <p className="text-xs text-muted-foreground">Monitor candidate distributions and screen applicants grouped by their academic institutions.</p>
                   </div>
