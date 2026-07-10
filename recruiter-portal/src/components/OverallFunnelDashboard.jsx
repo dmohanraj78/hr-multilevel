@@ -241,12 +241,14 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     }, []);
   }, [globalData]);
 
-  const rawTotal = globalData.length; // includes duplicates
-  const duplicatesRemoved = rawTotal - deduplicatedGlobal.length;
+  // Number of candidates with an R1 evaluation record = 682 (consistent with R1 tab)
+  const evaluatedCount = globalData.filter(c => c.round_1_evaluation !== null).length;
+  const rawTotal = globalData.length; // 697 total raw submissions
+  const duplicatesRemoved = rawTotal - evaluatedCount; // 697 - 682 = 15 not yet evaluated
 
-  // 1. Calculate Metrics — use globalData (reflects actual round_1_evaluation records, 137 passed is correct)
+  // 1. Calculate Metrics — use globalData (reflects actual round_1_evaluation records)
   const stats = useMemo(() => {
-    let total = deduplicatedGlobal.length; // unique applicants for APPLICANTS tile
+    let total = evaluatedCount; // 682 — same as R1 tab StatsBanner
     let hired = 0;
     let rejected = 0;
     let review = 0;
@@ -263,7 +265,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     });
 
     return { total, hired, rejected, review, pendingScreening, maybeCount };
-  }, [globalData, deduplicatedGlobal]);
+  }, [globalData, evaluatedCount]);
 
   // 2. Chart Calculations — use globalData so Technical Reviewer counts reflect actual eval records
   const chartData = useMemo(() => {
@@ -399,8 +401,9 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     }, []);
   }, [sortedAndFiltered]);
 
-  // Filtered duplicates removed count (for the APPLICANTS card)
-  const filteredDuplicatesRemoved = sortedAndFiltered.length - deduplicatedFiltered.length;
+  // Filtered count matching R1 eval records (for the APPLICANTS card = 682 when no filter)
+  const evaluatedFiltered = filteredApplicants.filter(c => c.round_1_evaluation !== null);
+  const filteredDuplicatesRemoved = sortedAndFiltered.length - evaluatedFiltered.length;
 
   // Tile Clicks Map to Header Filter
   const handleTileClick = (stageType) => {
@@ -494,7 +497,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
             AI Builder Intern — Applicant Funnel
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            <strong className="text-[#800020]">{rawTotal} applications</strong> processed · {duplicatesRemoved} duplicates removed · v2 rubric (max score 30)
+            <strong className="text-[#800020]">{rawTotal} applications</strong> processed · {duplicatesRemoved} not yet evaluated · v2 rubric (max score 30)
           </p>
         </div>
         <Button onClick={exportToCSV} className="bg-[#800020] hover:bg-[#800020]/90 text-white rounded-xl shadow-md shrink-0">
@@ -515,10 +518,10 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
           <CardContent className="pt-4 pb-3 flex flex-col gap-1">
             <span className="text-xs font-mono text-muted-foreground uppercase tracking-wider block">Applicants</span>
             <div className="flex items-baseline justify-between mt-1">
-              <span className="text-3xl font-extrabold font-mono text-foreground">{stats.total}</span>
+              <span className="text-3xl font-extrabold font-mono text-foreground">{evaluatedFiltered.length}</span>
               <Users className="h-5 w-5 text-slate-400 stroke-[1.5]" />
             </div>
-            <span className="text-[10px] text-muted-foreground">{filteredDuplicatesRemoved} duplicates removed</span>
+            <span className="text-[10px] text-muted-foreground">of {sortedAndFiltered.length} applications</span>
           </CardContent>
         </Card>
 
