@@ -531,137 +531,7 @@ export default function App() {
                   }}
                 />
 
-                {/* Snapshots Section */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* Round 1 Card */}
-                  <Card className="rounded-[1.5rem] border shadow-sm bg-card text-card-foreground flex flex-col justify-between">
-                    <div>
-                      <CardHeader className="pb-3 border-b">
-                        <CardTitle className="text-base font-bold flex items-center justify-between">
-                          <span>Round 1: HR Review</span>
-                          <Badge variant="outline" className="font-mono text-[10px] px-2 py-0.5 border-[#800020]/30 text-[#800020] bg-[#800020]/5">HR Queue</Badge>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="pt-4 flex flex-col gap-3 text-sm">
-                        <div className="flex justify-between border-b pb-2">
-                          <span className="text-muted-foreground font-medium">Total Applicants (Deduplicated):</span>
-                          <strong className="font-mono text-foreground font-extrabold">{r1Stats.total}</strong>
-                        </div>
-                        <div className="flex justify-between border-b pb-2">
-                          <span className="text-muted-foreground font-medium">Unscreened:</span>
-                          <strong className="font-mono text-amber-600 font-extrabold">{r1Stats.pending}</strong>
-                        </div>
-                        <div className="flex justify-between border-b pb-2">
-                          <span className="text-muted-foreground font-medium">Passed (Promoted to R2):</span>
-                          <strong className="font-mono text-green-600 font-extrabold">{r1Stats.passed}</strong>
-                        </div>
-                        <div className="flex justify-between border-b pb-2">
-                          <span className="text-muted-foreground font-medium">Rejected (Review):</span>
-                          <strong className="font-mono text-red-600 font-extrabold">{r1Stats.rejected}</strong>
-                        </div>
-
-                        {/* Candidate Tiers Breakdown moved here */}
-                        <div className="pt-2 flex flex-col gap-2">
-                          <span className="text-[10px] font-bold text-muted-foreground font-mono uppercase tracking-wider">Candidate Tiers</span>
-                          <div className="grid grid-cols-4 gap-1">
-                            {Object.entries(overallTiers).map(([tierName, count]) => {
-                              const colors = {
-                                'Tier 1+': 'bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/25',
-                                'Tier 1': 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/25',
-                                'Tier 2+': 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/25',
-                                'Tier 2': 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/25',
-                                'Tier 3': 'bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/25',
-                                'T4': 'bg-slate-500/10 text-slate-700 dark:text-slate-400 border-slate-500/25',
-                                'N/A': 'bg-slate-500/10 text-slate-700 dark:text-slate-400 border-slate-500/25'
-                              };
-                              return (
-                                <div key={tierName} className={`flex flex-col items-center py-1 px-0.5 rounded-lg border text-center ${colors[tierName] || 'bg-muted text-muted-foreground'}`}>
-                                  <span className="text-[8px] font-bold uppercase tracking-wider">{tierName === 'Tier 1+' ? '1+' : tierName === 'Tier 1' ? '1' : tierName === 'Tier 2+' ? '2+' : tierName === 'Tier 2' ? '2' : tierName === 'Tier 3' ? '3' : tierName}</span>
-                                  <span className="font-mono text-xs font-bold">{count}</span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </div>
-                    <div className="p-4 pt-0">
-                      <Button variant="outline" size="sm" className="text-[#800020] border-[#800020]/30 hover:bg-[#800020]/10 rounded-lg w-full font-bold" onClick={() => window.open('https://recruiter-portal-one.vercel.app', '_blank')}>
-                        Go to HR Workspace ↗
-                      </Button>
-                    </div>
-                  </Card>
-
-                  {/* Round 2 Card */}
-                  <Card className="rounded-[1.5rem] border shadow-sm bg-card text-card-foreground flex flex-col justify-between">
-                    <div>
-                      <CardHeader className="pb-3 border-b">
-                        <CardTitle className="text-base font-bold flex items-center justify-between">
-                          <span>Round 2: Technical Review</span>
-                          <Badge variant="outline" className="font-mono text-[10px] px-2 py-0.5 border-blue-500/30 text-blue-600 bg-blue-500/5">R2 Queue</Badge>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="pt-4 flex flex-col gap-3 text-sm">
-                        <div className="flex justify-between border-b pb-2">
-                          <span className="text-muted-foreground font-medium">Total in Review:</span>
-                          <strong className="font-mono text-foreground font-extrabold">{r2Stats.total}</strong>
-                        </div>
-                        <div className="flex justify-between border-b pb-2">
-                          <span className="text-muted-foreground font-medium">Pending Review:</span>
-                          <strong className="font-mono text-amber-600 font-extrabold">{r2Stats.pending}</strong>
-                        </div>
-                        <div className="flex justify-between border-b pb-2">
-                          <span className="text-muted-foreground font-medium">Promoted to R3:</span>
-                          <strong className="font-mono text-green-600 font-extrabold">{r2Stats.promoted}</strong>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground font-medium">Declined (Review):</span>
-                          <strong className="font-mono text-red-600 font-extrabold">{r2Stats.declined}</strong>
-                        </div>
-                      </CardContent>
-                    </div>
-                    <div className="p-4 pt-0">
-                      <Button variant="outline" size="sm" className="text-blue-600 border-blue-500/30 hover:bg-blue-500/10 rounded-lg w-full font-bold" onClick={() => window.open('https://evaluator-portal-mu.vercel.app', '_blank')}>
-                        Go to Technical Review Hub ↗
-                      </Button>
-                    </div>
-                  </Card>
-
-                  {/* Round 3 Card */}
-                  <Card className="rounded-[1.5rem] border shadow-sm bg-card text-card-foreground flex flex-col justify-between">
-                    <div>
-                      <CardHeader className="pb-3 border-b">
-                        <CardTitle className="text-base font-bold flex items-center justify-between">
-                          <span>Round 3: Executive Review</span>
-                          <Badge variant="outline" className="font-mono text-[10px] px-2 py-0.5 border-purple-500/30 text-purple-600 bg-purple-500/5">R3 Queue</Badge>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="pt-4 flex flex-col gap-3 text-sm">
-                        <div className="flex justify-between border-b pb-2">
-                          <span className="text-muted-foreground font-medium">Total Promoted:</span>
-                          <strong className="font-mono text-foreground font-extrabold">{r3Stats.total}</strong>
-                        </div>
-                        <div className="flex justify-between border-b pb-2">
-                          <span className="text-muted-foreground font-medium">Pending Verdict:</span>
-                          <strong className="font-mono text-amber-600 font-extrabold">{r3Stats.pending}</strong>
-                        </div>
-                        <div className="flex justify-between border-b pb-2">
-                          <span className="text-muted-foreground font-medium">Hired (Approved Offer):</span>
-                          <strong className="font-mono text-green-600 font-extrabold">{r3Stats.hired}</strong>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground font-medium">Declined (Verdict):</span>
-                          <strong className="font-mono text-red-600 font-extrabold">{r3Stats.declined}</strong>
-                        </div>
-                      </CardContent>
-                    </div>
-                    <div className="p-4 pt-0">
-                      <Button variant="outline" size="sm" className="text-purple-600 border-purple-500/30 hover:bg-purple-500/10 rounded-lg w-full font-bold" onClick={() => window.open('https://executive-portal-nine.vercel.app', '_blank')}>
-                        Go to Executive Portal ↗
-                      </Button>
-                    </div>
-                  </Card>
-                </div>
+                
 
                 {/* Technical Reviewer Workload Status Snapshots */}
                 <div className="flex flex-col gap-1 mt-2">
@@ -972,80 +842,120 @@ export default function App() {
                   <div className="relative max-w-md">
                     <Search className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground stroke-[1.5]" />
                     <Input
-                      placeholder="Search normalized universities..."
+                      placeholder="Search universities..."
                       value={univSearch}
                       onChange={(e) => setUnivSearch(e.target.value)}
                       className="pl-9 h-11 rounded-xl"
                     />
                   </div>
 
-                  {/* University Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {sortedUnis.length === 0 ? (
-                      <div className="col-span-full text-center py-12 border border-dashed rounded-2xl text-muted-foreground font-mono text-sm">
-                        No universities found matching your search.
-                      </div>
-                    ) : (
-                      sortedUnis.map((uni) => {
-                        return (
-                          <Card key={uni.name} className="border rounded-[1.25rem] overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
-                            <CardHeader className="pb-3 bg-muted/20 border-b">
-                              <div className="flex items-start justify-between">
-                                <div className="flex gap-2.5 items-center">
-                                  <div className="p-2 bg-[#800020]/10 rounded-lg text-[#800020]">
-                                    <Building className="h-4 w-4 stroke-[1.5]" />
-                                  </div>
-                                  <div>
-                                    <CardTitle className="text-base font-bold leading-none">{uni.name}</CardTitle>
-                                    <span className="text-[10px] text-muted-foreground mt-1.5 block">Normalized from variations</span>
-                                  </div>
-                                </div>
-                                <Badge variant="secondary" className="font-mono font-bold text-xs bg-[#800020]/10 text-[#800020] px-2 py-0.5 rounded-full">
-                                  {uni.total} {uni.total === 1 ? 'candidate' : 'candidates'}
-                                </Badge>
-                              </div>
-                            </CardHeader>
-                            
-                            <CardContent className="pt-4 flex flex-col gap-4">
-                              {/* Tier Breakdown Bars */}
-                              <div className="flex flex-col gap-2">
-                                <span className="text-[10px] font-bold text-muted-foreground font-mono uppercase tracking-wider">Tier Distribution</span>
-                                <div className="grid grid-cols-3 gap-2">
-                                  {Object.entries(uni.tiers).map(([tierName, count]) => {
-                                    const colors = {
-                                      'Tier 1+': 'bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/25',
-                                      'Tier 1': 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/25',
-                                      'Tier 2+': 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/25',
-                                      'Tier 2': 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/25',
-                                      'Tier 3': 'bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/25',
-                                      'T4': 'bg-slate-500/10 text-slate-700 dark:text-slate-400 border-slate-500/25',
-                                      'N/A': 'bg-slate-500/10 text-slate-700 dark:text-slate-400 border-slate-500/25'
-                                    };
-                                    return (
-                                      <div key={tierName} className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg border text-xs font-semibold ${colors[tierName] || 'bg-muted text-muted-foreground'}`}>
-                                        <span className="font-sans">{tierName}</span>
-                                        <span className="font-mono font-bold">{count}</span>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </div>
+                  {/* University Table */}
+                  <Card className="rounded-[1.25rem] overflow-hidden border shadow-sm">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="bg-[#1B365D] text-white">
+                            <th className="p-3.5 font-bold text-sm">University</th>
+                            <th className="p-3.5 font-bold text-sm text-center w-[100px] border-l border-white/10">Total</th>
+                            <th className="p-3.5 font-bold text-sm text-center w-[90px] border-l border-white/10">Tier 1</th>
+                            <th className="p-3.5 font-bold text-sm text-center w-[90px] border-l border-white/10">Tier 1+</th>
+                            <th className="p-3.5 font-bold text-sm text-center w-[90px] border-l border-white/10">Tier 2</th>
+                            <th className="p-3.5 font-bold text-sm text-center w-[90px] border-l border-white/10">Tier 2+</th>
+                            <th className="p-3.5 font-bold text-sm text-center w-[90px] border-l border-white/10">Tier 3</th>
+                            <th className="p-3.5 font-bold text-sm text-center w-[90px] border-l border-white/10">Tier 4</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {sortedUnis.length === 0 ? (
+                            <tr>
+                              <td colSpan={8} className="text-center py-12 text-muted-foreground font-mono text-sm bg-muted/20">
+                                No universities found matching your search.
+                              </td>
+                            </tr>
+                          ) : (
+                            sortedUnis.map((uni) => {
+                              const t1 = uni.tiers['Tier 1'] || 0;
+                              const t1p = uni.tiers['Tier 1+'] || 0;
+                              const t2 = uni.tiers['Tier 2'] || 0;
+                              const t2p = uni.tiers['Tier 2+'] || 0;
+                              const t3 = uni.tiers['Tier 3'] || 0;
+                              const t4 = uni.tiers['T4'] || 0;
 
-                              {/* View Candidates List Button */}
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setSelectedUnivName(uni.name)}
-                                className="w-full flex items-center justify-center gap-1.5 text-xs text-[#800020] border-[#800020]/30 hover:border-[#800020] hover:bg-[#800020]/10 font-bold py-2 rounded-xl mt-1"
-                              >
-                                View Candidates ({uni.total}) &rarr;
-                              </Button>
-                            </CardContent>
-                          </Card>
-                        );
-                      })
-                    )}
-                  </div>
+                              return (
+                                <tr key={uni.name} className="border-b hover:bg-muted/10 transition-colors last:border-0">
+                                  <td className="p-3.5 font-semibold text-foreground text-sm">
+                                    <button 
+                                      onClick={() => setSelectedUnivName(uni.name)}
+                                      className="text-[#800020] hover:underline font-bold text-left focus:outline-none"
+                                    >
+                                      {uni.name}
+                                    </button>
+                                  </td>
+                                  <td className="p-3.5 text-center font-bold text-sm border-l border-muted bg-muted/20 text-foreground">
+                                    {uni.total}
+                                  </td>
+                                  
+                                  {/* Tier 1 - light green */}
+                                  <td className={`p-3.5 text-center font-bold text-sm border-l border-muted ${
+                                    t1 > 0 
+                                      ? 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-400' 
+                                      : 'text-muted-foreground/30'
+                                  }`}>
+                                    {t1}
+                                  </td>
+                                  
+                                  {/* Tier 1+ - light green */}
+                                  <td className={`p-3.5 text-center font-bold text-sm border-l border-muted ${
+                                    t1p > 0 
+                                      ? 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-400' 
+                                      : 'text-muted-foreground/30'
+                                  }`}>
+                                    {t1p}
+                                  </td>
+                                  
+                                  {/* Tier 2 - light blue */}
+                                  <td className={`p-3.5 text-center font-bold text-sm border-l border-muted ${
+                                    t2 > 0 
+                                      ? 'bg-blue-500/10 text-blue-800 dark:text-blue-400' 
+                                      : 'text-muted-foreground/30'
+                                  }`}>
+                                    {t2}
+                                  </td>
+                                  
+                                  {/* Tier 2+ - light blue */}
+                                  <td className={`p-3.5 text-center font-bold text-sm border-l border-muted ${
+                                    t2p > 0 
+                                      ? 'bg-blue-500/15 text-blue-800 dark:text-blue-400' 
+                                      : 'text-muted-foreground/30'
+                                  }`}>
+                                    {t2p}
+                                  </td>
+                                  
+                                  {/* Tier 3 - light yellow */}
+                                  <td className={`p-3.5 text-center font-bold text-sm border-l border-muted ${
+                                    t3 > 0 
+                                      ? 'bg-amber-500/10 text-amber-800 dark:text-amber-400' 
+                                      : 'text-muted-foreground/30'
+                                  }`}>
+                                    {t3}
+                                  </td>
+                                  
+                                  {/* Tier 4 - light orange */}
+                                  <td className={`p-3.5 text-center font-bold text-sm border-l border-muted ${
+                                    t4 > 0 
+                                      ? 'bg-orange-500/10 text-orange-800 dark:text-orange-400' 
+                                      : 'text-muted-foreground/30'
+                                  }`}>
+                                    {t4}
+                                  </td>
+                                </tr>
+                              );
+                            })
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </Card>
                 </div>
               );
             })()}

@@ -647,21 +647,22 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
             </CardTitle>
             <CardDescription className="text-xs">Candidate dropoff rates by pipeline stage</CardDescription>
           </CardHeader>
-          <CardContent className="pt-4 flex flex-col gap-4">
-            {[
-              { label: '1. Total Submissions', count: stats.total, percent: 100, color: 'bg-slate-400' },
-              { label: '2. Passed Review', count: stats.total - stats.pendingScreening - stats.rejected, percent: Math.round(((stats.total - stats.pendingScreening - stats.rejected) / (stats.total || 1)) * 100), color: 'bg-blue-500' },
-              { label: '3. Promoted to R3', count: globalData.filter(c => {
-                  const r2 = getR2(c);
-                  const m = r2.moved_to_round_3;
-                  return m && !m.endsWith('_draft') && (m === 'Yes' || m === 'Maybe');
-                }).length, percent: Math.round((globalData.filter(c => {
-                  const r2 = getR2(c);
-                  const m = r2.moved_to_round_3;
-                  return m && !m.endsWith('_draft') && (m === 'Yes' || m === 'Maybe');
-                }).length / (stats.total || 1)) * 100), color: 'bg-purple-500' },
-              { label: '4. Final Hire Offers', count: stats.hired, percent: Math.round((stats.hired / (stats.total || 1)) * 100), color: 'bg-[#800020]' }
-            ].map((stage, idx) => (
+                    <CardContent className="pt-4 flex flex-col gap-4">
+            {(() => {
+              const applicationsCount = deduplicatedFiltered.length;
+              const clearedR1Count = deduplicatedFiltered.filter(c => getR1(c).app_status === 'Yes').length;
+              const movedR3Count = deduplicatedFiltered.filter(c => {
+                const m = getR2(c).moved_to_round_3;
+                return m && !m.endsWith('_draft') && (m === 'Yes' || m === 'Maybe');
+              }).length;
+              const hiredCount = deduplicatedFiltered.filter(c => getR3(c).verdict === 'Yes').length;
+
+              return [
+                { label: '1. Applications', count: applicationsCount, percent: 100, color: 'bg-slate-400' },
+                { label: '2. Cleared Round 1', count: clearedR1Count, percent: Math.round((clearedR1Count / (applicationsCount || 1)) * 100), color: 'bg-blue-500' },
+                { label: '3. Moved to Round 3', count: movedR3Count, percent: Math.round((movedR3Count / (applicationsCount || 1)) * 100), color: 'bg-purple-500' },
+                { label: '4. Hired', count: hiredCount, percent: Math.round((hiredCount / (applicationsCount || 1)) * 100), color: 'bg-[#800020]' }
+              ].map((stage, idx) => (
               <div key={idx} className="flex flex-col gap-1.5">
                 <div className="flex justify-between text-xs font-semibold">
                   <span className="text-muted-foreground">{stage.label}</span>
@@ -674,7 +675,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
                   />
                 </div>
               </div>
-            ))}
+            ))})()}
           </CardContent>
         </Card>
 
