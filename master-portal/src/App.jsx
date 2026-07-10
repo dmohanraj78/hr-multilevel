@@ -221,7 +221,7 @@ export default function App() {
     
     let baseUrl = 'https://recruiter-portal-one.vercel.app';
     if (isReview) {
-      baseUrl = 'https://technical-review.vercel.app';
+      baseUrl = 'https://evaluator-portal-mu.vercel.app';
     } else if (r2.moved_to_round_3 === 'Yes' || r2.moved_to_round_3 === 'Maybe') {
       baseUrl = 'https://executive-portal-nine.vercel.app';
     }
@@ -621,7 +621,7 @@ export default function App() {
                       </CardContent>
                     </div>
                     <div className="p-4 pt-0">
-                      <Button variant="outline" size="sm" className="text-blue-600 border-blue-500/30 hover:bg-blue-500/10 rounded-lg w-full font-bold" onClick={() => window.open('https://technical-review.vercel.app', '_blank')}>
+                      <Button variant="outline" size="sm" className="text-blue-600 border-blue-500/30 hover:bg-blue-500/10 rounded-lg w-full font-bold" onClick={() => window.open('https://evaluator-portal-mu.vercel.app', '_blank')}>
                         Go to Technical Review Hub ↗
                       </Button>
                     </div>
