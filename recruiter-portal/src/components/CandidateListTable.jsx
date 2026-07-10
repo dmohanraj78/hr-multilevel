@@ -543,7 +543,7 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
                     <TableCell className="font-mono text-xs font-bold py-4">{cand.id}</TableCell>
                     <TableCell>
                       <div className="font-semibold text-foreground">{getBio(cand, 'full_name')}</div>
-                      <div className="text-xs text-muted-foreground">{getBio(cand, 'applied_role') || 'ML Engineer Intern'}</div>
+                      
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className="font-mono text-[10px] px-1.5 py-0.5 border-primary/20">{getEval1(cand, 'tier') || 'N/A'}</Badge>
