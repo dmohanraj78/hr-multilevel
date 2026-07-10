@@ -221,7 +221,7 @@ export default function App() {
     
     let baseUrl = 'https://recruiter-portal-one.vercel.app';
     if (isReview) {
-      baseUrl = 'https://evaluator-portal-mu.vercel.app';
+      baseUrl = 'https://technical-review.vercel.app';
     } else if (r2.moved_to_round_3 === 'Yes' || r2.moved_to_round_3 === 'Maybe') {
       baseUrl = 'https://executive-portal-nine.vercel.app';
     }
@@ -278,7 +278,7 @@ export default function App() {
       await upsertRound1(candidateId, { eval_group: newTechEvaluator });
       await loadData();
     } catch (e) {
-      alert('Failed to update evaluation tech evaluator: ' + e.message);
+      alert('Failed to update evaluation technical evaluator: ' + e.message);
     }
   };
 
@@ -296,8 +296,29 @@ export default function App() {
     return Array.isArray(val) ? val[0] || {} : val || {};
   };
 
+
+  // Deduplicated applicant stats
+  const deduplicatedCandidates = globalData.reduce((acc, current) => {
+    const x = acc.find(item => item.email?.trim().lower() === current.email?.trim().lower());
+    if (!x) return acc.concat([current]);
+    return acc;
+  }, []);
+  const deduplicatedCount = deduplicatedCandidates.length;
+
+  const overallTiers = { 'Tier 1+': 0, 'Tier 1': 0, 'Tier 2+': 0, 'Tier 2': 0, 'Tier 3': 0, 'T4': 0, 'N/A': 0 };
+  deduplicatedCandidates.forEach(cand => {
+    let tier = getR1(cand).tier || 'N/A';
+    if (tier === 'T1+') tier = 'Tier 1+';
+    else if (tier === 'T1') tier = 'Tier 1';
+    else if (tier === 'T2+') tier = 'Tier 2+';
+    else if (tier === 'T2') tier = 'Tier 2';
+    else if (tier === 'T3') tier = 'Tier 3';
+    else if (tier === 'T4') tier = 'T4';
+    overallTiers[tier] = (overallTiers[tier] || 0) + 1;
+  });
+
   const r1Stats = {
-    total: globalData.length,
+    total: deduplicatedCount,
     pending: globalData.filter(c => {
       const r = getR1(c);
       return !r.app_status || r.app_status === 'Pending';
@@ -310,10 +331,19 @@ export default function App() {
     total: r1Stats.passed,
     promoted: globalData.filter(c => {
       const r = getR2(c);
-      return r.moved_to_round_3 === 'Yes' || r.moved_to_round_3 === 'Maybe';
+      const m = r.moved_to_round_3;
+      return m && !m.endsWith('_draft') && (m === 'Yes' || m === 'Maybe');
     }).length,
-    declined: globalData.filter(c => getR2(c).moved_to_round_3 === 'No').length,
-    pending: globalData.filter(c => getR1(c).app_status === 'Yes' && !getR2(c).moved_to_round_3).length,
+    declined: globalData.filter(c => {
+      const r = getR2(c);
+      const m = r.moved_to_round_3;
+      return m && !m.endsWith('_draft') && (m === 'No' || m === 'Declined');
+    }).length,
+    pending: globalData.filter(c => {
+      const r = getR2(c);
+      const m = r.moved_to_round_3;
+      return getR1(c).app_status === 'Yes' && (!m || m.endsWith('_draft'));
+    }).length,
   };
 
   const r3Stats = {
@@ -323,31 +353,55 @@ export default function App() {
     pending: globalData.filter(c => {
       const r2 = getR2(c);
       const r3 = getR3(c);
-      return (r2.moved_to_round_3 === 'Yes' || r2.moved_to_round_3 === 'Maybe') && !r3.verdict;
+      const m = r2.moved_to_round_3;
+      const isFinished = m && !m.endsWith('_draft');
+      return isFinished && (m === 'Yes' || m === 'Maybe') && !r3.verdict;
     }).length,
   };
 
-  const techEvaluatorsSnapshot = ['Dharti', 'Jal', 'Agni', 'Vayu', 'Akash', 'Bijli'].map(techEvaluatorId => {
+  const techEvaluatorsSnapshot = [
+    'Tejaswini', 'Sohan', 'Basvaraj', 'Pushkaraj', 'Akash', 'Anmol',
+    'Sachin', 'Akhil L', 'Vedant', 'Akhil M', 'Samit', 'Snehanshu',
+    'Ankita', 'Kaushik'
+  ].map(techEvaluatorId => {
     const assigned = globalData.filter(c => getR1(c).eval_group === techEvaluatorId);
     return {
       name: techEvaluatorId,
       total: assigned.length,
-      pending: assigned.filter(c => getR1(c).app_status === 'Yes' && !getR2(c).moved_to_round_3).length,
+      pending: assigned.filter(c => {
+        const r1 = getR1(c);
+        const r2 = getR2(c);
+        const m = r2.moved_to_round_3;
+        return r1.app_status === 'Yes' && (!m || m.endsWith('_draft'));
+      }).length,
       promoted: assigned.filter(c => {
         const r2 = getR2(c);
-        return r2.moved_to_round_3 === 'Yes' || r2.moved_to_round_3 === 'Maybe';
+        const m = r2.moved_to_round_3;
+        return m && !m.endsWith('_draft') && (m === 'Yes' || m === 'Maybe');
       }).length,
-      declined: assigned.filter(c => getR2(c).moved_to_round_3 === 'No').length,
+      declined: assigned.filter(c => {
+        const r2 = getR2(c);
+        const m = r2.moved_to_round_3;
+        return m && !m.endsWith('_draft') && (m === 'No' || m === 'Declined');
+      }).length,
     };
   });
 
   const techEvaluatorColors = {
-    Dharti: { border: 'border-t-emerald-500', text: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-500/5' },
-    Jal: { border: 'border-t-blue-500', text: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-500/5' },
-    Agni: { border: 'border-t-red-500', text: 'text-red-600 dark:text-red-400', bg: 'bg-red-500/5' },
-    Vayu: { border: 'border-t-cyan-500', text: 'text-cyan-600 dark:text-cyan-400', bg: 'bg-cyan-500/5' },
-    Akash: { border: 'border-t-indigo-500', text: 'text-indigo-600 dark:text-indigo-400', bg: 'bg-indigo-500/5' },
-    Bijli: { border: 'border-t-amber-500', text: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-500/5' }
+    Tejaswini: { border: 'border-t-purple-500', text: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-500/5' },
+    Sohan: { border: 'border-t-blue-500', text: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-500/5' },
+    Basvaraj: { border: 'border-t-green-500', text: 'text-green-600 dark:text-green-400', bg: 'bg-green-500/5' },
+    Pushkaraj: { border: 'border-t-emerald-500', text: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-500/5' },
+    Akash: { border: 'border-t-teal-500', text: 'text-teal-600 dark:text-teal-400', bg: 'bg-teal-500/5' },
+    Anmol: { border: 'border-t-cyan-500', text: 'text-cyan-600 dark:text-cyan-400', bg: 'bg-cyan-500/5' },
+    Sachin: { border: 'border-t-sky-500', text: 'text-sky-600 dark:text-sky-400', bg: 'bg-sky-500/5' },
+    'Akhil L': { border: 'border-t-indigo-500', text: 'text-indigo-600 dark:text-indigo-400', bg: 'bg-indigo-500/5' },
+    Vedant: { border: 'border-t-violet-500', text: 'text-violet-600 dark:text-violet-400', bg: 'bg-violet-500/5' },
+    'Akhil M': { border: 'border-t-fuchsia-500', text: 'text-fuchsia-600 dark:text-fuchsia-400', bg: 'bg-fuchsia-500/5' },
+    Samit: { border: 'border-t-pink-500', text: 'text-pink-600 dark:text-pink-400', bg: 'bg-pink-500/5' },
+    Snehanshu: { border: 'border-t-rose-500', text: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-500/5' },
+    Ankita: { border: 'border-t-amber-500', text: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-500/5' },
+    Kaushik: { border: 'border-t-orange-500', text: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-500/5' }
   };
 
   return (
@@ -387,65 +441,71 @@ export default function App() {
             
             {/* Top Navigation switch */}
             <div className="flex flex-wrap items-center gap-2 border-b pb-3 justify-between">
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2">
                 <Button
-                  variant={activeTab === 'overview' ? 'default' : 'ghost'}
+                  variant={activeTab === 'overview' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setActiveTab('overview')}
-                  className={`rounded-lg px-4 font-bold text-xs ${
-                    activeTab === 'overview' ? 'bg-[#800020] text-white hover:bg-[#800020]/90' : 'text-muted-foreground'
+                  className={`rounded-lg px-4 font-bold text-xs transition-all ${
+                    activeTab === 'overview' 
+                      ? 'bg-[#800020] text-white hover:bg-[#800020]/90 border-transparent' 
+                      : 'border border-[#800020]/30 text-[#800020] hover:bg-[#800020]/5 hover:text-[#800020]'
                   }`}
                 >
                   <BarChart className="mr-2 h-4 w-4 stroke-[1.5]" /> Overview & Charts
                 </Button>
                 
                 <Button
-                  variant={activeTab === 'r1' ? 'default' : 'ghost'}
+                  variant={activeTab === 'r1' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setActiveTab('r1')}
-                  className={`rounded-lg px-4 font-bold text-xs ${
-                    activeTab === 'r1' ? 'bg-[#800020] text-white hover:bg-[#800020]/90' : 'text-muted-foreground'
+                  className={`rounded-lg px-4 font-bold text-xs transition-all ${
+                    activeTab === 'r1' 
+                      ? 'bg-[#800020] text-white hover:bg-[#800020]/90 border-transparent' 
+                      : 'border border-[#800020]/30 text-[#800020] hover:bg-[#800020]/5 hover:text-[#800020]'
                   }`}
                 >
-                  <Users className="mr-2 h-4 w-4 stroke-[1.5]" /> R1: Recruiter Review
+                  <Users className="mr-2 h-4 w-4 stroke-[1.5]" /> R1: HR Review
                 </Button>
                 
                 <Button
-                  variant={activeTab === 'r2' ? 'default' : 'ghost'}
+                  variant={activeTab === 'r2' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setActiveTab('r2')}
-                  className={`rounded-lg px-4 font-bold text-xs ${
-                    activeTab === 'r2' ? 'bg-[#800020] text-white hover:bg-[#800020]/90' : 'text-muted-foreground'
+                  className={`rounded-lg px-4 font-bold text-xs transition-all ${
+                    activeTab === 'r2' 
+                      ? 'bg-[#800020] text-white hover:bg-[#800020]/90 border-transparent' 
+                      : 'border border-[#800020]/30 text-[#800020] hover:bg-[#800020]/5 hover:text-[#800020]'
                   }`}
                 >
-                  <Flame className="mr-2 h-4 w-4 stroke-[1.5]" /> R2: Tech Evaluator Technical Review
+                  <Flame className="mr-2 h-4 w-4 stroke-[1.5]" /> R2: Technical Evaluator Technical Review
                 </Button>
                 
                 <Button
-                  variant={activeTab === 'r3' ? 'default' : 'ghost'}
+                  variant={activeTab === 'r3' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setActiveTab('r3')}
-                  className={`rounded-lg px-4 font-bold text-xs ${
-                    activeTab === 'r3' ? 'bg-[#800020] text-white hover:bg-[#800020]/90' : 'text-muted-foreground'
+                  className={`rounded-lg px-4 font-bold text-xs transition-all ${
+                    activeTab === 'r3' 
+                      ? 'bg-[#800020] text-white hover:bg-[#800020]/90 border-transparent' 
+                      : 'border border-[#800020]/30 text-[#800020] hover:bg-[#800020]/5 hover:text-[#800020]'
                   }`}
                 >
                   <Award className="mr-2 h-4 w-4 stroke-[1.5]" /> R3: Executive Verdicts
                 </Button>
                 
                 <Button
-                  variant={activeTab === 'university' ? 'default' : 'ghost'}
+                  variant={activeTab === 'university' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setActiveTab('university')}
-                  className={`rounded-lg px-4 font-bold text-xs ${
-                    activeTab === 'university' ? 'bg-[#800020] text-white hover:bg-[#800020]/90' : 'text-muted-foreground'
+                  className={`rounded-lg px-4 font-bold text-xs transition-all ${
+                    activeTab === 'university' 
+                      ? 'bg-[#800020] text-white hover:bg-[#800020]/90 border-transparent' 
+                      : 'border border-[#800020]/30 text-[#800020] hover:bg-[#800020]/5 hover:text-[#800020]'
                   }`}
                 >
                   <GraduationCap className="mr-2 h-4 w-4 stroke-[1.5]" /> University Review
                 </Button>
-              </div>
-
-              <div className="flex items-center gap-1.5 bg-[#800020]/10 border border-[#800020]/20 px-3 py-1.5 rounded-xl font-mono text-[10px] text-[#800020] font-bold">
-                <Settings2 className="h-3.5 w-3.5 mr-1 stroke-[2]" /> MASTER CONSOLE
               </div>
             </div>
 
@@ -474,130 +534,166 @@ export default function App() {
                 {/* Snapshots Section */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {/* Round 1 Card */}
-                  <Card className="rounded-[1.5rem] border shadow-sm bg-card text-card-foreground">
-                    <CardHeader className="pb-3 border-b">
-                      <CardTitle className="text-base font-bold flex items-center justify-between">
-                        <span>Round 1: Recruiter Review</span>
-                        <Badge variant="outline" className="font-mono text-[10px] px-2 py-0.5 border-[#800020]/30 text-[#800020] bg-[#800020]/5">R1 Queue</Badge>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-4 flex flex-col gap-3 text-sm">
-                      <div className="flex justify-between border-b pb-2">
-                        <span className="text-muted-foreground">Total Applicants:</span>
-                        <strong className="font-mono text-foreground font-extrabold">{r1Stats.total}</strong>
-                      </div>
-                      <div className="flex justify-between border-b pb-2">
-                        <span className="text-muted-foreground">Unscreened:</span>
-                        <strong className="font-mono text-amber-600 font-extrabold">{r1Stats.pending}</strong>
-                      </div>
-                      <div className="flex justify-between border-b pb-2">
-                        <span className="text-muted-foreground">Passed (Promoted to R2):</span>
-                        <strong className="font-mono text-green-600 font-extrabold">{r1Stats.passed}</strong>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Rejected (Review):</span>
-                        <strong className="font-mono text-red-600 font-extrabold">{r1Stats.rejected}</strong>
-                      </div>
-                    </CardContent>
+                  <Card className="rounded-[1.5rem] border shadow-sm bg-card text-card-foreground flex flex-col justify-between">
+                    <div>
+                      <CardHeader className="pb-3 border-b">
+                        <CardTitle className="text-base font-bold flex items-center justify-between">
+                          <span>Round 1: HR Review</span>
+                          <Badge variant="outline" className="font-mono text-[10px] px-2 py-0.5 border-[#800020]/30 text-[#800020] bg-[#800020]/5">HR Queue</Badge>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="pt-4 flex flex-col gap-3 text-sm">
+                        <div className="flex justify-between border-b pb-2">
+                          <span className="text-muted-foreground font-medium">Total Applicants (Deduplicated):</span>
+                          <strong className="font-mono text-foreground font-extrabold">{r1Stats.total}</strong>
+                        </div>
+                        <div className="flex justify-between border-b pb-2">
+                          <span className="text-muted-foreground font-medium">Unscreened:</span>
+                          <strong className="font-mono text-amber-600 font-extrabold">{r1Stats.pending}</strong>
+                        </div>
+                        <div className="flex justify-between border-b pb-2">
+                          <span className="text-muted-foreground font-medium">Passed (Promoted to R2):</span>
+                          <strong className="font-mono text-green-600 font-extrabold">{r1Stats.passed}</strong>
+                        </div>
+                        <div className="flex justify-between border-b pb-2">
+                          <span className="text-muted-foreground font-medium">Rejected (Review):</span>
+                          <strong className="font-mono text-red-600 font-extrabold">{r1Stats.rejected}</strong>
+                        </div>
+
+                        {/* Candidate Tiers Breakdown moved here */}
+                        <div className="pt-2 flex flex-col gap-2">
+                          <span className="text-[10px] font-bold text-muted-foreground font-mono uppercase tracking-wider">Candidate Tiers</span>
+                          <div className="grid grid-cols-4 gap-1">
+                            {Object.entries(overallTiers).map(([tierName, count]) => {
+                              const colors = {
+                                'Tier 1+': 'bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/25',
+                                'Tier 1': 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/25',
+                                'Tier 2+': 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/25',
+                                'Tier 2': 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/25',
+                                'Tier 3': 'bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/25',
+                                'T4': 'bg-slate-500/10 text-slate-700 dark:text-slate-400 border-slate-500/25',
+                                'N/A': 'bg-slate-500/10 text-slate-700 dark:text-slate-400 border-slate-500/25'
+                              };
+                              return (
+                                <div key={tierName} className={`flex flex-col items-center py-1 px-0.5 rounded-lg border text-center ${colors[tierName] || 'bg-muted text-muted-foreground'}`}>
+                                  <span className="text-[8px] font-bold uppercase tracking-wider">{tierName === 'Tier 1+' ? '1+' : tierName === 'Tier 1' ? '1' : tierName === 'Tier 2+' ? '2+' : tierName === 'Tier 2' ? '2' : tierName === 'Tier 3' ? '3' : tierName}</span>
+                                  <span className="font-mono text-xs font-bold">{count}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </div>
+                    <div className="p-4 pt-0">
+                      <Button variant="outline" size="sm" className="text-[#800020] border-[#800020]/30 hover:bg-[#800020]/10 rounded-lg w-full font-bold" onClick={() => window.open('https://recruiter-portal-one.vercel.app', '_blank')}>
+                        Go to HR Workspace ↗
+                      </Button>
+                    </div>
                   </Card>
 
                   {/* Round 2 Card */}
-                  <Card className="rounded-[1.5rem] border shadow-sm bg-card text-card-foreground">
-                    <CardHeader className="pb-3 border-b">
-                      <CardTitle className="text-base font-bold flex items-center justify-between">
-                        <span>Round 2: Tech Tech Evaluator Review</span>
-                        <Badge variant="outline" className="font-mono text-[10px] px-2 py-0.5 border-blue-500/30 text-blue-600 bg-blue-500/5">R2 Queue</Badge>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-4 flex flex-col gap-3 text-sm">
-                      <div className="flex justify-between border-b pb-2">
-                        <span className="text-muted-foreground">Total in Review:</span>
-                        <strong className="font-mono text-foreground font-extrabold">{r2Stats.total}</strong>
-                      </div>
-                      <div className="flex justify-between border-b pb-2">
-                        <span className="text-muted-foreground">Pending Review:</span>
-                        <strong className="font-mono text-amber-600 font-extrabold">{r2Stats.pending}</strong>
-                      </div>
-                      <div className="flex justify-between border-b pb-2">
-                        <span className="text-muted-foreground">Promoted to R3:</span>
-                        <strong className="font-mono text-green-600 font-extrabold">{r2Stats.promoted}</strong>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Declined (Review):</span>
-                        <strong className="font-mono text-red-600 font-extrabold">{r2Stats.declined}</strong>
-                      </div>
-                    </CardContent>
+                  <Card className="rounded-[1.5rem] border shadow-sm bg-card text-card-foreground flex flex-col justify-between">
+                    <div>
+                      <CardHeader className="pb-3 border-b">
+                        <CardTitle className="text-base font-bold flex items-center justify-between">
+                          <span>Round 2: Technical Review</span>
+                          <Badge variant="outline" className="font-mono text-[10px] px-2 py-0.5 border-blue-500/30 text-blue-600 bg-blue-500/5">R2 Queue</Badge>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="pt-4 flex flex-col gap-3 text-sm">
+                        <div className="flex justify-between border-b pb-2">
+                          <span className="text-muted-foreground font-medium">Total in Review:</span>
+                          <strong className="font-mono text-foreground font-extrabold">{r2Stats.total}</strong>
+                        </div>
+                        <div className="flex justify-between border-b pb-2">
+                          <span className="text-muted-foreground font-medium">Pending Review:</span>
+                          <strong className="font-mono text-amber-600 font-extrabold">{r2Stats.pending}</strong>
+                        </div>
+                        <div className="flex justify-between border-b pb-2">
+                          <span className="text-muted-foreground font-medium">Promoted to R3:</span>
+                          <strong className="font-mono text-green-600 font-extrabold">{r2Stats.promoted}</strong>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground font-medium">Declined (Review):</span>
+                          <strong className="font-mono text-red-600 font-extrabold">{r2Stats.declined}</strong>
+                        </div>
+                      </CardContent>
+                    </div>
+                    <div className="p-4 pt-0">
+                      <Button variant="outline" size="sm" className="text-blue-600 border-blue-500/30 hover:bg-blue-500/10 rounded-lg w-full font-bold" onClick={() => window.open('https://technical-review.vercel.app', '_blank')}>
+                        Go to Technical Review Hub ↗
+                      </Button>
+                    </div>
                   </Card>
 
                   {/* Round 3 Card */}
-                  <Card className="rounded-[1.5rem] border shadow-sm bg-card text-card-foreground">
-                    <CardHeader className="pb-3 border-b">
-                      <CardTitle className="text-base font-bold flex items-center justify-between">
-                        <span>Round 3: Executive Verdict</span>
-                        <Badge variant="outline" className="font-mono text-[10px] px-2 py-0.5 border-purple-500/30 text-purple-600 bg-purple-500/5">R3 Queue</Badge>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-4 flex flex-col gap-3 text-sm">
-                      <div className="flex justify-between border-b pb-2">
-                        <span className="text-muted-foreground">Total Promoted:</span>
-                        <strong className="font-mono text-foreground font-extrabold">{r3Stats.total}</strong>
-                      </div>
-                      <div className="flex justify-between border-b pb-2">
-                        <span className="text-muted-foreground">Pending Verdict:</span>
-                        <strong className="font-mono text-amber-600 font-extrabold">{r3Stats.pending}</strong>
-                      </div>
-                      <div className="flex justify-between border-b pb-2">
-                        <span className="text-muted-foreground">Hired (Approved Offer):</span>
-                        <strong className="font-mono text-green-600 font-extrabold">{r3Stats.hired}</strong>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Declined (Verdict):</span>
-                        <strong className="font-mono text-red-600 font-extrabold">{r3Stats.declined}</strong>
-                      </div>
-                    </CardContent>
+                  <Card className="rounded-[1.5rem] border shadow-sm bg-card text-card-foreground flex flex-col justify-between">
+                    <div>
+                      <CardHeader className="pb-3 border-b">
+                        <CardTitle className="text-base font-bold flex items-center justify-between">
+                          <span>Round 3: Executive Verdicts</span>
+                          <Badge variant="outline" className="font-mono text-[10px] px-2 py-0.5 border-purple-500/30 text-purple-600 bg-purple-500/5">R3 Queue</Badge>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="pt-4 flex flex-col gap-3 text-sm">
+                        <div className="flex justify-between border-b pb-2">
+                          <span className="text-muted-foreground font-medium">Total Promoted:</span>
+                          <strong className="font-mono text-foreground font-extrabold">{r3Stats.total}</strong>
+                        </div>
+                        <div className="flex justify-between border-b pb-2">
+                          <span className="text-muted-foreground font-medium">Pending Verdict:</span>
+                          <strong className="font-mono text-amber-600 font-extrabold">{r3Stats.pending}</strong>
+                        </div>
+                        <div className="flex justify-between border-b pb-2">
+                          <span className="text-muted-foreground font-medium">Hired (Approved Offer):</span>
+                          <strong className="font-mono text-green-600 font-extrabold">{r3Stats.hired}</strong>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground font-medium">Declined (Verdict):</span>
+                          <strong className="font-mono text-red-600 font-extrabold">{r3Stats.declined}</strong>
+                        </div>
+                      </CardContent>
+                    </div>
+                    <div className="p-4 pt-0">
+                      <Button variant="outline" size="sm" className="text-purple-600 border-purple-500/30 hover:bg-purple-500/10 rounded-lg w-full font-bold" onClick={() => window.open('https://executive-portal-nine.vercel.app', '_blank')}>
+                        Go to Executive Portal ↗
+                      </Button>
+                    </div>
                   </Card>
                 </div>
 
-                {/* Tech Evaluator Workload Status Snapshots */}
+                {/* Technical Reviewer Workload Status Snapshots */}
                 <div className="flex flex-col gap-1 mt-2">
-                  <h3 className="text-base font-bold text-foreground">Tech Evaluator Review Workload Snapshots</h3>
-                  <p className="text-xs text-muted-foreground">Real-time workloads and status breakdowns for each technical review techEvaluator.</p>
+                  <h3 className="text-base font-bold text-foreground font-heading">Technical Reviewer Workload Snapshots</h3>
+                  <p className="text-xs text-muted-foreground">Real-time workloads and status breakdowns for each technical review technical evaluator.</p>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                  {techEvaluatorsSnapshot.map(techEvaluator => {
-                    const colors = techEvaluatorColors[techEvaluator.name] || { border: 'border-t-slate-500', text: 'text-slate-600', bg: 'bg-slate-500/5' };
-                    return (
-                      <Card key={techEvaluator.name} className={`rounded-xl border border-t-4 ${colors.border} shadow-sm bg-card text-card-foreground hover:scale-[1.02] transition-all duration-300`}>
-                        <CardHeader className="pb-2 pt-3 px-3 border-b bg-muted/15">
-                          <CardTitle className="text-sm font-bold flex items-center justify-between">
-                            <span className={colors.text}>{techEvaluator.name}</span>
-                            <Badge variant="outline" className={`font-mono text-[9px] px-1.5 py-0 border-transparent ${colors.text} ${colors.bg}`}>
-                              Tech Evaluator
-                            </Badge>
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className="pt-3 px-3 pb-3 flex flex-col gap-2 text-xs">
-                          <div className="flex justify-between border-b pb-1">
-                            <span className="text-muted-foreground">Total:</span>
-                            <strong className="font-mono text-foreground font-extrabold">{techEvaluator.total}</strong>
-                          </div>
-                          <div className="flex justify-between border-b pb-1">
-                            <span className="text-muted-foreground text-amber-600">Pending:</span>
-                            <strong className="font-mono text-amber-600 font-extrabold">{techEvaluator.pending}</strong>
-                          </div>
-                          <div className="flex justify-between border-b pb-1">
-                            <span className="text-muted-foreground text-green-600 font-medium">Promoted:</span>
-                            <strong className="font-mono text-green-600 font-extrabold">{techEvaluator.promoted}</strong>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground text-red-600 font-medium">Declined:</span>
-                            <strong className="font-mono text-red-600 font-extrabold">{techEvaluator.declined}</strong>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
+                <div className="border rounded-xl bg-card text-card-foreground overflow-hidden shadow-sm">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="bg-muted/40 border-b">
+                          <th className="p-3.5 font-bold text-muted-foreground font-mono uppercase tracking-wider text-[10px]">Technical Reviewer</th>
+                          <th className="p-3.5 font-bold text-muted-foreground text-center font-mono uppercase tracking-wider text-[10px] w-[140px]">Total Assigned</th>
+                          <th className="p-3.5 font-bold text-muted-foreground text-center font-mono uppercase tracking-wider text-[10px] w-[140px]">Pending Review</th>
+                          <th className="p-3.5 font-bold text-muted-foreground text-center font-mono uppercase tracking-wider text-[10px] w-[140px]">Promoted</th>
+                          <th className="p-3.5 font-bold text-muted-foreground text-center font-mono uppercase tracking-wider text-[10px] w-[140px]">Declined</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y font-mono">
+                        {techEvaluatorsSnapshot.map((evaluator) => (
+                          <tr key={evaluator.name} className="hover:bg-muted/10 transition-colors">
+                            <td className="p-3.5 font-sans font-bold text-foreground">{evaluator.name}</td>
+                            <td className="p-3.5 text-center text-foreground font-extrabold">{evaluator.total}</td>
+                            <td className="p-3.5 text-center text-amber-600 font-extrabold">{evaluator.pending}</td>
+                            <td className="p-3.5 text-center text-green-600 font-extrabold">{evaluator.promoted}</td>
+                            <td className="p-3.5 text-center text-red-600 font-extrabold">{evaluator.declined}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             )}
@@ -607,7 +703,7 @@ export default function App() {
               <div className="flex flex-col gap-6 animate-in fade-in duration-300">
                 <div className="flex flex-col gap-1">
                   <h2 className="text-xl font-extrabold tracking-tight">Round 1 Review Worksheet</h2>
-                  <p className="text-xs text-muted-foreground">Manage initial resume review, total scores, and evaluator tech evaluator assignments.</p>
+                  <p className="text-xs text-muted-foreground">Manage initial resume review, total scores, and evaluator technical evaluator assignments.</p>
                 </div>
                 
                 <StatsBanner candidates={r1Candidates} rawCount={globalData.length} />

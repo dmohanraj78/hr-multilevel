@@ -70,7 +70,7 @@ export default function App() {
       await upsertRound1(candidateId, { eval_group: newTechEvaluator });
       await loadData();
     } catch (e) {
-      alert('Failed to update evaluation tech evaluator: ' + e.message);
+      alert('Failed to update evaluation technical evaluator: ' + e.message);
     }
   };
 
@@ -153,7 +153,7 @@ export default function App() {
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans transition-colors duration-200">
       
       {/* Top Header bar */}
-      <Header title="Recruiter Funnel Stage" isDemo={!!error} />
+      <Header title="HR Round" isDemo={!!error} />
 
       <main className="flex-1 p-8 max-w-6xl w-full mx-auto flex flex-col gap-8">
         

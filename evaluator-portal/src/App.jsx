@@ -5,15 +5,23 @@ import CandidateProfileDossier from '@/components/CandidateProfileDossier';
 import { fetchRound2Candidates, upsertRound2, upsertRound1 } from '@/lib/supabase';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard, Users, ShieldAlert, ArrowLeft, GitPullRequest, Code, FileText } from 'lucide-react';
+import { LayoutDashboard, Users, ShieldAlert, ArrowLeft, GitPullRequest } from 'lucide-react';
 
 const TECH_EVALUATORS = [
-  { id: 'Dharti', name: 'Dharti', desc: 'Earth Core Review', color: 'border-amber-500/20 hover:border-amber-500/80 bg-amber-500/5' },
-  { id: 'Jal', name: 'Jal', desc: 'Water Flow Review', color: 'border-blue-500/20 hover:border-blue-500/80 bg-blue-500/5' },
-  { id: 'Agni', name: 'Agni', desc: 'Fire Spark Review', color: 'border-red-500/20 hover:border-red-500/80 bg-red-500/5' },
-  { id: 'Vayu', name: 'Vayu', desc: 'Air Breeze Review', color: 'border-teal-500/20 hover:border-teal-500/80 bg-teal-500/5' },
-  { id: 'Akash', name: 'Akash', desc: 'Sky Space Review', color: 'border-indigo-500/20 hover:border-indigo-500/80 bg-indigo-500/5' },
-  { id: 'Bijli', name: 'Bijli', desc: 'Lightning Spark Review', color: 'border-yellow-500/20 hover:border-yellow-500/80 bg-yellow-500/5' }
+  { id: 'Akash', name: 'Akash', desc: 'Akash\'s Queue', color: 'border-teal-500/20 hover:border-teal-500/80 bg-teal-500/5' },
+  { id: 'Akhil L', name: 'Akhil L', desc: 'Akhil L\'s Queue', color: 'border-indigo-500/20 hover:border-indigo-500/80 bg-indigo-500/5' },
+  { id: 'Akhil M', name: 'Akhil M', desc: 'Akhil M\'s Queue', color: 'border-fuchsia-500/20 hover:border-fuchsia-500/80 bg-fuchsia-500/5' },
+  { id: 'Anmol', name: 'Anmol', desc: 'Anmol\'s Queue', color: 'border-cyan-500/20 hover:border-cyan-500/80 bg-cyan-500/5' },
+  { id: 'Ankita', name: 'Ankita', desc: 'Ankita\'s Queue', color: 'border-amber-500/20 hover:border-amber-500/80 bg-amber-500/5' },
+  { id: 'Basvaraj', name: 'Basvaraj', desc: 'Basvaraj\'s Queue', color: 'border-green-500/20 hover:border-green-500/80 bg-green-500/5' },
+  { id: 'Kaushik', name: 'Kaushik', desc: 'Kaushik\'s Queue', color: 'border-orange-500/20 hover:border-orange-500/80 bg-orange-500/5' },
+  { id: 'Pushkaraj', name: 'Pushkaraj', desc: 'Pushkaraj\'s Queue', color: 'border-emerald-500/20 hover:border-emerald-500/80 bg-emerald-500/5' },
+  { id: 'Sachin', name: 'Sachin', desc: 'Sachin\'s Queue', color: 'border-sky-500/20 hover:border-sky-500/80 bg-sky-500/5' },
+  { id: 'Samit', name: 'Samit', desc: 'Samit\'s Queue', color: 'border-pink-500/20 hover:border-pink-500/80 bg-pink-500/5' },
+  { id: 'Snehanshu', name: 'Snehanshu', desc: 'Snehanshu\'s Queue', color: 'border-rose-500/20 hover:border-rose-500/80 bg-rose-500/5' },
+  { id: 'Sohan', name: 'Sohan', desc: 'Sohan\'s Queue', color: 'border-blue-500/20 hover:border-blue-500/80 bg-blue-500/5' },
+  { id: 'Tejaswini', name: 'Tejaswini', desc: 'Tejaswini\'s Queue', color: 'border-purple-500/20 hover:border-purple-500/80 bg-purple-500/5' },
+  { id: 'Vedant', name: 'Vedant', desc: 'Vedant\'s Queue', color: 'border-violet-500/20 hover:border-violet-500/80 bg-violet-500/5' }
 ];
 
 export default function App() {
@@ -22,6 +30,7 @@ export default function App() {
   const [error, setError] = useState(null);
   const [selectedTechEvaluator, setSelectedTechEvaluator] = useState(null);
   const [selectedCandidate, setSelectedCandidate] = useState(null);
+  const [worksheetTab, setWorksheetTab] = useState('active'); // 'active' | 'completed'
 
   const loadData = async () => {
     setLoading(true);
@@ -67,6 +76,9 @@ export default function App() {
   const handleSaveReview = async (payload) => {
     try {
       await upsertRound2(selectedCandidate.id, payload.round_2_evaluation);
+      if (payload.round_1_evaluation?.eval_group) {
+        await upsertRound1(selectedCandidate.id, { eval_group: payload.round_1_evaluation.eval_group });
+      }
       setSelectedCandidate(null);
       await loadData();
     } catch (e) {
@@ -79,7 +91,7 @@ export default function App() {
       await upsertRound1(candidateId, { eval_group: newTechEvaluator });
       await loadData();
     } catch (e) {
-      alert('Failed to update evaluation tech evaluator: ' + e.message);
+      alert('Failed to update evaluation technical evaluator: ' + e.message);
     }
   };
 
@@ -96,7 +108,7 @@ export default function App() {
     };
   };
 
-  // Filter candidates assigned to active tech evaluator who passed Round 1 review
+  // Filter candidates assigned to active technical evaluator who passed Round 1 review
   const getTechEvaluatorCandidates = (techEvaluatorId) => {
     return candidates.filter(c => {
       const r1 = getRound1(c);
@@ -109,7 +121,7 @@ export default function App() {
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans transition-colors duration-200">
       
       {/* Top Header */}
-      <Header title="Evaluator Review Stage" isDemo={!!error} />
+      <Header title="Technical Review Hub" isDemo={!!error} />
 
       <main className="flex-1 p-8 max-w-6xl w-full mx-auto flex flex-col gap-8">
         
@@ -141,74 +153,79 @@ export default function App() {
             
             <div className={selectedCandidate ? 'hidden' : 'flex flex-col gap-6'}>
               {selectedTechEvaluator ? (
-                // Tech Evaluator Worksheet view
+                // Technical Evaluator Worksheet view
                 <div className="flex flex-col gap-6">
                   <div className="flex items-center gap-3">
-              <Button variant="outline" size="sm" onClick={() => setSelectedTechEvaluator(null)}>
-                <ArrowLeft className="mr-2 h-4 w-4" /> Back to Tech Evaluators Hub
-              </Button>
-              <h2 className="text-2xl font-bold font-heading">{selectedTechEvaluator.name} Tech Evaluator Worksheet</h2>
-            </div>
-            
-            <p className="text-sm text-muted-foreground">
-              Reviewing candidate code-submissions currently assigned to the <strong className="text-foreground">{selectedTechEvaluator.name}</strong> queue (Status: Review Passed).
-            </p>
+                    <Button variant="outline" size="sm" onClick={() => setSelectedTechEvaluator(null)}>
+                      <ArrowLeft className="mr-2 h-4 w-4" /> Back to Technical Review Hub
+                    </Button>
+                    <h2 className="text-2xl font-bold font-heading">{selectedTechEvaluator.name}'s Sheet</h2>
+                  </div>
+                  
+                  <p className="text-sm text-muted-foreground">
+                    Reviewing candidate code-submissions currently assigned to the <strong className="text-foreground">{selectedTechEvaluator.name}</strong> queue.
+                  </p>
 
-            <CandidateListTable
-              candidates={getTechEvaluatorCandidates(selectedTechEvaluator.id)}
-              actionLabel="Review Tech Demo"
-              onActionClick={(cand) => setSelectedCandidate(cand)}
-              round={2}
-              onUpdateTechEvaluator={handleUpdateTechEvaluator}
-            />
-          </div>
-        ) : (
-          // Tech Evaluator selector landing hub
-          <div className="flex flex-col gap-6">
-            <div className="text-center py-6">
-              <h1 className="text-3xl font-extrabold font-heading tracking-tight flex items-center justify-center gap-2">
-                <GitPullRequest className="h-8 w-8 text-[#800020]" /> Technical Review Hub
-              </h1>
-              <p className="text-sm text-muted-foreground mt-2 max-w-md mx-auto">
-                Select your assigned tech evaluator review queue below to begin inspection of review-passed technical demo submissions.
-              </p>
-            </div>
+                  <CandidateListTable
+                    candidates={getTechEvaluatorCandidates(selectedTechEvaluator.id)}
+                    actionLabel="Review"
+                    onActionClick={(cand) => setSelectedCandidate(cand)}
+                    round={2}
+                    onUpdateTechEvaluator={handleUpdateTechEvaluator}
+                  />
+                </div>
+              ) : (
+                // Technical Evaluator selector landing hub
+                <div className="flex flex-col gap-6">
+                  <div className="text-center py-6">
+                    <h1 className="text-3xl font-extrabold font-heading tracking-tight flex items-center justify-center gap-2">
+                      <GitPullRequest className="h-8 w-8 text-[#800020]" /> Technical Review Hub
+                    </h1>
+                    <p className="text-sm text-muted-foreground mt-2 max-w-md mx-auto">
+                      Select your assigned technical review hub queue below to begin inspection of review-passed technical demo submissions.
+                    </p>
+                  </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {TECH_EVALUATORS.map((techEvaluator) => {
-                const count = getTechEvaluatorCandidates(techEvaluator.id).length;
-                return (
-                  <Card 
-                    key={techEvaluator.id} 
-                    className={`cursor-pointer transition-all border-2 duration-300 hover:shadow-lg ${techEvaluator.color}`}
-                    onClick={() => setSelectedTechEvaluator(techEvaluator)}
-                  >
-                    <CardHeader className="pb-2">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-xl font-bold font-heading">{techEvaluator.name}</CardTitle>
-                        <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-mono font-bold">
-                          {count}
-                        </div>
-                      </div>
-                      <CardDescription>{techEvaluator.desc}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="pt-2 flex items-center justify-between">
-                      <span className="text-xs font-mono text-muted-foreground flex items-center gap-1">
-                        <Users className="h-3.5 w-3.5" /> candidates queued
-                      </span>
-                      <Button variant="ghost" size="sm" className="font-mono text-xs hover:bg-transparent p-0 hover:underline text-[#800020] hover:text-[#800020]/80">
-                        Enter Worksheet &rarr;
-                      </Button>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {TECH_EVALUATORS.map((techEvaluator) => {
+                      const allAssigned = getTechEvaluatorCandidates(techEvaluator.id);
+                      const totalCount = allAssigned.length;
+                      const pendingCount = allAssigned.filter(c => {
+                        const m = c.round_2_evaluation?.moved_to_round_3;
+                        return !m || m.endsWith('_draft');
+                      }).length;
+                      const completedCount = totalCount - pendingCount;
+                      return (
+                        <Card 
+                          key={techEvaluator.id} 
+                          className={`cursor-pointer transition-all border-2 duration-300 hover:shadow-lg ${techEvaluator.color}`}
+                          onClick={() => setSelectedTechEvaluator(techEvaluator)}
+                        >
+                          <CardHeader className="pb-2">
+                            <div className="flex items-center justify-between">
+                              <CardTitle className="text-xl font-bold font-heading">{techEvaluator.name}</CardTitle>
+                              <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-mono font-bold">
+                                {totalCount}
+                              </div>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="pt-2 flex items-center justify-between gap-4">
+                            <span className="text-xs font-mono text-muted-foreground flex items-center gap-1">
+                              <Users className="h-3.5 w-3.5" /> {pendingCount} pending · {completedCount} completed
+                            </span>
+                            <Button variant="ghost" size="sm" className="font-mono text-xs hover:bg-transparent p-0 hover:underline text-[#800020] hover:text-[#800020]/80">
+                              Enter &rarr;
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
+          </>
         )}
-      </div>
-    </>
-  )}
       </main>
     </div>
   );

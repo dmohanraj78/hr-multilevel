@@ -188,7 +188,7 @@ function HeaderFilter({
   );
 }
 
-export default function CandidateListTable({ candidates, actionLabel, onActionClick, showClanFilter = false, round = 1, onUpdateClan }) {
+export default function CandidateListTable({ candidates, actionLabel, onActionClick, showTechEvaluatorFilter = false, round = 1, onUpdateTechEvaluator }) {
   const [search, setSearch] = useState('');
   const [activeFilters, setActiveFilters] = useState({});
   const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
@@ -304,11 +304,11 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
       if (activeFilters.score && !activeFilters.score.includes(parseFloat(getEval1(cand, 'total') || 0))) return false;
       if (activeFilters.review_cat && !activeFilters.review_cat.includes(getEval1(cand, 'review_cat') || 'N/A')) return false;
       if (activeFilters.status && !activeFilters.status.includes(getStatusInfo(cand).text)) return false;
-      if (showClanFilter && activeFilters.clan && !activeFilters.clan.includes(getEval1(cand, 'eval_group') || 'None')) return false;
+      if (showTechEvaluatorFilter && activeFilters.clan && !activeFilters.clan.includes(getEval1(cand, 'eval_group') || 'None')) return false;
 
       return true;
     });
-  }, [candidates, search, activeFilters, showClanFilter]);
+  }, [candidates, search, activeFilters, showTechEvaluatorFilter]);
 
   // Sorting logic
   const sortedAndFiltered = useMemo(() => {
@@ -341,7 +341,7 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
       'Review Score',
       'Demo-AI Review',
       'Review Status',
-      'Tech Evaluator Assigned',
+      'Technical Evaluator Assigned',
       'Start Date',
       'College Commitment',
       'Technical Depth',
@@ -497,10 +497,10 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
                   onSort={handleSort}
                 />
               </TableHead>
-              {showClanFilter && (
+              {showTechEvaluatorFilter && (
                 <TableHead className="w-[180px] overflow-visible">
                   <HeaderFilter
-                    label="Tech Evaluator"
+                    label="Technical Reviewer"
                     columnKey="clan"
                     uniqueValues={uniqueClans}
                     activeFilters={activeFilters}
@@ -516,7 +516,7 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
           <TableBody>
             {sortedAndFiltered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={showClanFilter ? 9 : 8} className="text-center py-10 text-muted-foreground font-mono text-sm">
+                <TableCell colSpan={showTechEvaluatorFilter ? 9 : 8} className="text-center py-10 text-muted-foreground font-mono text-sm">
                   No applicants matching active selection filters.
                 </TableCell>
               </TableRow>
@@ -553,24 +553,32 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
                     </TableCell>
                     <TableCell>{catBadge}</TableCell>
                     <TableCell>{statusBadge}</TableCell>
-                    {showClanFilter && (
+                    {showTechEvaluatorFilter && (
                       <TableCell className="py-2">
                         {round === 1 ? (
                           <select
                             value={getEval1(cand, 'eval_group') || 'None'}
                             onChange={(e) => {
                               const val = e.target.value;
-                              onUpdateClan?.(cand.id, val === 'None' ? null : val);
+                              onUpdateTechEvaluator?.(cand.id, val === 'None' ? null : val);
                             }}
                             className="h-8 w-24 text-xs bg-card border rounded-md px-1 focus:outline-none focus:ring-1 focus:ring-[#800020] font-semibold text-[#800020] border-[#800020]/20"
                           >
                             <option value="None">None</option>
-                            <option value="Dharti">Dharti</option>
-                            <option value="Jal">Jal</option>
-                            <option value="Agni">Agni</option>
-                            <option value="Vayu">Vayu</option>
+                            <option value="Tejaswini">Tejaswini</option>
+                            <option value="Sohan">Sohan</option>
+                            <option value="Basvaraj">Basvaraj</option>
+                            <option value="Pushkaraj">Pushkaraj</option>
                             <option value="Akash">Akash</option>
-                            <option value="Bijli">Bijli</option>
+                            <option value="Anmol">Anmol</option>
+                            <option value="Sachin">Sachin</option>
+                            <option value="Akhil L">Akhil L</option>
+                            <option value="Vedant">Vedant</option>
+                            <option value="Akhil M">Akhil M</option>
+                            <option value="Samit">Samit</option>
+                            <option value="Snehanshu">Snehanshu</option>
+                            <option value="Ankita">Ankita</option>
+                            <option value="Kaushik">Kaushik</option>
                           </select>
                         ) : (
                           <Badge variant="outline" className="font-semibold text-[11px] border-primary/20 text-[#800020] bg-primary/5 rounded-full px-2">

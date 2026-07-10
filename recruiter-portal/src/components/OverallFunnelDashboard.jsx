@@ -220,7 +220,11 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
 
     if (r3.verdict === 'Yes') return 'Hired';
     if (r3.verdict === 'No') return 'Declined (Offer)';
-    if (r2.moved_to_round_3 === 'No') return 'Declined (Review)';
+    
+    const r2Decision = r2.moved_to_round_3;
+    const isR2Finished = r2Decision && !r2Decision.endsWith('_draft');
+    
+    if (isR2Finished && (r2Decision === 'No' || r2Decision === 'Declined')) return 'Declined (Review)';
     if (r1.app_status === 'Reject') return 'Declined (Review)';
     if (r1.app_status === 'Yes') return 'Tech Review';
     if (r1.app_status === 'Maybe') return 'Maybe (Reviewed)';
@@ -251,7 +255,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
 
   // 2. Chart Calculations
   const chartData = useMemo(() => {
-    const clans = { Dharti: 0, Jal: 0, Agni: 0, Vayu: 0, Akash: 0, Bijli: 0, Unassigned: 0 };
+    const clans = { Tejaswini: 0, Sohan: 0, Basvaraj: 0, Pushkaraj: 0, Akash: 0, Anmol: 0, Sachin: 0, 'Akhil L': 0, Vedant: 0, 'Akhil M': 0, Samit: 0, Snehanshu: 0, Ankita: 0, Kaushik: 0, Unassigned: 0 };
     const tiers = { 'T1+': 0, 'T1': 0, 'T2+': 0, 'T2': 0, 'T3': 0, 'N/A': 0 };
     const scores = { '0-5': 0, '6-10': 0, '11-15': 0, '16-20': 0, '21-25': 0, '26-30': 0 };
 
@@ -408,7 +412,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
   const exportToCSV = () => {
     const headers = [
       'Applicant ID', 'Full Name', 'Email', 'Role', 'UG University', 
-      'R1 Review Status', 'R1 Assigned Tech Evaluator', 'R1 AI Score', 'R1 Tier', 'R1 Comments',
+      'R1 Review Status', 'R1 Assigned Technical Evaluator', 'R1 AI Score', 'R1 Tier', 'R1 Comments',
       'R2 Start Date', 'R2 Concerns/Restrictions', 'R2 Tech Depth', 'R2 Solves Biz?', 'R2 Tech Stack', 'R2 Latency/Cost considered', 'R2 Decision', 'R2 Comments',
       'R3 Verdict', 'R3 Executive Comments'
     ];
@@ -579,10 +583,12 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
               { label: '2. Passed Review', count: stats.total - stats.pendingScreening - stats.rejected, percent: Math.round(((stats.total - stats.pendingScreening - stats.rejected) / (stats.total || 1)) * 100), color: 'bg-blue-500' },
               { label: '3. Promoted to R3', count: globalData.filter(c => {
                   const r2 = getR2(c);
-                  return r2.moved_to_round_3 === 'Yes' || r2.moved_to_round_3 === 'Maybe';
+                  const m = r2.moved_to_round_3;
+                  return m && !m.endsWith('_draft') && (m === 'Yes' || m === 'Maybe');
                 }).length, percent: Math.round((globalData.filter(c => {
                   const r2 = getR2(c);
-                  return r2.moved_to_round_3 === 'Yes' || r2.moved_to_round_3 === 'Maybe';
+                  const m = r2.moved_to_round_3;
+                  return m && !m.endsWith('_draft') && (m === 'Yes' || m === 'Maybe');
                 }).length / (stats.total || 1)) * 100), color: 'bg-purple-500' },
               { label: '4. Final Hire Offers', count: stats.hired, percent: Math.round((stats.hired / (stats.total || 1)) * 100), color: 'bg-[#800020]' }
             ].map((stage, idx) => (
@@ -606,9 +612,9 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
         <Card className="rounded-[1.5rem] border shadow-sm lg:col-span-1">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-bold flex items-center gap-2">
-              <BarChart3 className="h-4.5 w-4.5 text-[#800020]" /> Tech Evaluator Workloads
+              <BarChart3 className="h-4.5 w-4.5 text-[#800020]" /> Technical Reviewer Workloads
             </CardTitle>
-            <CardDescription className="text-xs">Candidates assigned to tech evaluators</CardDescription>
+            <CardDescription className="text-xs">Candidates assigned to technical evaluators</CardDescription>
           </CardHeader>
           <CardContent className="pt-4 flex items-end justify-between gap-2 h-44">
             {Object.entries(chartData.clans).map(([clan, count]) => {
@@ -763,7 +769,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
                   </th>
                   <th className="py-3.5 px-4 w-[185px] overflow-visible">
                     <HeaderFilter
-                      label="Tech Evaluator"
+                      label="Technical Reviewer"
                       columnKey="clan"
                       uniqueValues={uniqueClans}
                       activeFilters={activeFilters}

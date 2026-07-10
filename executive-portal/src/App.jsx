@@ -62,7 +62,7 @@ export default function App() {
       await upsertRound1(candidateId, { eval_group: newTechEvaluator });
       await loadData();
     } catch (e) {
-      alert('Failed to update evaluation tech evaluator: ' + e.message);
+      alert('Failed to update evaluation technical evaluator: ' + e.message);
     }
   };
 
@@ -135,14 +135,14 @@ export default function App() {
                 <Award className="h-8 w-8 text-[#800020]" /> Executive Verdict Dashboard
               </h1>
               <p className="text-sm text-muted-foreground">
-                Vetted candidates currently approved by the tech evaluators (Moved to R3: Yes/Maybe) awaiting your final verdict.
+                Vetted candidates currently approved by the technical evaluators (Moved to R3: Yes/Maybe) awaiting your final verdict.
               </p>
             </div>
 
             <div className="mt-2">
               <CandidateListTable
                 candidates={candidates}
-                actionLabel="Review & Decide"
+                actionLabel="Review"
                 onActionClick={(cand) => setSelectedCandidate(cand)}
                 showTechEvaluatorFilter={true}
                 round={3}

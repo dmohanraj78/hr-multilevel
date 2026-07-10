@@ -6,7 +6,17 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem, SelectGroup } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { FileText, Github, ExternalLink, ArrowLeft, Sparkles, Star } from 'lucide-react';
+import { FileText, Github, ExternalLink, ArrowLeft, Sparkles } from 'lucide-react';
+
+const formatExternalLink = (url) => {
+  if (!url) return '';
+  const trimmed = String(url).trim();
+  if (!trimmed) return '';
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+  return `https://${trimmed}`;
+};
 
 export default function CandidateProfileDossier({ candidate, round, onSave, onCancel }) {
   // Safe parsing helper for Supabase relations
@@ -76,17 +86,70 @@ export default function CandidateProfileDossier({ candidate, round, onSave, onCa
   const [r2Start, setR2Start] = useState(r2.when_can_they_start || '');
   const [r2Duration, setR2Duration] = useState(r2.duration_months || '');
   const [r2Complexity, setR2Complexity] = useState(r2.complexity || '');
-  const [r2Solves, setR2Solves] = useState(r2.solves_business_problem || '');
+  
+  // Custom combined column parsing for Contact Status and Problem Fit
+  const rawSolves = r2.solves_business_problem || '';
+  const initialContact = rawSolves.includes('Contact: ') ? rawSolves.split('Contact: ')[1].split(' | ')[0] : (['Yet to Speak', 'Spoke', 'Scheduled', 'No response'].includes(rawSolves) ? rawSolves : '');
+  const initialFit = rawSolves.includes('Fit: ') ? rawSolves.split('Fit: ')[1] : (['Yes', 'Maybe', 'No'].includes(rawSolves) ? rawSolves : '');
+  
+  const [r2Solves, setR2Solves] = useState(initialContact);
+  const [r2ProblemFit, setR2ProblemFit] = useState(initialFit);
+  
   const [r2Stack, setR2Stack] = useState(r2.tech_stack || '');
   const [r2Comments, setR2Comments] = useState(r2.demo_review_comment || '');
-  const [r2NextStep, setR2NextStep] = useState(r2.moved_to_round_3 || '');
-  const [r2ProductDepth, setR2ProductDepth] = useState(r2.product_depth || '');
+  const [r2NextStep, setR2NextStep] = useState(r2.moved_to_round_3 ? r2.moved_to_round_3.replace('_draft', '') : '');
+  
+  // Custom combined column parsing for Tech Depth and Latency Considered
+  const rawDepth = r2.product_depth || '';
+  const initialDepth = rawDepth.includes('Depth: ') ? rawDepth.split('Depth: ')[1].split(' | ')[0] : (['High', 'Medium', 'Low', 'None'].includes(rawDepth) ? rawDepth : '');
+  const initialLatency = rawDepth.includes('Latency: ') ? rawDepth.split('Latency: ')[1] : (!['High', 'Medium', 'Low', 'None'].includes(rawDepth) ? rawDepth : '');
+  
+  const [r2ProductDepth, setR2ProductDepth] = useState(initialDepth);
+  const [r2Latency, setR2Latency] = useState(initialLatency);
 
   const [r3Comments, setR3Comments] = useState(r3.review_comments || '');
 
   const [saving, setSaving] = useState(false);
 
-  const handleSave = async (forceVerdict) => {
+  const handleSave = async (forceVerdict, isFinish = false) => {
+    const activeEvaluator = r1Group || r1.eval_group;
+
+    if (round === 2 && isFinish) {
+      const isPromote = r2NextStep === 'Yes' || r2NextStep === 'Maybe';
+      const isReject = r2NextStep === 'No' || r2NextStep === 'Declined';
+
+      if (isPromote) {
+        const missing = [];
+        if (!r2Start.trim()) missing.push("Earliest date they can start the internship");
+        if (!r2Duration.trim()) missing.push("Duration for which they are available");
+        if (!r2Complexity.trim()) missing.push("Any concerns / restrictions");
+        if (!r2ProductDepth) missing.push("Technical depth of demo / product");
+        if (!r2Solves) missing.push("Contact Status");
+        if (!r2Stack.trim()) missing.push("Tech stack used");
+        if (!r2ProblemFit) missing.push("Problem-solution fit");
+        if (!r2Latency.trim()) missing.push("Areas like latency, cost, security, etc");
+        if (!r2NextStep) missing.push("Decision");
+        if (!r2Comments.trim()) missing.push("Reason for decision");
+
+        if (missing.length > 0) {
+          alert("Please fill out all mandatory fields before completing the review:\n- " + missing.join("\n- "));
+          return;
+        }
+      } else if (isReject) {
+        const rejectMissing = [];
+        if (!r2NextStep) rejectMissing.push("Decision");
+        if (!r2Comments.trim()) rejectMissing.push("Reason for decision");
+
+        if (rejectMissing.length > 0) {
+          alert("Please fill out the mandatory fields before completing the review:\n- " + rejectMissing.join("\n- "));
+          return;
+        }
+      } else {
+        alert("Please select a Decision before finishing the review.");
+        return;
+      }
+    }
+
     setSaving(true);
     try {
       if (round === 1) {
@@ -99,17 +162,27 @@ export default function CandidateProfileDossier({ candidate, round, onSave, onCa
           }
         });
       } else if (round === 2) {
+        let finalDecision = r2NextStep;
+        if (r2NextStep) {
+          if (!isFinish) {
+            finalDecision = r2NextStep + '_draft';
+          }
+        }
         await onSave({
           round_2_evaluation: {
             ...r2,
             when_can_they_start: r2Start,
             duration_months: r2Duration,
             complexity: r2Complexity,
-            solves_business_problem: r2Solves,
+            solves_business_problem: r2Solves || r2ProblemFit ? `Contact: ${r2Solves || ''} | Fit: ${r2ProblemFit || ''}` : '',
             tech_stack: r2Stack,
             demo_review_comment: r2Comments,
-            moved_to_round_3: r2NextStep,
-            product_depth: r2ProductDepth
+            moved_to_round_3: finalDecision,
+            product_depth: r2ProductDepth || r2Latency ? `Depth: ${r2ProductDepth || ''} | Latency: ${r2Latency || ''}` : ''
+          },
+          round_1_evaluation: {
+            ...r1,
+            eval_group: activeEvaluator
           }
         });
       } else if (round === 3) {
@@ -127,6 +200,12 @@ export default function CandidateProfileDossier({ candidate, round, onSave, onCa
       setSaving(false);
     }
   };
+
+  const reviewers = [
+    'Tejaswini', 'Sohan', 'Basvaraj', 'Pushkaraj', 'Akash', 'Anmol',
+    'Sachin', 'Akhil L', 'Vedant', 'Akhil M', 'Samit', 'Snehanshu',
+    'Ankita', 'Kaushik'
+  ];
 
   const skillsList = [
     { name: 'Python', score: getSkill('skill_python') },
@@ -172,21 +251,21 @@ export default function CandidateProfileDossier({ candidate, round, onSave, onCa
                 <div className="flex gap-2 shrink-0">
                   {getBio('resume_drive_url') && (
                     <Button variant="outline" size="sm" asChild className="rounded-md">
-                      <a href={getBio('resume_drive_url')} target="_blank" rel="noopener noreferrer">
+                      <a href={formatExternalLink(getBio('resume_drive_url'))} target="_blank" rel="noopener noreferrer">
                         <FileText className="mr-2 h-4 w-4 stroke-[1.5]" /> Resume
                       </a>
                     </Button>
                   )}
                   {getBio('github_url') && (
                     <Button variant="outline" size="sm" asChild className="rounded-md">
-                      <a href={getBio('github_url')} target="_blank" rel="noopener noreferrer">
+                      <a href={formatExternalLink(getBio('github_url'))} target="_blank" rel="noopener noreferrer">
                         <Github className="mr-2 h-4 w-4 stroke-[1.5]" /> GitHub
                       </a>
                     </Button>
                   )}
                   {getBio('demo_link') && (
                     <Button variant="outline" size="sm" asChild className="rounded-md">
-                      <a href={getBio('demo_link')} target="_blank" rel="noopener noreferrer">
+                      <a href={formatExternalLink(getBio('demo_link'))} target="_blank" rel="noopener noreferrer">
                         <ExternalLink className="mr-2 h-4 w-4 stroke-[1.5]" /> Live Demo
                       </a>
                     </Button>
@@ -243,7 +322,7 @@ export default function CandidateProfileDossier({ candidate, round, onSave, onCa
             </CardContent>
           </Card>
 
-          {/* Skills horizontal progress bars */}
+          {/* Skills progress bars */}
           <Card className="rounded-[1.5rem] border shadow-sm">
             <CardHeader className="pb-2">
               <CardTitle className="text-base font-bold">Self-Reported AI/ML Skills</CardTitle>
@@ -284,10 +363,10 @@ export default function CandidateProfileDossier({ candidate, round, onSave, onCa
                   <div className="flex items-center gap-2 flex-wrap">
                     <Badge variant="outline" className="border-[#800020] text-[#800020] bg-[#800020]/5 font-semibold">Round 1 Review</Badge>
                     <span className="text-xs font-mono text-muted-foreground">App Status: {r1.app_status || 'Pending'}</span>
-                    <span className="text-xs font-mono text-muted-foreground ml-auto">Assigned Tech Evaluator: <strong className="text-foreground">{r1.eval_group || 'None'}</strong></span>
+                    
                   </div>
                   <p className="text-sm mt-2 text-muted-foreground italic">
-                    "{r1.review_comments || 'No screen comments logged.'}"
+                    "{r1.review_comments || 'No review comments logged.'}"
                   </p>
                 </div>
 
@@ -295,14 +374,15 @@ export default function CandidateProfileDossier({ candidate, round, onSave, onCa
                 {round === 3 && (
                   <div className="border-l-2 border-green-600 pl-4 py-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <Badge variant="outline" className="border-green-600 text-green-600 bg-green-600/5 font-semibold">Round 2 Tech Review</Badge>
+                      <Badge variant="outline" className="border-green-600 text-green-600 bg-green-600/5 font-semibold">Round 2 Technical Review</Badge>
                       <span className="text-xs font-mono text-muted-foreground">Start: {r2.when_can_they_start || '-'}</span>
-                      <span className="text-xs font-mono text-muted-foreground">Concerns: <strong>{r2.duration_months || 'None'}</strong></span>
+                      <span className="text-xs font-mono text-muted-foreground ml-auto">Technical Reviewer: <strong className="text-foreground">{r1.eval_group || 'None'}</strong></span>
+                      <span className="text-xs font-mono text-muted-foreground">Duration: <strong>{r2.duration_months || '-'}</strong></span>
+                      <span className="text-xs font-mono text-muted-foreground">Contact: <strong>{r2.solves_business_problem || '-'}</strong></span>
                       <span className="text-xs font-mono text-muted-foreground">Tech Depth: <strong>{r2.product_depth || '-'}</strong></span>
-                      <span className="text-xs font-mono text-muted-foreground">Problem Fit: <strong>{r2.solves_business_problem || '-'}</strong></span>
                     </div>
                     <p className="text-xs font-mono text-muted-foreground mt-1.5">Stack: {r2.tech_stack || '-'}</p>
-                    <p className="text-xs font-mono text-muted-foreground mt-1">Latency/Cost/Security considered: {r2.complexity || '-'}</p>
+                    <p className="text-xs font-mono text-muted-foreground mt-1">Concerns: {r2.complexity || '-'}</p>
                     <p className="text-sm mt-2 text-muted-foreground italic">
                       "{r2.demo_review_comment || 'No review comments logged.'}"
                     </p>
@@ -343,16 +423,28 @@ export default function CandidateProfileDossier({ candidate, round, onSave, onCa
             </CardContent>
           </Card>
 
-          {/* Review Input Panel */}
+          {/* Input Panel */}
           <Card className="border shadow-md rounded-[1.5rem]">
             <CardHeader className="pb-3 border-b">
               <CardTitle className="text-base font-bold">Review Inputs</CardTitle>
             </CardHeader>
             <CardContent className="pt-4 flex flex-col gap-4">
               
-              {/* Round 1 Review Form */}
+              {/* Round 1 Screening Form */}
               {round === 1 && (
                 <div className="flex flex-col gap-3">
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="r1Comments" className="font-semibold text-xs">HR Comments</Label>
+                    <Textarea
+                      id="r1Comments"
+                      placeholder="Add initial review comments..."
+                      value={r1Comments}
+                      onChange={(e) => setR1Comments(e.target.value)}
+                      rows={4}
+                      className="rounded-md"
+                    />
+                  </div>
+
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="appStatus" className="font-semibold text-xs">App Status</Label>
                     <Select value={r1Status} onValueChange={setR1Status}>
@@ -371,54 +463,58 @@ export default function CandidateProfileDossier({ candidate, round, onSave, onCa
                   </div>
 
                   <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="evalGroup" className="font-semibold text-xs">Assign Tech Evaluator</Label>
+                    <Label htmlFor="r1Group" className="font-semibold text-xs">Assign Technical Evaluator</Label>
                     <Select value={r1Group} onValueChange={setR1Group}>
-                      <SelectTrigger id="evalGroup" className="rounded-md">
-                        <SelectValue placeholder="Select Tech Evaluator" />
+                      <SelectTrigger id="r1Group" className="rounded-md">
+                        <SelectValue placeholder="Select Technical Evaluator" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectGroup>
-                          <SelectItem value="Dharti">Dharti</SelectItem>
-                          <SelectItem value="Jal">Jal</SelectItem>
-                          <SelectItem value="Agni">Agni</SelectItem>
-                          <SelectItem value="Vayu">Vayu</SelectItem>
-                          <SelectItem value="Akash">Akash</SelectItem>
-                          <SelectItem value="Bijli">Bijli</SelectItem>
+                          {reviewers.map((name) => (
+                            <SelectItem key={name} value={name}>{name}</SelectItem>
+                          ))}
                         </SelectGroup>
                       </SelectContent>
                     </Select>
                   </div>
 
-                  <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="r1Comments" className="font-semibold text-xs">Recruiter Comments</Label>
-                    <Textarea
-                      id="r1Comments"
-                      placeholder="Add initial review comments..."
-                      value={r1Comments}
-                      onChange={(e) => setR1Comments(e.target.value)}
-                      rows={4}
-                      className="rounded-md"
-                    />
-                  </div>
-
-                  <Button onClick={() => handleSave(null)} className="w-full mt-2 bg-[#800020] hover:bg-[#800020]/90 text-white rounded-lg" disabled={saving}>
+                  <Button onClick={() => handleSave(null, false)} className="w-full mt-2 bg-[#800020] hover:bg-[#800020]/90 text-white rounded-lg" disabled={saving}>
                     {saving ? 'Saving...' : 'Save Decision'}
                   </Button>
                 </div>
               )}
 
-              {/* Round 2 Review Form */}
+              {/* Round 2 Vetting Form */}
               {round === 2 && (
                 <div className="flex flex-col gap-3 text-sm">
                   
                   {/* Candidate Tier Display */}
-                  <div className="bg-primary/5 border border-primary/20 p-3 rounded-lg flex items-center justify-between">
-                    <span className="text-xs font-semibold text-muted-foreground">Candidate Review Tier:</span>
-                    <Badge variant="outline" className="font-mono font-bold text-xs border-primary/30 text-[#800020] bg-primary/5">
-                      {r1.tier || 'N/A'} (Score: {r1.total || 0})
-                    </Badge>
+                  <div className="bg-primary/5 border border-primary/20 p-3 rounded-lg flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-muted-foreground">Candidate Review Tier:</span>
+                      <Badge variant="outline" className="font-mono font-bold text-xs border-primary/30 text-[#800020] bg-primary/5">
+                        {r1.tier || 'N/A'} (Score: {r1.total || 0})
+                      </Badge>
+                    </div>
                   </div>
 
+                  {/* 1. Contact Status */}
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="r2Solves" className="font-semibold text-xs">Contact Status</Label>
+                    <Select value={r2Solves} onValueChange={setR2Solves}>
+                      <SelectTrigger id="r2Solves" className="rounded-md">
+                        <SelectValue placeholder="Select Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Yet to Speak">Yet to Speak</SelectItem>
+                        <SelectItem value="Spoke">Spoke</SelectItem>
+                        <SelectItem value="Scheduled">Scheduled</SelectItem>
+                        <SelectItem value="No response">No response</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* 2. Earliest date they can start the internship */}
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="r2Start" className="font-semibold text-xs">Earliest date they can start the internship</Label>
                     <Input
@@ -430,48 +526,47 @@ export default function CandidateProfileDossier({ candidate, round, onSave, onCa
                     />
                   </div>
 
+                  {/* 3. Duration for which they are available */}
                   <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="r2Duration" className="font-semibold text-xs">Any concerns / restrictions (with college commitment, personal, others)</Label>
+                    <Label htmlFor="r2Duration" className="font-semibold text-xs">Duration for which they are available</Label>
                     <Input
                       id="r2Duration"
-                      placeholder="e.g. exams in Oct, college NOC required"
+                      placeholder="e.g. 6 months"
                       value={r2Duration}
                       onChange={(e) => setR2Duration(e.target.value)}
                       className="rounded-md"
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="flex flex-col gap-1.5">
-                      <Label htmlFor="r2ProductDepth" className="font-semibold text-xs">Technical depth of demo / product</Label>
-                      <Select value={r2ProductDepth} onValueChange={setR2ProductDepth}>
-                        <SelectTrigger id="r2ProductDepth" className="rounded-md">
-                          <SelectValue placeholder="Select" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="High">High</SelectItem>
-                          <SelectItem value="Medium">Medium</SelectItem>
-                          <SelectItem value="Low">Low</SelectItem>
-                          <SelectItem value="None">None</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="flex flex-col gap-1.5">
-                      <Label htmlFor="r2Solves" className="font-semibold text-xs">Problem-solution fit</Label>
-                      <Select value={r2Solves} onValueChange={setR2Solves}>
-                        <SelectTrigger id="r2Solves" className="rounded-md">
-                          <SelectValue placeholder="Select" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Yes">Yes</SelectItem>
-                          <SelectItem value="No">No</SelectItem>
-                          <SelectItem value="Partial">Partial</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                  {/* 4. Any concerns / restrictions */}
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="r2Complexity" className="font-semibold text-xs">Any concerns / restrictions (with college commitment, personal, others)</Label>
+                    <Input
+                      id="r2Complexity"
+                      placeholder="e.g. exams in Oct, college NOC required"
+                      value={r2Complexity}
+                      onChange={(e) => setR2Complexity(e.target.value)}
+                      className="rounded-md"
+                    />
                   </div>
 
+                  {/* 5. Technical depth of demo / product */}
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="r2ProductDepth" className="font-semibold text-xs">Technical depth of demo / product</Label>
+                    <Select value={r2ProductDepth} onValueChange={setR2ProductDepth}>
+                      <SelectTrigger id="r2ProductDepth" className="rounded-md">
+                        <SelectValue placeholder="Select Depth" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="High">High</SelectItem>
+                        <SelectItem value="Medium">Medium</SelectItem>
+                        <SelectItem value="Low">Low</SelectItem>
+                        <SelectItem value="None">None</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* 6. Tech stack used */}
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="r2Stack" className="font-semibold text-xs">Tech stack used</Label>
                     <Input
@@ -483,31 +578,50 @@ export default function CandidateProfileDossier({ candidate, round, onSave, onCa
                     />
                   </div>
 
+                  {/* 7. Problem-solution fit */}
                   <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="r2Complexity" className="font-semibold text-xs">Have latency, cost, security, etc. been considered?</Label>
+                    <Label htmlFor="r2ProblemFit" className="font-semibold text-xs">Problem-solution fit</Label>
+                    <Select value={r2ProblemFit} onValueChange={setR2ProblemFit}>
+                      <SelectTrigger id="r2ProblemFit" className="rounded-md">
+                        <SelectValue placeholder="Select Fit" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Yes">Yes</SelectItem>
+                        <SelectItem value="Maybe">Maybe</SelectItem>
+                        <SelectItem value="No">No</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* 8. Areas like latency, cost, security, etc been considered */}
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="r2Latency" className="font-semibold text-xs">Areas like latency, cost, security, etc been considered</Label>
                     <Input
-                      id="r2Complexity"
-                      placeholder="e.g. redis caching, indexed queries"
-                      value={r2Complexity}
-                      onChange={(e) => setR2Complexity(e.target.value)}
+                      id="r2Latency"
+                      placeholder="e.g. Rate limits, cost estimates, basic encryption"
+                      value={r2Latency}
+                      onChange={(e) => setR2Latency(e.target.value)}
                       className="rounded-md"
                     />
                   </div>
 
+                  {/* 9. Decision */}
                   <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="r2Next" className="font-semibold text-xs">Decision (Promote to Round 3?)</Label>
+                    <Label htmlFor="r2Next" className="font-semibold text-xs">Decision</Label>
                     <Select value={r2NextStep} onValueChange={setR2NextStep}>
                       <SelectTrigger id="r2Next" className="rounded-md">
                         <SelectValue placeholder="Select Decision" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Yes">Yes (Promote)</SelectItem>
+                        <SelectItem value="Yes">Yes</SelectItem>
                         <SelectItem value="Maybe">Maybe</SelectItem>
-                        <SelectItem value="No">No (Decline)</SelectItem>
+                        <SelectItem value="No">No</SelectItem>
+                        <SelectItem value="Declined">Declined</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
+                  {/* 10. Reason for decision (detailed notes) */}
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="r2Comments" className="font-semibold text-xs">Reason for decision (detailed notes)</Label>
                     <Textarea
@@ -520,9 +634,23 @@ export default function CandidateProfileDossier({ candidate, round, onSave, onCa
                     />
                   </div>
 
-                  <Button onClick={() => handleSave(null)} className="w-full mt-2 bg-[#800020] hover:bg-[#800020]/90 text-white rounded-lg" disabled={saving}>
-                    {saving ? 'Saving...' : 'Save Review outcomes'}
-                  </Button>
+                  <div className="flex gap-2 mt-2">
+                    <Button 
+                      onClick={() => handleSave(null, false)} 
+                      variant="outline" 
+                      className="flex-1 border-[#800020] text-[#800020] hover:bg-[#800020]/10 rounded-lg font-bold" 
+                      disabled={saving}
+                    >
+                      {saving ? 'Saving...' : 'Save'}
+                    </Button>
+                    <Button 
+                      onClick={() => handleSave(null, true)} 
+                      className="flex-1 bg-[#800020] hover:bg-[#800020]/90 text-white rounded-lg font-bold" 
+                      disabled={saving}
+                    >
+                      {saving ? 'Saving...' : 'Finish Review'}
+                    </Button>
+                  </div>
                 </div>
               )}
 
@@ -542,10 +670,10 @@ export default function CandidateProfileDossier({ candidate, round, onSave, onCa
                   </div>
 
                   <div className="flex gap-2 mt-2">
-                    <Button onClick={() => handleSave('No')} variant="outline" className="flex-1 border-red-500 hover:bg-red-500/10 text-red-500 rounded-lg font-bold" disabled={saving}>
+                    <Button onClick={() => handleSave('No', false)} variant="outline" className="flex-1 border-red-500 hover:bg-red-500/10 text-red-500 rounded-lg font-bold" disabled={saving}>
                       Decline
                     </Button>
-                    <Button onClick={() => handleSave('Yes')} className="flex-1 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold" disabled={saving}>
+                    <Button onClick={() => handleSave('Yes', false)} className="flex-1 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold" disabled={saving}>
                       Approve Hire
                     </Button>
                   </div>

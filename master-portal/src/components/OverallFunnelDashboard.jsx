@@ -220,7 +220,11 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
 
     if (r3.verdict === 'Yes') return 'Hired';
     if (r3.verdict === 'No') return 'Declined (Offer)';
-    if (r2.moved_to_round_3 === 'No') return 'Declined (Review)';
+    
+    const r2Decision = r2.moved_to_round_3;
+    const isR2Finished = r2Decision && !r2Decision.endsWith('_draft');
+    
+    if (isR2Finished && (r2Decision === 'No' || r2Decision === 'Declined')) return 'Declined (Review)';
     if (r1.app_status === 'Reject') return 'Declined (Review)';
     if (r1.app_status === 'Yes') return 'Tech Review';
     if (r1.app_status === 'Maybe') return 'Maybe (Reviewed)';
@@ -251,7 +255,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
 
   // 2. Chart Calculations
   const chartData = useMemo(() => {
-    const clans = { Dharti: 0, Jal: 0, Agni: 0, Vayu: 0, Akash: 0, Bijli: 0, Unassigned: 0 };
+    const clans = { Tejaswini: 0, Sohan: 0, Basvaraj: 0, Pushkaraj: 0, Akash: 0, Anmol: 0, Sachin: 0, 'Akhil L': 0, Vedant: 0, 'Akhil M': 0, Samit: 0, Snehanshu: 0, Ankita: 0, Kaushik: 0, Unassigned: 0 };
     const tiers = { 'T1+': 0, 'T1': 0, 'T2+': 0, 'T2': 0, 'T3': 0, 'N/A': 0 };
     const scores = { '0-5': 0, '6-10': 0, '11-15': 0, '16-20': 0, '21-25': 0, '26-30': 0 };
 
@@ -408,7 +412,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
   const exportToCSV = () => {
     const headers = [
       'Applicant ID', 'Full Name', 'Email', 'Role', 'UG University', 
-      'R1 Review Status', 'R1 Assigned Tech Evaluator', 'R1 AI Score', 'R1 Tier', 'R1 Comments',
+      'R1 Review Status', 'R1 Assigned Technical Evaluator', 'R1 AI Score', 'R1 Tier', 'R1 Comments',
       'R2 Start Date', 'R2 Concerns/Restrictions', 'R2 Tech Depth', 'R2 Solves Biz?', 'R2 Tech Stack', 'R2 Latency/Cost considered', 'R2 Decision', 'R2 Comments',
       'R3 Verdict', 'R3 Executive Comments'
     ];
@@ -579,10 +583,12 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
               { label: '2. Passed Review', count: stats.total - stats.pendingScreening - stats.rejected, percent: Math.round(((stats.total - stats.pendingScreening - stats.rejected) / (stats.total || 1)) * 100), color: 'bg-blue-500' },
               { label: '3. Promoted to R3', count: globalData.filter(c => {
                   const r2 = getR2(c);
-                  return r2.moved_to_round_3 === 'Yes' || r2.moved_to_round_3 === 'Maybe';
+                  const m = r2.moved_to_round_3;
+                  return m && !m.endsWith('_draft') && (m === 'Yes' || m === 'Maybe');
                 }).length, percent: Math.round((globalData.filter(c => {
                   const r2 = getR2(c);
-                  return r2.moved_to_round_3 === 'Yes' || r2.moved_to_round_3 === 'Maybe';
+                  const m = r2.moved_to_round_3;
+                  return m && !m.endsWith('_draft') && (m === 'Yes' || m === 'Maybe');
                 }).length / (stats.total || 1)) * 100), color: 'bg-purple-500' },
               { label: '4. Final Hire Offers', count: stats.hired, percent: Math.round((stats.hired / (stats.total || 1)) * 100), color: 'bg-[#800020]' }
             ].map((stage, idx) => (
@@ -606,9 +612,9 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
         <Card className="rounded-[1.5rem] border shadow-sm lg:col-span-1">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-bold flex items-center gap-2">
-              <BarChart3 className="h-4.5 w-4.5 text-[#800020]" /> Tech Evaluator Workloads
+              <BarChart3 className="h-4.5 w-4.5 text-[#800020]" /> Technical Reviewer Workloads
             </CardTitle>
-            <CardDescription className="text-xs">Candidates assigned to tech evaluators</CardDescription>
+            <CardDescription className="text-xs">Candidates assigned to technical evaluators</CardDescription>
           </CardHeader>
           <CardContent className="pt-4 flex items-end justify-between gap-2 h-44">
             {Object.entries(chartData.clans).map(([clan, count]) => {
@@ -663,192 +669,6 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
             })}
           </CardContent>
         </Card>
-
-      </div>
-
-      {/* Main Filterable Data Explorer Table */}
-      <div className="flex flex-col gap-4">
-        
-        <div className="flex flex-col gap-1">
-          <h2 className="text-xl font-bold tracking-tight">Data Explorer</h2>
-          <p className="text-xs text-muted-foreground">Search and audit all applicants across the pipeline.</p>
-        </div>
-
-        {/* Filters */}
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex-1 min-w-[240px] relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground stroke-[1.5]" />
-            <Input
-              placeholder="Search by ID, name, email, or university..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 h-10 rounded-lg"
-            />
-          </div>
-
-          {Object.keys(activeFilters).length > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setActiveFilters({})}
-              className="text-xs font-semibold text-[#800020] hover:bg-[#800020]/10 rounded-lg h-10 px-3 border border-transparent hover:border-[#800020]/20"
-            >
-              Reset All Filters ({Object.keys(activeFilters).length})
-            </Button>
-          )}
-        </div>
-
-        {/* Data Grid */}
-        <div className="border rounded-xl bg-card text-card-foreground overflow-visible shadow-sm">
-          <div className="overflow-x-auto overflow-visible">
-            <table className="w-full text-sm text-left relative z-10">
-              <thead className="bg-muted/40 border-b text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                <tr>
-                  <th className="py-3.5 px-4 font-mono w-[85px] overflow-visible">
-                    <HeaderFilter
-                      label="ID"
-                      columnKey="id"
-                      uniqueValues={uniqueIds}
-                      activeFilters={activeFilters}
-                      onApplyFilter={handleApplyFilter}
-                      sortConfig={sortConfig}
-                      onSort={handleSort}
-                      isNumeric={true}
-                    />
-                  </th>
-                  <th className="py-3.5 px-4 overflow-visible min-w-[180px]">
-                    <HeaderFilter
-                      label="Applicant"
-                      columnKey="candidate"
-                      uniqueValues={uniqueCandidates}
-                      activeFilters={activeFilters}
-                      onApplyFilter={handleApplyFilter}
-                      sortConfig={sortConfig}
-                      onSort={handleSort}
-                    />
-                  </th>
-                  <th className="py-3.5 px-4 overflow-visible min-w-[180px]">
-                    <HeaderFilter
-                      label="University"
-                      columnKey="university"
-                      uniqueValues={uniqueUniversities}
-                      activeFilters={activeFilters}
-                      onApplyFilter={handleApplyFilter}
-                      sortConfig={sortConfig}
-                      onSort={handleSort}
-                    />
-                  </th>
-                  <th className="py-3.5 px-4 w-[130px] overflow-visible">
-                    <HeaderFilter
-                      label="Tier"
-                      columnKey="tier"
-                      uniqueValues={uniqueTiers}
-                      activeFilters={activeFilters}
-                      onApplyFilter={handleApplyFilter}
-                      sortConfig={sortConfig}
-                      onSort={handleSort}
-                    />
-                  </th>
-                  <th className="py-3.5 px-4 w-[115px] overflow-visible text-center">
-                    <HeaderFilter
-                      label="Score"
-                      columnKey="score"
-                      uniqueValues={uniqueScores}
-                      activeFilters={activeFilters}
-                      onApplyFilter={handleApplyFilter}
-                      sortConfig={sortConfig}
-                      onSort={handleSort}
-                      isNumeric={true}
-                    />
-                  </th>
-                  <th className="py-3.5 px-4 w-[185px] overflow-visible">
-                    <HeaderFilter
-                      label="Tech Evaluator"
-                      columnKey="clan"
-                      uniqueValues={uniqueClans}
-                      activeFilters={activeFilters}
-                      onApplyFilter={handleApplyFilter}
-                      sortConfig={sortConfig}
-                      onSort={handleSort}
-                    />
-                  </th>
-                  <th className="py-3.5 px-4 w-[185px] overflow-visible">
-                    <HeaderFilter
-                      label="Stage"
-                      columnKey="funnelStage"
-                      uniqueValues={uniqueStages}
-                      activeFilters={activeFilters}
-                      onApplyFilter={handleApplyFilter}
-                      sortConfig={sortConfig}
-                      onSort={handleSort}
-                    />
-                  </th>
-                  <th className="py-3.5 px-4 w-[120px] text-right pr-6 font-semibold uppercase tracking-wider text-muted-foreground">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {sortedAndFiltered.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="text-center py-10 text-muted-foreground font-mono text-sm">
-                      No applicants matching selection.
-                    </td>
-                  </tr>
-                ) : (
-                  sortedAndFiltered.slice(0, 100).map((c) => {
-                    const r1 = getR1(c);
-                    const stage = getFunnelStage(c);
-
-                    let stageBadge = <Badge variant="secondary" className="rounded-full px-2.5">{stage}</Badge>;
-                    if (stage === 'Hired') stageBadge = <Badge className="bg-green-600 hover:bg-green-700 text-white rounded-full px-2.5 border-transparent">Hired</Badge>;
-                    else if (stage.startsWith('Declined')) stageBadge = <Badge variant="destructive" className="rounded-full px-2.5">{stage}</Badge>;
-                    else if (stage === 'Tech Review') stageBadge = <Badge className="bg-blue-600 text-white rounded-full px-2.5 border-transparent">Tech Review</Badge>;
-                    else if (stage === 'Pending Review') stageBadge = <Badge className="bg-amber-500 text-white rounded-full px-2.5 border-transparent">Pending Review</Badge>;
-
-                    return (
-                      <tr key={c.id} className="hover:bg-muted/10 transition-colors duration-150">
-                        <td className="py-4 px-4 font-mono text-xs font-bold text-muted-foreground">{c.id}</td>
-                        <td className="py-4 px-4">
-                          <div className="font-semibold text-foreground">{c.full_name || 'Anonymous Applicant'}</div>
-                          <div className="text-xs text-muted-foreground">{c.email || ''}</div>
-                        </td>
-                        <td className="py-4 px-4 text-xs font-medium text-muted-foreground max-w-[200px] truncate">
-                          {c.ug_university || '-'}
-                        </td>
-                        <td className="py-4 px-4">
-                          <Badge variant="outline" className="font-mono text-[10px] px-1.5 border-primary/20">{r1.tier || 'N/A'}</Badge>
-                        </td>
-                        <td className="py-4 px-4 text-center font-mono font-extrabold text-[#800020]">
-                          {r1.total || 0}
-                        </td>
-                        <td className="py-4 px-4">
-                          {r1.eval_group ? (
-                            <Badge variant="outline" className="font-semibold text-[10px] border-primary/20 text-[#800020] bg-primary/5 rounded-full px-2">
-                              {r1.eval_group}
-                            </Badge>
-                          ) : (
-                            <span className="text-xs text-muted-foreground italic">-</span>
-                          )}
-                        </td>
-                        <td className="py-4 px-4">{stageBadge}</td>
-                        <td className="py-4 px-4 text-right pr-6">
-                          <Button size="xs" variant="ghost" onClick={() => onViewCandidate(c)} className="font-semibold text-xs text-[#800020] hover:text-white hover:bg-[#800020] px-2.5 py-1.5 rounded-lg border border-[#800020]/20">
-                            Audit dossier
-                          </Button>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-          
-          {sortedAndFiltered.length > 100 && (
-            <div className="p-3 border-t bg-muted/20 text-center text-xs font-mono text-muted-foreground">
-              Showing first 100 results of {sortedAndFiltered.length} applicants matching filters.
-            </div>
-          )}
-        </div>
 
       </div>
 
