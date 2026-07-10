@@ -1,16 +1,197 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
-import { Search, Download } from 'lucide-react';
+import { Search, Download, Filter, ArrowUp, ArrowDown, Check } from 'lucide-react';
+
+function HeaderFilter({
+  label,
+  columnKey,
+  uniqueValues,
+  activeFilters,
+  onApplyFilter,
+  sortConfig,
+  onSort,
+  isNumeric = false
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [tempSelected, setTempSelected] = useState(null);
+  const popoverRef = useRef(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      const current = activeFilters[columnKey];
+      if (current) {
+        setTempSelected(new Set(current));
+      } else {
+        setTempSelected(new Set(uniqueValues));
+      }
+    }
+  }, [isOpen, uniqueValues, activeFilters, columnKey]);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (popoverRef.current && !popoverRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
+
+  const handleToggleValue = (val) => {
+    const next = new Set(tempSelected);
+    if (next.has(val)) {
+      next.delete(val);
+    } else {
+      next.add(val);
+    }
+    setTempSelected(next);
+  };
+
+  const handleSelectAll = () => {
+    setTempSelected(new Set(uniqueValues));
+  };
+
+  const handleClearAll = () => {
+    setTempSelected(new Set());
+  };
+
+  const handleApply = () => {
+    if (tempSelected.size === uniqueValues.length) {
+      onApplyFilter(columnKey, null);
+    } else {
+      onApplyFilter(columnKey, Array.from(tempSelected));
+    }
+    setIsOpen(false);
+  };
+
+  const handleSortAsc = () => {
+    onSort(columnKey, 'asc');
+    setIsOpen(false);
+  };
+
+  const handleSortDesc = () => {
+    onSort(columnKey, 'desc');
+    setIsOpen(false);
+  };
+
+  const hasActiveFilter = activeFilters[columnKey] !== undefined && activeFilters[columnKey] !== null;
+  const isSortedAsc = sortConfig?.key === columnKey && sortConfig?.direction === 'asc';
+  const isSortedDesc = sortConfig?.key === columnKey && sortConfig?.direction === 'desc';
+
+  const filteredUniqueValues = uniqueValues.filter(val =>
+    String(val).toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  return (
+    <div className="relative inline-flex items-center gap-1.5 group/header select-none text-left" ref={popoverRef}>
+      <span className="font-semibold text-foreground">{label}</span>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsOpen(!isOpen);
+        }}
+        className={`p-1 rounded hover:bg-muted/80 transition-all ${
+          isOpen || hasActiveFilter || isSortedAsc || isSortedDesc
+            ? 'text-[#800020] opacity-100 bg-[#800020]/10 border border-[#800020]/20'
+            : 'text-muted-foreground opacity-40 group-hover/header:opacity-100'
+        }`}
+      >
+        <Filter className="h-3.5 w-3.5 stroke-[2]" />
+      </button>
+
+      {isOpen && (
+        <div className="absolute left-0 top-full mt-2 w-64 bg-card border rounded-xl shadow-xl z-[999] text-card-foreground p-3 font-normal text-sm normal-case flex flex-col gap-3">
+          {/* Sorting */}
+          <div className="flex flex-col gap-1">
+            <button
+              onClick={handleSortAsc}
+              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left hover:bg-muted transition-colors w-full font-medium ${
+                isSortedAsc ? 'text-[#800020] bg-[#800020]/5 font-semibold' : ''
+              }`}
+            >
+              <ArrowUp className="h-4 w-4 text-[#800020]" />
+              Sort {isNumeric ? 'Smallest to Largest' : 'A to Z'}
+            </button>
+            <button
+              onClick={handleSortDesc}
+              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left hover:bg-muted transition-colors w-full font-medium ${
+                isSortedDesc ? 'text-[#800020] bg-[#800020]/5 font-semibold' : ''
+              }`}
+            >
+              <ArrowDown className="h-4 w-4 text-[#800020]" />
+              Sort {isNumeric ? 'Largest to Smallest' : 'Z to A'}
+            </button>
+          </div>
+
+          <div className="border-t my-0.5" />
+
+          {/* Search values */}
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              placeholder="Search values..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-8 h-8 text-xs rounded-md"
+            />
+          </div>
+
+          {/* Quick selectors */}
+          <div className="flex items-center gap-2 text-xs font-semibold px-1">
+            <button onClick={handleSelectAll} className="text-[#800020] hover:underline">Select All</button>
+            <span className="text-muted-foreground">·</span>
+            <button onClick={handleClearAll} className="text-[#800020] hover:underline">Clear</button>
+          </div>
+
+          {/* Checkboxes List */}
+          <div className="max-h-40 overflow-y-auto border rounded-lg p-2 flex flex-col gap-1.5 bg-muted/20">
+            {filteredUniqueValues.length === 0 ? (
+              <div className="text-xs text-muted-foreground text-center py-4">No matching values</div>
+            ) : (
+              filteredUniqueValues.map((val) => {
+                const isChecked = tempSelected?.has(val);
+                return (
+                  <label key={val} className="flex items-center gap-2 px-1 py-0.5 hover:bg-muted/50 rounded cursor-pointer text-xs">
+                    <input
+                      type="checkbox"
+                      checked={isChecked || false}
+                      onChange={() => handleToggleValue(val)}
+                      className="rounded border-muted text-[#800020] focus:ring-[#800020] h-3.5 w-3.5 cursor-pointer"
+                    />
+                    <span className="truncate text-foreground font-medium">{String(val)}</span>
+                  </label>
+                );
+              })
+            )}
+          </div>
+
+          {/* Action Footer */}
+          <div className="flex items-center justify-end gap-2 border-t pt-2 mt-1">
+            <Button size="xs" variant="ghost" onClick={() => setIsOpen(false)} className="h-8 rounded-lg text-xs">
+              Cancel
+            </Button>
+            <Button size="xs" onClick={handleApply} className="bg-[#800020] hover:bg-[#800020]/90 text-white h-8 rounded-lg text-xs font-semibold px-3">
+              Apply
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function CandidateListTable({ candidates, actionLabel, onActionClick, showClanFilter = false, round = 1, onUpdateClan }) {
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ALL');
-  const [tierFilter, setTierFilter] = useState('ALL');
-  const [clanFilter, setClanFilter] = useState('ALL');
+  const [activeFilters, setActiveFilters] = useState({});
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
 
   // Relational data helpers
   const getBio = (c, field) => {
@@ -30,7 +211,6 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
   // Safe helper to extract status based on the current round
   const getStatusInfo = (cand) => {
     if (round === 3) {
-      // Check Round 3 Verdict
       const r3 = cand.round_3_evaluation;
       const r3Parsed = Array.isArray(r3) ? r3[0] : r3;
       const verdict = r3Parsed?.verdict;
@@ -40,17 +220,15 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
     }
     
     if (round === 2) {
-      // Check Round 2 Decision
       const r2 = cand.round_2_evaluation;
       const r2Parsed = Array.isArray(r2) ? r2[0] : r2;
       const decision = r2Parsed?.moved_to_round_3;
       if (decision === 'Yes') return { text: 'Promoted', color: 'bg-green-600 hover:bg-green-700 text-white border-transparent' };
       if (decision === 'Maybe') return { text: 'Maybe', color: 'bg-amber-500 hover:bg-amber-600 text-white border-transparent' };
       if (decision === 'No') return { text: 'Declined', color: 'bg-red-600 hover:bg-red-700 text-white border-transparent' };
-      return { text: 'Pending Vetting', color: 'bg-gray-400 hover:bg-gray-500 text-white border-transparent' };
+      return { text: 'Pending Review', color: 'bg-gray-400 hover:bg-gray-500 text-white border-transparent' };
     }
 
-    // Default: Round 1 app_status
     const status = getEval1(cand, 'app_status') || 'Pending';
     if (status === 'Yes') return { text: 'Yes', color: 'bg-green-600 hover:bg-green-700 text-white border-transparent' };
     if (status === 'Reject') return { text: 'Reject', color: 'bg-red-600 hover:bg-red-700 text-white border-transparent' };
@@ -59,33 +237,99 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
     return { text: 'Pending', color: 'bg-gray-200 text-gray-800 dark:bg-gray-800 dark:text-gray-200' };
   };
 
-  // Filter logic
-  const filtered = candidates.filter(cand => {
-    // Search
-    const query = search.toLowerCase();
-    const nameMatch = getBio(cand, 'full_name')?.toLowerCase().includes(query);
-    const emailMatch = getBio(cand, 'email')?.toLowerCase().includes(query);
-    const roleMatch = getBio(cand, 'applied_role')?.toLowerCase().includes(query);
-    const idMatch = cand.id?.toString().includes(query);
-    
-    if (search && !nameMatch && !emailMatch && !roleMatch && !idMatch) return false;
+  // Extraction maps for headers
+  const getCandValue = {
+    id: (c) => c.id,
+    candidate: (c) => getBio(c, 'full_name'),
+    tier: (c) => getEval1(c, 'tier') || 'N/A',
+    score: (c) => parseFloat(getEval1(c, 'total') || 0),
+    review_cat: (c) => getEval1(c, 'review_cat') || 'N/A',
+    status: (c) => getStatusInfo(c).text,
+    clan: (c) => getEval1(c, 'eval_group') || 'None'
+  };
 
-    // Status filter
-    if (statusFilter !== 'ALL') {
-      const info = getStatusInfo(cand);
-      if (info.text !== statusFilter) return false;
-    }
+  // Helper to extract unique values for dropdowns
+  const getUniqueValues = (key, extractor) => {
+    const vals = candidates.map(extractor);
+    return Array.from(new Set(vals)).sort((a, b) => {
+      if (typeof a === 'number' && typeof b === 'number') return a - b;
+      return String(a).localeCompare(String(b));
+    });
+  };
 
-    // Tier filter
-    const tier = getEval1(cand, 'tier') || 'N/A';
-    if (tierFilter !== 'ALL' && tier !== tierFilter) return false;
+  // Unique values lists
+  const uniqueIds = useMemo(() => getUniqueValues('id', getCandValue.id), [candidates]);
+  const uniqueCandidates = useMemo(() => getUniqueValues('candidate', getCandValue.candidate), [candidates]);
+  const uniqueTiers = useMemo(() => getUniqueValues('tier', getCandValue.tier), [candidates]);
+  const uniqueScores = useMemo(() => getUniqueValues('score', getCandValue.score), [candidates]);
+  const uniqueReviewCats = useMemo(() => getUniqueValues('review_cat', getCandValue.review_cat), [candidates]);
+  const uniqueStatuses = useMemo(() => getUniqueValues('status', getCandValue.status), [candidates]);
+  const uniqueClans = useMemo(() => getUniqueValues('clan', getCandValue.clan), [candidates]);
 
-    // Clan filter
-    const clan = getEval1(cand, 'eval_group') || 'None';
-    if (showClanFilter && clanFilter !== 'ALL' && clan !== clanFilter) return false;
+  // Apply filters
+  const handleApplyFilter = (columnKey, selectedValues) => {
+    setActiveFilters(prev => {
+      const next = { ...prev };
+      if (selectedValues === null) {
+        delete next[columnKey];
+      } else {
+        next[columnKey] = selectedValues;
+      }
+      return next;
+    });
+  };
 
-    return true;
-  });
+  const handleSort = (columnKey, direction) => {
+    setSortConfig({ key: columnKey, direction });
+  };
+
+  // Combined filter logic
+  const filtered = useMemo(() => {
+    return candidates.filter(cand => {
+      // 1. Global Search
+      if (search) {
+        const query = search.toLowerCase();
+        const nameMatch = getBio(cand, 'full_name')?.toLowerCase().includes(query);
+        const emailMatch = getBio(cand, 'email')?.toLowerCase().includes(query);
+        const roleMatch = getBio(cand, 'applied_role')?.toLowerCase().includes(query);
+        const idMatch = cand.id?.toString().includes(query);
+        
+        if (!nameMatch && !emailMatch && !roleMatch && !idMatch) return false;
+      }
+
+      // 2. Header Filters
+      if (activeFilters.id && !activeFilters.id.includes(cand.id)) return false;
+      if (activeFilters.candidate && !activeFilters.candidate.includes(getBio(cand, 'full_name'))) return false;
+      if (activeFilters.tier && !activeFilters.tier.includes(getEval1(cand, 'tier') || 'N/A')) return false;
+      if (activeFilters.score && !activeFilters.score.includes(parseFloat(getEval1(cand, 'total') || 0))) return false;
+      if (activeFilters.review_cat && !activeFilters.review_cat.includes(getEval1(cand, 'review_cat') || 'N/A')) return false;
+      if (activeFilters.status && !activeFilters.status.includes(getStatusInfo(cand).text)) return false;
+      if (showClanFilter && activeFilters.clan && !activeFilters.clan.includes(getEval1(cand, 'eval_group') || 'None')) return false;
+
+      return true;
+    });
+  }, [candidates, search, activeFilters, showClanFilter]);
+
+  // Sorting logic
+  const sortedAndFiltered = useMemo(() => {
+    if (!sortConfig.key) return filtered;
+
+    return [...filtered].sort((a, b) => {
+      let valA = getCandValue[sortConfig.key](a);
+      let valB = getCandValue[sortConfig.key](b);
+
+      if (valA === undefined || valA === null) return 1;
+      if (valB === undefined || valB === null) return -1;
+
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        return sortConfig.direction === 'asc' ? valA - valB : valB - valA;
+      }
+
+      return sortConfig.direction === 'asc'
+        ? String(valA).localeCompare(String(valB))
+        : String(valB).localeCompare(String(valA));
+    });
+  }, [filtered, sortConfig]);
 
   const handleExportCSV = () => {
     const headers = [
@@ -94,10 +338,10 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
       'Email',
       'Role',
       'Tier',
-      'Screening Score',
-      'Review Category',
-      'Vetting Status',
-      'Clan Assigned',
+      'Review Score',
+      'Demo-AI Review',
+      'Review Status',
+      'Tech Evaluator Assigned',
       'Start Date',
       'College Commitment',
       'Technical Depth',
@@ -106,7 +350,7 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
       'Latency/Security/Cost'
     ];
 
-    const rows = filtered.map(c => {
+    const rows = sortedAndFiltered.map(c => {
       const r1 = c.round_1_evaluation?.[0] || c.round_1_evaluation || c || {};
       const r2 = c.round_2_evaluation?.[0] || c.round_2_evaluation || {};
       const r3 = c.round_3_evaluation?.[0] || c.round_3_evaluation || {};
@@ -145,41 +389,6 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
     document.body.removeChild(link);
   };
 
-  // Render round-specific filter options
-  const renderStatusFilterOptions = () => {
-    if (round === 3) {
-      return (
-        <>
-          <SelectItem value="ALL">All Verdicts</SelectItem>
-          <SelectItem value="Pending Verdict">Pending Verdict</SelectItem>
-          <SelectItem value="Approved">Approved</SelectItem>
-          <SelectItem value="Declined">Declined</SelectItem>
-        </>
-      );
-    }
-    if (round === 2) {
-      return (
-        <>
-          <SelectItem value="ALL">All Vettings</SelectItem>
-          <SelectItem value="Pending Vetting">Pending Vetting</SelectItem>
-          <SelectItem value="Promoted">Promoted</SelectItem>
-          <SelectItem value="Maybe">Maybe</SelectItem>
-          <SelectItem value="Declined">Declined</SelectItem>
-        </>
-      );
-    }
-    return (
-      <>
-        <SelectItem value="ALL">All Statuses</SelectItem>
-        <SelectItem value="Pending">Pending</SelectItem>
-        <SelectItem value="Yes">Yes</SelectItem>
-        <SelectItem value="Reject">Reject</SelectItem>
-        <SelectItem value="Maybe">Maybe</SelectItem>
-        <SelectItem value="Duplicate">Duplicate</SelectItem>
-      </>
-    );
-  };
-
   return (
     <div className="flex flex-col gap-4">
       {/* Filters Bar */}
@@ -194,89 +403,125 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
           />
         </div>
 
-        {/* Status Filter */}
-        <div className="w-[160px]">
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="h-10 rounded-lg">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              {renderStatusFilterOptions()}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Tier Filter */}
-        <div className="w-[120px]">
-          <Select value={tierFilter} onValueChange={setTierFilter}>
-            <SelectTrigger className="h-10 rounded-lg">
-              <SelectValue placeholder="Tier" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">All Tiers</SelectItem>
-              <SelectItem value="T1+">Tier 1+</SelectItem>
-              <SelectItem value="T1">Tier 1</SelectItem>
-              <SelectItem value="T2+">Tier 2+</SelectItem>
-              <SelectItem value="T2">Tier 2</SelectItem>
-              <SelectItem value="T3">Tier 3</SelectItem>
-              <SelectItem value="N/A">N/A</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Clan Filter */}
-        {showClanFilter && (
-          <div className="w-[130px]">
-            <Select value={clanFilter} onValueChange={setClanFilter}>
-              <SelectTrigger className="h-10 rounded-lg">
-                <SelectValue placeholder="Clan" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">All Clans</SelectItem>
-                <SelectItem value="Dharti">Dharti</SelectItem>
-                <SelectItem value="Jal">Jal</SelectItem>
-                <SelectItem value="Agni">Agni</SelectItem>
-                <SelectItem value="Vayu">Vayu</SelectItem>
-                <SelectItem value="Akash">Akash</SelectItem>
-                <SelectItem value="Bijli">Bijli</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        {Object.keys(activeFilters).length > 0 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setActiveFilters({})}
+            className="text-xs font-semibold text-[#800020] hover:bg-[#800020]/10 rounded-lg h-10 px-3 border border-transparent hover:border-[#800020]/20"
+          >
+            Reset All Filters ({Object.keys(activeFilters).length})
+          </Button>
         )}
+
         <Button 
           variant="outline"
           size="sm"
           onClick={handleExportCSV}
           className="ml-auto h-10 rounded-lg border-primary/20 text-[#800020] hover:bg-[#800020] hover:text-white"
         >
-          <Download className="mr-2 h-4 w-4" /> Export CSV
+          <Download className="mr-2 h-4 w-4" /> Export CSV ({sortedAndFiltered.length})
         </Button>
       </div>
 
       {/* Candidates Table */}
-      <div className="border rounded-xl bg-card text-card-foreground overflow-hidden shadow-sm">
-        <Table>
+      <div className="border rounded-xl bg-card text-card-foreground overflow-visible shadow-sm">
+        <Table className="relative z-10">
           <TableHeader className="bg-muted/40 border-b">
             <TableRow>
-              <TableHead className="w-[60px] font-mono text-xs font-semibold py-3">ID</TableHead>
-              <TableHead className="font-semibold">Candidate</TableHead>
-              <TableHead className="w-[100px] font-semibold">Tier</TableHead>
-              <TableHead className="w-[80px] font-semibold">Score</TableHead>
-              <TableHead className="w-[130px] font-semibold">Review Cat</TableHead>
-              <TableHead className="w-[130px] font-semibold">Status</TableHead>
-              {showClanFilter && <TableHead className="w-[100px] font-semibold">Clan</TableHead>}
+              <TableHead className="w-[85px] font-mono text-xs py-3 overflow-visible">
+                <HeaderFilter
+                  label="ID"
+                  columnKey="id"
+                  uniqueValues={uniqueIds}
+                  activeFilters={activeFilters}
+                  onApplyFilter={handleApplyFilter}
+                  sortConfig={sortConfig}
+                  onSort={handleSort}
+                  isNumeric={true}
+                />
+              </TableHead>
+              <TableHead className="overflow-visible min-w-[180px]">
+                <HeaderFilter
+                  label="Candidate"
+                  columnKey="candidate"
+                  uniqueValues={uniqueCandidates}
+                  activeFilters={activeFilters}
+                  onApplyFilter={handleApplyFilter}
+                  sortConfig={sortConfig}
+                  onSort={handleSort}
+                />
+              </TableHead>
+              <TableHead className="w-[125px] overflow-visible">
+                <HeaderFilter
+                  label="Tier"
+                  columnKey="tier"
+                  uniqueValues={uniqueTiers}
+                  activeFilters={activeFilters}
+                  onApplyFilter={handleApplyFilter}
+                  sortConfig={sortConfig}
+                  onSort={handleSort}
+                />
+              </TableHead>
+              <TableHead className="w-[110px] overflow-visible">
+                <HeaderFilter
+                  label="Score"
+                  columnKey="score"
+                  uniqueValues={uniqueScores}
+                  activeFilters={activeFilters}
+                  onApplyFilter={handleApplyFilter}
+                  sortConfig={sortConfig}
+                  onSort={handleSort}
+                  isNumeric={true}
+                />
+              </TableHead>
+              <TableHead className="w-[155px] overflow-visible">
+                <HeaderFilter
+                  label="Demo-AI Review"
+                  columnKey="review_cat"
+                  uniqueValues={uniqueReviewCats}
+                  activeFilters={activeFilters}
+                  onApplyFilter={handleApplyFilter}
+                  sortConfig={sortConfig}
+                  onSort={handleSort}
+                />
+              </TableHead>
+              <TableHead className="w-[155px] overflow-visible">
+                <HeaderFilter
+                  label="Status"
+                  columnKey="status"
+                  uniqueValues={uniqueStatuses}
+                  activeFilters={activeFilters}
+                  onApplyFilter={handleApplyFilter}
+                  sortConfig={sortConfig}
+                  onSort={handleSort}
+                />
+              </TableHead>
+              {showClanFilter && (
+                <TableHead className="w-[180px] overflow-visible">
+                  <HeaderFilter
+                    label="Tech Evaluator"
+                    columnKey="clan"
+                    uniqueValues={uniqueClans}
+                    activeFilters={activeFilters}
+                    onApplyFilter={handleApplyFilter}
+                    sortConfig={sortConfig}
+                    onSort={handleSort}
+                  />
+                </TableHead>
+              )}
               <TableHead className="w-[150px] text-right font-semibold pr-6">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.length === 0 ? (
+            {sortedAndFiltered.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={showClanFilter ? 9 : 8} className="text-center py-10 text-muted-foreground font-mono text-sm">
                   No applicants matching active selection filters.
                 </TableCell>
               </TableRow>
             ) : (
-              filtered.map((cand) => {
+              sortedAndFiltered.map((cand) => {
                 const info = getStatusInfo(cand);
                 
                 let statusBadge = (
@@ -292,8 +537,6 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
                 else if (cat === 'Good') catBadge = <Badge className="bg-blue-600 text-white border-transparent rounded-full px-2 py-0.5">Good</Badge>;
                 else if (cat === 'Need Clarity') catBadge = <Badge className="bg-orange-500 text-white border-transparent rounded-full px-2 py-0.5">Need Clarity</Badge>;
                 else if (cat === 'Invalid') catBadge = <Badge variant="destructive" className="rounded-full px-2 py-0.5">Invalid</Badge>;
-
-                const notes = getEval1(cand, 'demo_review_notes_ai') || 'No analysis available.';
 
                 return (
                   <TableRow key={cand.id} className="hover:bg-muted/20 border-b transition-colors duration-200">

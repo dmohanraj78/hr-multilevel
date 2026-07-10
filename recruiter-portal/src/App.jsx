@@ -55,22 +55,22 @@ export default function App() {
     }
   }, [candidates]);
 
-  const handleSaveScreening = async (payload) => {
+  const handleSaveReview = async (payload) => {
     try {
       await upsertRound1(selectedCandidate.id, payload.round_1_evaluation);
       setSelectedCandidate(null);
       await loadData();
     } catch (e) {
-      alert('Failed to save screening details: ' + e.message);
+      alert('Failed to save review details: ' + e.message);
     }
   };
 
-  const handleUpdateClan = async (candidateId, newClan) => {
+  const handleUpdateTechEvaluator = async (candidateId, newTechEvaluator) => {
     try {
-      await upsertRound1(candidateId, { eval_group: newClan });
+      await upsertRound1(candidateId, { eval_group: newTechEvaluator });
       await loadData();
     } catch (e) {
-      alert('Failed to update evaluation clan: ' + e.message);
+      alert('Failed to update evaluation tech evaluator: ' + e.message);
     }
   };
 
@@ -90,7 +90,7 @@ export default function App() {
       clarity: [],
       invalid: [],
       hired: [],
-      vetting: [],
+      review: [],
       declined: [],
       unscreened: []
     };
@@ -135,11 +135,11 @@ export default function App() {
       
       const isHired = r3.verdict === 'Yes';
       const isDeclined = r1.app_status === 'Reject' || r2.moved_to_round_3 === 'No' || r3.verdict === 'No';
-      const isVetting = r1.app_status === 'Yes' && !isHired && !isDeclined;
+      const isReview = r1.app_status === 'Yes' && !isHired && !isDeclined;
       const isUnscreened = !r1.app_status || r1.app_status === 'Pending';
 
       if (isHired) categories.hired.push(cand);
-      if (isVetting) categories.vetting.push(cand);
+      if (isReview) categories.review.push(cand);
       if (isDeclined) categories.declined.push(cand);
       if (isUnscreened) categories.unscreened.push(cand);
     });
@@ -178,7 +178,7 @@ export default function App() {
               <CandidateProfileDossier
                 candidate={selectedCandidate}
                 round={1}
-                onSave={handleSaveScreening}
+                onSave={handleSaveReview}
                 onCancel={() => setSelectedCandidate(null)}
               />
             )}
@@ -194,7 +194,7 @@ export default function App() {
                   activeTab === 'pipeline' ? 'bg-[#800020] text-white hover:bg-[#800020]/90' : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                <KanbanSquare className="mr-2 h-4 w-4 stroke-[1.5]" /> Screening Worksheet
+                <KanbanSquare className="mr-2 h-4 w-4 stroke-[1.5]" /> Review Worksheet
               </Button>
               <Button
                 variant={activeTab === 'overall' ? 'default' : 'ghost'}
@@ -209,15 +209,15 @@ export default function App() {
             </div>
 
             {activeTab === 'pipeline' ? (
-              // Screening Pipeline View
+              // Review Pipeline View
               <div className="flex flex-col gap-8 animate-in fade-in duration-300">
                 {/* Header Title Grid */}
                 <div className="flex flex-col gap-1">
                   <h1 className="text-3xl font-extrabold font-heading tracking-tight flex items-center gap-2">
-                    <Users className="h-7 w-7 text-[#800020] stroke-[1.5]" /> Applicant Screening Dashboard
+                    <Users className="h-7 w-7 text-[#800020] stroke-[1.5]" /> Applicant Review Dashboard
                   </h1>
                   <p className="text-sm text-muted-foreground">
-                    Monitor resume screening rates and inspect candidate scores by active role.
+                    Monitor resume review rates and inspect candidate scores by active role.
                   </p>
                 </div>
 
@@ -234,7 +234,7 @@ export default function App() {
                       <TabsTrigger value="clarity" className="font-mono text-xs px-3 py-1.5 data-[state=active]:bg-[#800020] data-[state=active]:text-white">Need Clarity ({categories.clarity.length})</TabsTrigger>
                       <TabsTrigger value="invalid" className="font-mono text-xs px-3 py-1.5 data-[state=active]:bg-[#800020] data-[state=active]:text-white">Invalid ({categories.invalid.length})</TabsTrigger>
                       <TabsTrigger value="hired" className="font-mono text-xs px-3 py-1.5 data-[state=active]:bg-green-600 data-[state=active]:text-white">Hired ({categories.hired.length})</TabsTrigger>
-                      <TabsTrigger value="vetting" className="font-mono text-xs px-3 py-1.5 data-[state=active]:bg-blue-600 data-[state=active]:text-white">In Vetting ({categories.vetting.length})</TabsTrigger>
+                      <TabsTrigger value="review" className="font-mono text-xs px-3 py-1.5 data-[state=active]:bg-blue-600 data-[state=active]:text-white">In Review ({categories.review.length})</TabsTrigger>
                       <TabsTrigger value="declined" className="font-mono text-xs px-3 py-1.5 data-[state=active]:bg-red-600 data-[state=active]:text-white">Declined ({categories.declined.length})</TabsTrigger>
                       <TabsTrigger value="unscreened" className="font-mono text-xs px-3 py-1.5 data-[state=active]:bg-amber-600 data-[state=active]:text-white">Unscreened ({categories.unscreened.length})</TabsTrigger>
                     </TabsList>
@@ -245,9 +245,9 @@ export default function App() {
                       candidates={candidates}
                       actionLabel="Review & Screen"
                       onActionClick={(cand) => setSelectedCandidate(cand)}
-                      showClanFilter={true}
+                      showTechEvaluatorFilter={true}
                       round={1}
-                      onUpdateClan={handleUpdateClan}
+                      onUpdateTechEvaluator={handleUpdateTechEvaluator}
                     />
                   </TabsContent>
 
@@ -256,9 +256,9 @@ export default function App() {
                       candidates={categories.strong}
                       actionLabel="Review & Screen"
                       onActionClick={(cand) => setSelectedCandidate(cand)}
-                      showClanFilter={true}
+                      showTechEvaluatorFilter={true}
                       round={1}
-                      onUpdateClan={handleUpdateClan}
+                      onUpdateTechEvaluator={handleUpdateTechEvaluator}
                     />
                   </TabsContent>
 
@@ -267,9 +267,9 @@ export default function App() {
                       candidates={categories.good}
                       actionLabel="Review & Screen"
                       onActionClick={(cand) => setSelectedCandidate(cand)}
-                      showClanFilter={true}
+                      showTechEvaluatorFilter={true}
                       round={1}
-                      onUpdateClan={handleUpdateClan}
+                      onUpdateTechEvaluator={handleUpdateTechEvaluator}
                     />
                   </TabsContent>
 
@@ -278,9 +278,9 @@ export default function App() {
                       candidates={categories.clarity}
                       actionLabel="Review & Screen"
                       onActionClick={(cand) => setSelectedCandidate(cand)}
-                      showClanFilter={true}
+                      showTechEvaluatorFilter={true}
                       round={1}
-                      onUpdateClan={handleUpdateClan}
+                      onUpdateTechEvaluator={handleUpdateTechEvaluator}
                     />
                   </TabsContent>
 
@@ -289,9 +289,9 @@ export default function App() {
                       candidates={categories.invalid}
                       actionLabel="Review & Screen"
                       onActionClick={(cand) => setSelectedCandidate(cand)}
-                      showClanFilter={true}
+                      showTechEvaluatorFilter={true}
                       round={1}
-                      onUpdateClan={handleUpdateClan}
+                      onUpdateTechEvaluator={handleUpdateTechEvaluator}
                     />
                   </TabsContent>
 
@@ -300,20 +300,20 @@ export default function App() {
                       candidates={categories.hired}
                       actionLabel="Review & Screen"
                       onActionClick={(cand) => setSelectedCandidate(cand)}
-                      showClanFilter={true}
+                      showTechEvaluatorFilter={true}
                       round={1}
-                      onUpdateClan={handleUpdateClan}
+                      onUpdateTechEvaluator={handleUpdateTechEvaluator}
                     />
                   </TabsContent>
 
-                  <TabsContent value="vetting" className="mt-0">
+                  <TabsContent value="review" className="mt-0">
                     <CandidateListTable
-                      candidates={categories.vetting}
+                      candidates={categories.review}
                       actionLabel="Review & Screen"
                       onActionClick={(cand) => setSelectedCandidate(cand)}
-                      showClanFilter={true}
+                      showTechEvaluatorFilter={true}
                       round={1}
-                      onUpdateClan={handleUpdateClan}
+                      onUpdateTechEvaluator={handleUpdateTechEvaluator}
                     />
                   </TabsContent>
 
@@ -322,9 +322,9 @@ export default function App() {
                       candidates={categories.declined}
                       actionLabel="Review & Screen"
                       onActionClick={(cand) => setSelectedCandidate(cand)}
-                      showClanFilter={true}
+                      showTechEvaluatorFilter={true}
                       round={1}
-                      onUpdateClan={handleUpdateClan}
+                      onUpdateTechEvaluator={handleUpdateTechEvaluator}
                     />
                   </TabsContent>
 
@@ -333,9 +333,9 @@ export default function App() {
                       candidates={categories.unscreened}
                       actionLabel="Review & Screen"
                       onActionClick={(cand) => setSelectedCandidate(cand)}
-                      showClanFilter={true}
+                      showTechEvaluatorFilter={true}
                       round={1}
-                      onUpdateClan={handleUpdateClan}
+                      onUpdateTechEvaluator={handleUpdateTechEvaluator}
                     />
                   </TabsContent>
                 </Tabs>
@@ -349,7 +349,7 @@ export default function App() {
                   onTileClick={(stage) => {
                     setActiveTab('pipeline');
                     if (stage === 'Hired') setActiveWorksheetTab('hired');
-                    else if (stage === 'Vetting') setActiveWorksheetTab('vetting');
+                    else if (stage === 'Review') setActiveWorksheetTab('review');
                     else if (stage === 'Declined') setActiveWorksheetTab('declined');
                     else if (stage === 'Pending') setActiveWorksheetTab('unscreened');
                     else if (stage === 'ALL') setActiveWorksheetTab('all');

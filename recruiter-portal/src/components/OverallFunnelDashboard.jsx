@@ -1,16 +1,197 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
-import { Download, Search, LayoutGrid, Users, CheckCircle, Flame, Award, XOctagon, HelpCircle, BarChart3, TrendingUp } from 'lucide-react';
+import { Download, Search, LayoutGrid, Users, CheckCircle, Flame, XOctagon, HelpCircle, BarChart3, TrendingUp, Filter, ArrowUp, ArrowDown } from 'lucide-react';
+
+function HeaderFilter({
+  label,
+  columnKey,
+  uniqueValues,
+  activeFilters,
+  onApplyFilter,
+  sortConfig,
+  onSort,
+  isNumeric = false
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [tempSelected, setTempSelected] = useState(null);
+  const popoverRef = useRef(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      const current = activeFilters[columnKey];
+      if (current) {
+        setTempSelected(new Set(current));
+      } else {
+        setTempSelected(new Set(uniqueValues));
+      }
+    }
+  }, [isOpen, uniqueValues, activeFilters, columnKey]);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (popoverRef.current && !popoverRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
+
+  const handleToggleValue = (val) => {
+    const next = new Set(tempSelected);
+    if (next.has(val)) {
+      next.delete(val);
+    } else {
+      next.add(val);
+    }
+    setTempSelected(next);
+  };
+
+  const handleSelectAll = () => {
+    setTempSelected(new Set(uniqueValues));
+  };
+
+  const handleClearAll = () => {
+    setTempSelected(new Set());
+  };
+
+  const handleApply = () => {
+    if (tempSelected.size === uniqueValues.length) {
+      onApplyFilter(columnKey, null);
+    } else {
+      onApplyFilter(columnKey, Array.from(tempSelected));
+    }
+    setIsOpen(false);
+  };
+
+  const handleSortAsc = () => {
+    onSort(columnKey, 'asc');
+    setIsOpen(false);
+  };
+
+  const handleSortDesc = () => {
+    onSort(columnKey, 'desc');
+    setIsOpen(false);
+  };
+
+  const hasActiveFilter = activeFilters[columnKey] !== undefined && activeFilters[columnKey] !== null;
+  const isSortedAsc = sortConfig?.key === columnKey && sortConfig?.direction === 'asc';
+  const isSortedDesc = sortConfig?.key === columnKey && sortConfig?.direction === 'desc';
+
+  const filteredUniqueValues = uniqueValues.filter(val =>
+    String(val).toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  return (
+    <div className="relative inline-flex items-center gap-1.5 group/header select-none text-left" ref={popoverRef}>
+      <span className="font-semibold text-foreground">{label}</span>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsOpen(!isOpen);
+        }}
+        className={`p-1 rounded hover:bg-muted/80 transition-all ${
+          isOpen || hasActiveFilter || isSortedAsc || isSortedDesc
+            ? 'text-[#800020] opacity-100 bg-[#800020]/10 border border-[#800020]/20'
+            : 'text-muted-foreground opacity-40 group-hover/header:opacity-100'
+        }`}
+      >
+        <Filter className="h-3.5 w-3.5 stroke-[2]" />
+      </button>
+
+      {isOpen && (
+        <div className="absolute left-0 top-full mt-2 w-64 bg-card border rounded-xl shadow-xl z-[999] text-card-foreground p-3 font-normal text-sm normal-case flex flex-col gap-3">
+          {/* Sorting */}
+          <div className="flex flex-col gap-1">
+            <button
+              onClick={handleSortAsc}
+              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left hover:bg-muted transition-colors w-full font-medium ${
+                isSortedAsc ? 'text-[#800020] bg-[#800020]/5 font-semibold' : ''
+              }`}
+            >
+              <ArrowUp className="h-4 w-4 text-[#800020]" />
+              Sort {isNumeric ? 'Smallest to Largest' : 'A to Z'}
+            </button>
+            <button
+              onClick={handleSortDesc}
+              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left hover:bg-muted transition-colors w-full font-medium ${
+                isSortedDesc ? 'text-[#800020] bg-[#800020]/5 font-semibold' : ''
+              }`}
+            >
+              <ArrowDown className="h-4 w-4 text-[#800020]" />
+              Sort {isNumeric ? 'Largest to Smallest' : 'Z to A'}
+            </button>
+          </div>
+
+          <div className="border-t my-0.5" />
+
+          {/* Search values */}
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              placeholder="Search values..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-8 h-8 text-xs rounded-md"
+            />
+          </div>
+
+          {/* Quick selectors */}
+          <div className="flex items-center gap-2 text-xs font-semibold px-1">
+            <button onClick={handleSelectAll} className="text-[#800020] hover:underline">Select All</button>
+            <span className="text-muted-foreground">·</span>
+            <button onClick={handleClearAll} className="text-[#800020] hover:underline">Clear</button>
+          </div>
+
+          {/* Checkboxes List */}
+          <div className="max-h-40 overflow-y-auto border rounded-lg p-2 flex flex-col gap-1.5 bg-muted/20">
+            {filteredUniqueValues.length === 0 ? (
+              <div className="text-xs text-muted-foreground text-center py-4">No matching values</div>
+            ) : (
+              filteredUniqueValues.map((val) => {
+                const isChecked = tempSelected?.has(val);
+                return (
+                  <label key={val} className="flex items-center gap-2 px-1 py-0.5 hover:bg-muted/50 rounded cursor-pointer text-xs">
+                    <input
+                      type="checkbox"
+                      checked={isChecked || false}
+                      onChange={() => handleToggleValue(val)}
+                      className="rounded border-muted text-[#800020] focus:ring-[#800020] h-3.5 w-3.5 cursor-pointer"
+                    />
+                    <span className="truncate text-foreground font-medium">{String(val)}</span>
+                  </label>
+                );
+              })
+            )}
+          </div>
+
+          {/* Action Footer */}
+          <div className="flex items-center justify-end gap-2 border-t pt-2 mt-1">
+            <Button size="xs" variant="ghost" onClick={() => setIsOpen(false)} className="h-8 rounded-lg text-xs">
+              Cancel
+            </Button>
+            <Button size="xs" onClick={handleApply} className="bg-[#800020] hover:bg-[#800020]/90 text-white h-8 rounded-lg text-xs font-semibold px-3">
+              Apply
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function OverallFunnelDashboard({ globalData, onViewCandidate, onTileClick }) {
   const [search, setSearch] = useState('');
-  const [funnelStageFilter, setFunnelStageFilter] = useState('ALL');
-  const [clanFilter, setClanFilter] = useState('ALL');
-  const [tierFilter, setTierFilter] = useState('ALL');
+  const [activeFilters, setActiveFilters] = useState({});
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
 
   // Helper selectors
   const getR1 = (c) => {
@@ -39,12 +220,12 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
 
     if (r3.verdict === 'Yes') return 'Hired';
     if (r3.verdict === 'No') return 'Declined (Offer)';
-    if (r2.moved_to_round_3 === 'No') return 'Declined (Vetting)';
-    if (r1.app_status === 'Reject') return 'Declined (Screening)';
-    if (r1.app_status === 'Yes') return 'Tech Vetting';
-    if (r1.app_status === 'Maybe') return 'Maybe (Screened)';
+    if (r2.moved_to_round_3 === 'No') return 'Declined (Review)';
+    if (r1.app_status === 'Reject') return 'Declined (Review)';
+    if (r1.app_status === 'Yes') return 'Tech Review';
+    if (r1.app_status === 'Maybe') return 'Maybe (Reviewed)';
     if (r1.app_status === 'Duplicate') return 'Duplicate';
-    return 'Pending Screening';
+    return 'Pending Review';
   };
 
   // 1. Calculate Metrics
@@ -60,8 +241,8 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       const stage = getFunnelStage(c);
       if (stage === 'Hired') hired++;
       else if (stage.startsWith('Declined')) rejected++;
-      else if (stage === 'Tech Vetting') vetting++;
-      else if (stage === 'Pending Screening') pendingScreening++;
+      else if (stage === 'Tech Review') vetting++;
+      else if (stage === 'Pending Review') pendingScreening++;
       else if (stage.startsWith('Maybe')) maybeCount++;
     });
 
@@ -70,11 +251,8 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
 
   // 2. Chart Calculations
   const chartData = useMemo(() => {
-    // Clans distribution
     const clans = { Dharti: 0, Jal: 0, Agni: 0, Vayu: 0, Akash: 0, Bijli: 0, Unassigned: 0 };
-    // Tiers distribution
     const tiers = { 'T1+': 0, 'T1': 0, 'T2+': 0, 'T2': 0, 'T3': 0, 'N/A': 0 };
-    // Score distributions (brackets of 5, max 30)
     const scores = { '0-5': 0, '6-10': 0, '11-15': 0, '16-20': 0, '21-25': 0, '26-30': 0 };
 
     globalData.forEach(c => {
@@ -100,16 +278,142 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     return { clans, tiers, scores };
   }, [globalData]);
 
-  // 3. Export CSV Data
+  // Header field value extractors
+  const getFieldVal = {
+    id: (c) => c.id,
+    candidate: (c) => c.full_name || 'Anonymous Applicant',
+    university: (c) => c.ug_university || '-',
+    tier: (c) => getR1(c).tier || 'N/A',
+    score: (c) => parseFloat(getR1(c).total || 0),
+    clan: (c) => getR1(c).eval_group || 'Unassigned',
+    funnelStage: (c) => getFunnelStage(c)
+  };
+
+  // Helpers to get unique lists
+  const getUniqueValues = (columnKey, extractor) => {
+    const vals = globalData.map(extractor);
+    return Array.from(new Set(vals)).sort((a, b) => {
+      if (typeof a === 'number' && typeof b === 'number') return a - b;
+      return String(a).localeCompare(String(b));
+    });
+  };
+
+  const uniqueIds = useMemo(() => getUniqueValues('id', getFieldVal.id), [globalData]);
+  const uniqueCandidates = useMemo(() => getUniqueValues('candidate', getFieldVal.candidate), [globalData]);
+  const uniqueUniversities = useMemo(() => getUniqueValues('university', getFieldVal.university), [globalData]);
+  const uniqueTiers = useMemo(() => getUniqueValues('tier', getFieldVal.tier), [globalData]);
+  const uniqueScores = useMemo(() => getUniqueValues('score', getFieldVal.score), [globalData]);
+  const uniqueClans = useMemo(() => getUniqueValues('clan', getFieldVal.clan), [globalData]);
+  const uniqueStages = useMemo(() => getUniqueValues('funnelStage', getFieldVal.funnelStage), [globalData]);
+
+  const handleApplyFilter = (columnKey, selectedValues) => {
+    setActiveFilters(prev => {
+      const next = { ...prev };
+      if (selectedValues === null) {
+        delete next[columnKey];
+      } else {
+        next[columnKey] = selectedValues;
+      }
+      return next;
+    });
+  };
+
+  const handleSort = (columnKey, direction) => {
+    setSortConfig({ key: columnKey, direction });
+  };
+
+  // Filtering logic
+  const filteredApplicants = useMemo(() => {
+    return globalData.filter(c => {
+      const r1 = getR1(c);
+      const stage = getFunnelStage(c);
+
+      // Search Query
+      if (search) {
+        const q = search.toLowerCase();
+        const nameMatch = (c.full_name || '').toLowerCase().includes(q);
+        const emailMatch = (c.email || '').toLowerCase().includes(q);
+        const collegeMatch = (c.ug_university || '').toLowerCase().includes(q);
+        const idMatch = c.id?.toString().includes(q);
+        if (!nameMatch && !emailMatch && !collegeMatch && !idMatch) return false;
+      }
+
+      // Header filters
+      if (activeFilters.id && !activeFilters.id.includes(c.id)) return false;
+      if (activeFilters.candidate && !activeFilters.candidate.includes(c.full_name || 'Anonymous Applicant')) return false;
+      if (activeFilters.university && !activeFilters.university.includes(c.ug_university || '-')) return false;
+      if (activeFilters.tier && !activeFilters.tier.includes(r1.tier || 'N/A')) return false;
+      if (activeFilters.score && !activeFilters.score.includes(parseFloat(r1.total || 0))) return false;
+      if (activeFilters.clan && !activeFilters.clan.includes(r1.eval_group || 'Unassigned')) return false;
+      if (activeFilters.funnelStage && !activeFilters.funnelStage.includes(stage)) return false;
+
+      return true;
+    });
+  }, [globalData, search, activeFilters]);
+
+  // Sorting logic
+  const sortedAndFiltered = useMemo(() => {
+    if (!sortConfig.key) return filteredApplicants;
+
+    return [...filteredApplicants].sort((a, b) => {
+      let valA = getFieldVal[sortConfig.key](a);
+      let valB = getFieldVal[sortConfig.key](b);
+
+      if (valA === undefined || valA === null) return 1;
+      if (valB === undefined || valB === null) return -1;
+
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        return sortConfig.direction === 'asc' ? valA - valB : valB - valA;
+      }
+
+      return sortConfig.direction === 'asc'
+        ? String(valA).localeCompare(String(valB))
+        : String(valB).localeCompare(String(valA));
+    });
+  }, [filteredApplicants, sortConfig]);
+
+  // Tile Clicks Map to Header Filter
+  const handleTileClick = (stageType) => {
+    setActiveFilters(prev => {
+      const next = { ...prev };
+      if (stageType === 'ALL') {
+        delete next.funnelStage;
+      } else if (stageType === 'Hired') {
+        next.funnelStage = ['Hired'];
+      } else if (stageType === 'Vetting') {
+        next.funnelStage = ['Tech Review'];
+      } else if (stageType === 'Declined') {
+        next.funnelStage = ['Declined (Offer)', 'Declined (Review)'];
+      } else if (stageType === 'Pending') {
+        next.funnelStage = ['Pending Review'];
+      }
+      return next;
+    });
+    onTileClick?.(stageType);
+  };
+
+  const getActiveTile = () => {
+    const fs = activeFilters.funnelStage;
+    if (!fs) return 'ALL';
+    if (fs.includes('Hired') && fs.length === 1) return 'Hired';
+    if (fs.includes('Tech Review') && fs.length === 1) return 'Vetting';
+    if (fs.includes('Pending Review') && fs.length === 1) return 'Pending';
+    if (fs.includes('Declined (Offer)')) return 'Declined';
+    return 'CUSTOM';
+  };
+
+  const currentActiveTile = getActiveTile();
+
+  // Export CSV
   const exportToCSV = () => {
     const headers = [
       'Applicant ID', 'Full Name', 'Email', 'Role', 'UG University', 
-      'R1 Screening Status', 'R1 Assigned Clan', 'R1 AI Score', 'R1 Tier', 'R1 Comments',
+      'R1 Review Status', 'R1 Assigned Tech Evaluator', 'R1 AI Score', 'R1 Tier', 'R1 Comments',
       'R2 Start Date', 'R2 Concerns/Restrictions', 'R2 Tech Depth', 'R2 Solves Biz?', 'R2 Tech Stack', 'R2 Latency/Cost considered', 'R2 Decision', 'R2 Comments',
       'R3 Verdict', 'R3 Executive Comments'
     ];
 
-    const rows = filteredApplicants.map(c => {
+    const rows = sortedAndFiltered.map(c => {
       const r1 = getR1(c);
       const r2 = getR2(c);
       const r3 = getR3(c);
@@ -150,39 +454,6 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     document.body.removeChild(link);
   };
 
-  // 4. Filtering applicants
-  const filteredApplicants = useMemo(() => {
-    return globalData.filter(c => {
-      const r1 = getR1(c);
-      const stage = getFunnelStage(c);
-
-      // Search Query
-      const q = search.toLowerCase();
-      const nameMatch = (c.full_name || '').toLowerCase().includes(q);
-      const emailMatch = (c.email || '').toLowerCase().includes(q);
-      const collegeMatch = (c.ug_university || '').toLowerCase().includes(q);
-      const idMatch = c.id?.toString().includes(q);
-      if (search && !nameMatch && !emailMatch && !collegeMatch && !idMatch) return false;
-
-      // Funnel Stage Filter
-      if (funnelStageFilter !== 'ALL') {
-        if (funnelStageFilter === 'Hired' && stage !== 'Hired') return false;
-        if (funnelStageFilter === 'Declined' && !stage.startsWith('Declined')) return false;
-        if (funnelStageFilter === 'Vetting' && stage !== 'Tech Vetting') return false;
-        if (funnelStageFilter === 'Pending' && stage !== 'Pending Screening') return false;
-        if (funnelStageFilter === 'Maybe' && !stage.startsWith('Maybe')) return false;
-      }
-
-      // Clan Filter
-      if (clanFilter !== 'ALL' && (r1.eval_group || 'Unassigned') !== clanFilter) return false;
-
-      // Tier Filter
-      if (tierFilter !== 'ALL' && (r1.tier || 'N/A') !== tierFilter) return false;
-
-      return true;
-    });
-  }, [globalData, search, funnelStageFilter, clanFilter, tierFilter]);
-
   return (
     <div className="flex flex-col gap-8">
       
@@ -197,7 +468,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
           </p>
         </div>
         <Button onClick={exportToCSV} className="bg-[#800020] hover:bg-[#800020]/90 text-white rounded-xl shadow-md shrink-0">
-          <Download className="mr-2 h-4 w-4 stroke-[1.5]" /> Export Filtered ({filteredApplicants.length}) Records (CSV)
+          <Download className="mr-2 h-4 w-4 stroke-[1.5]" /> Export Filtered ({sortedAndFiltered.length}) Records (CSV)
         </Button>
       </div>
 
@@ -206,9 +477,9 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
         
         {/* Total Tile */}
         <Card 
-          onClick={() => { setFunnelStageFilter('ALL'); onTileClick?.('ALL'); }}
+          onClick={() => handleTileClick('ALL')}
           className={`rounded-2xl border shadow-sm hover:shadow-md transition-all cursor-pointer hover:scale-[1.02] ${
-            funnelStageFilter === 'ALL' ? 'ring-2 ring-[#800020] border-transparent' : ''
+            currentActiveTile === 'ALL' ? 'ring-2 ring-[#800020] border-transparent' : ''
           }`}
         >
           <CardContent className="pt-4 pb-3 flex flex-col gap-1">
@@ -223,9 +494,9 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
 
         {/* Hired Tile */}
         <Card 
-          onClick={() => { setFunnelStageFilter('Hired'); onTileClick?.('Hired'); }}
+          onClick={() => handleTileClick('Hired')}
           className={`rounded-2xl border border-green-500/20 bg-green-500/5 shadow-sm hover:shadow-md transition-all cursor-pointer hover:scale-[1.02] ${
-            funnelStageFilter === 'Hired' ? 'ring-2 ring-green-500 border-transparent' : ''
+            currentActiveTile === 'Hired' ? 'ring-2 ring-green-500 border-transparent' : ''
           }`}
         >
           <CardContent className="pt-4 pb-3 flex flex-col gap-1">
@@ -238,28 +509,28 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
           </CardContent>
         </Card>
 
-        {/* In Vetting Tile */}
+        {/* In Review Tile */}
         <Card 
-          onClick={() => { setFunnelStageFilter('Vetting'); onTileClick?.('Vetting'); }}
+          onClick={() => handleTileClick('Vetting')}
           className={`rounded-2xl border border-blue-500/20 bg-blue-500/5 shadow-sm hover:shadow-md transition-all cursor-pointer hover:scale-[1.02] ${
-            funnelStageFilter === 'Vetting' ? 'ring-2 ring-blue-500 border-transparent' : ''
+            currentActiveTile === 'Vetting' ? 'ring-2 ring-blue-500 border-transparent' : ''
           }`}
         >
           <CardContent className="pt-4 pb-3 flex flex-col gap-1">
-            <span className="text-xs font-mono text-blue-700 dark:text-blue-400 uppercase tracking-wider block">In Vetting</span>
+            <span className="text-xs font-mono text-blue-700 dark:text-blue-400 uppercase tracking-wider block">In Review</span>
             <div className="flex items-baseline justify-between mt-1">
               <span className="text-3xl font-extrabold font-mono text-blue-600 dark:text-blue-400">{stats.vetting}</span>
               <Flame className="h-5 w-5 text-blue-500 stroke-[1.5]" />
             </div>
-            <span className="text-[10px] text-blue-600/80">Screening passed</span>
+            <span className="text-[10px] text-blue-600/80">Review passed</span>
           </CardContent>
         </Card>
 
         {/* Rejected Tile */}
         <Card 
-          onClick={() => { setFunnelStageFilter('Declined'); onTileClick?.('Declined'); }}
+          onClick={() => handleTileClick('Declined')}
           className={`rounded-2xl border border-red-500/20 bg-red-500/5 shadow-sm hover:shadow-md transition-all cursor-pointer hover:scale-[1.02] ${
-            funnelStageFilter === 'Declined' ? 'ring-2 ring-red-500 border-transparent' : ''
+            currentActiveTile === 'Declined' ? 'ring-2 ring-red-500 border-transparent' : ''
           }`}
         >
           <CardContent className="pt-4 pb-3 flex flex-col gap-1">
@@ -272,15 +543,15 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
           </CardContent>
         </Card>
 
-        {/* Pending Screening Tile */}
+        {/* Pending Review Tile */}
         <Card 
-          onClick={() => { setFunnelStageFilter('Pending'); onTileClick?.('Pending'); }}
+          onClick={() => handleTileClick('Pending')}
           className={`rounded-2xl border border-amber-500/20 bg-amber-500/5 shadow-sm hover:shadow-md transition-all cursor-pointer hover:scale-[1.02] ${
-            funnelStageFilter === 'Pending' ? 'ring-2 ring-amber-500 border-transparent' : ''
+            currentActiveTile === 'Pending' ? 'ring-2 ring-amber-500 border-transparent' : ''
           }`}
         >
           <CardContent className="pt-4 pb-3 flex flex-col gap-1">
-            <span className="text-xs font-mono text-amber-700 dark:text-amber-400 uppercase tracking-wider block">Unscreened</span>
+            <span className="text-xs font-mono text-amber-700 dark:text-amber-400 uppercase tracking-wider block">Pending Review</span>
             <div className="flex items-baseline justify-between mt-1">
               <span className="text-3xl font-extrabold font-mono text-amber-600 dark:text-amber-400">{stats.pendingScreening}</span>
               <HelpCircle className="h-5 w-5 text-amber-500 stroke-[1.5]" />
@@ -305,7 +576,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
           <CardContent className="pt-4 flex flex-col gap-4">
             {[
               { label: '1. Total Submissions', count: stats.total, percent: 100, color: 'bg-slate-400' },
-              { label: '2. Passed Screening', count: stats.total - stats.pendingScreening - stats.rejected, percent: Math.round(((stats.total - stats.pendingScreening - stats.rejected) / (stats.total || 1)) * 100), color: 'bg-blue-500' },
+              { label: '2. Passed Review', count: stats.total - stats.pendingScreening - stats.rejected, percent: Math.round(((stats.total - stats.pendingScreening - stats.rejected) / (stats.total || 1)) * 100), color: 'bg-blue-500' },
               { label: '3. Promoted to R3', count: globalData.filter(c => {
                   const r2 = getR2(c);
                   return r2.moved_to_round_3 === 'Yes' || r2.moved_to_round_3 === 'Maybe';
@@ -335,9 +606,9 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
         <Card className="rounded-[1.5rem] border shadow-sm lg:col-span-1">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-bold flex items-center gap-2">
-              <BarChart3 className="h-4.5 w-4.5 text-[#800020]" /> Clan Workloads
+              <BarChart3 className="h-4.5 w-4.5 text-[#800020]" /> Tech Evaluator Workloads
             </CardTitle>
-            <CardDescription className="text-xs">Candidates assigned to review groups</CardDescription>
+            <CardDescription className="text-xs">Candidates assigned to tech evaluators</CardDescription>
           </CardHeader>
           <CardContent className="pt-4 flex items-end justify-between gap-2 h-44">
             {Object.entries(chartData.clans).map(([clan, count]) => {
@@ -415,91 +686,123 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
             />
           </div>
 
-          <div className="w-[180px]">
-            <Select value={funnelStageFilter} onValueChange={setFunnelStageFilter}>
-              <SelectTrigger className="h-10 rounded-lg">
-                <SelectValue placeholder="Funnel Stage" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">All Funnel Stages</SelectItem>
-                <SelectItem value="Pending">Unscreened</SelectItem>
-                <SelectItem value="Vetting">Tech Vetting</SelectItem>
-                <SelectItem value="Hired">Hired (Approved)</SelectItem>
-                <SelectItem value="Declined">Declined (Rejected)</SelectItem>
-                <SelectItem value="Maybe">Maybe</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="w-[140px]">
-            <Select value={clanFilter} onValueChange={setClanFilter}>
-              <SelectTrigger className="h-10 rounded-lg">
-                <SelectValue placeholder="Clan" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">All Clans</SelectItem>
-                <SelectItem value="Dharti">Dharti</SelectItem>
-                <SelectItem value="Jal">Jal</SelectItem>
-                <SelectItem value="Agni">Agni</SelectItem>
-                <SelectItem value="Vayu">Vayu</SelectItem>
-                <SelectItem value="Akash">Akash</SelectItem>
-                <SelectItem value="Bijli">Bijli</SelectItem>
-                <SelectItem value="Unassigned">Unassigned</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="w-[120px]">
-            <Select value={tierFilter} onValueChange={setTierFilter}>
-              <SelectTrigger className="h-10 rounded-lg">
-                <SelectValue placeholder="Tier" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">All Tiers</SelectItem>
-                <SelectItem value="T1+">Tier 1+</SelectItem>
-                <SelectItem value="T1">Tier 1</SelectItem>
-                <SelectItem value="T2+">Tier 2+</SelectItem>
-                <SelectItem value="T2">Tier 2</SelectItem>
-                <SelectItem value="T3">Tier 3</SelectItem>
-                <SelectItem value="N/A">N/A</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          {Object.keys(activeFilters).length > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setActiveFilters({})}
+              className="text-xs font-semibold text-[#800020] hover:bg-[#800020]/10 rounded-lg h-10 px-3 border border-transparent hover:border-[#800020]/20"
+            >
+              Reset All Filters ({Object.keys(activeFilters).length})
+            </Button>
+          )}
         </div>
 
         {/* Data Grid */}
-        <div className="border rounded-xl bg-card text-card-foreground overflow-hidden shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
+        <div className="border rounded-xl bg-card text-card-foreground overflow-visible shadow-sm">
+          <div className="overflow-x-auto overflow-visible">
+            <table className="w-full text-sm text-left relative z-10">
               <thead className="bg-muted/40 border-b text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 <tr>
-                  <th className="py-3.5 px-4 font-mono w-[60px]">ID</th>
-                  <th className="py-3.5 px-4">Applicant Details</th>
-                  <th className="py-3.5 px-4">University</th>
-                  <th className="py-3.5 px-4 w-[110px]">Screen Tier</th>
-                  <th className="py-3.5 px-4 w-[90px] text-center">AI Score</th>
-                  <th className="py-3.5 px-4 w-[140px]">Assigned Clan</th>
-                  <th className="py-3.5 px-4 w-[160px]">Funnel Stage</th>
-                  <th className="py-3.5 px-4 w-[120px] text-right pr-6">Action</th>
+                  <th className="py-3.5 px-4 font-mono w-[85px] overflow-visible">
+                    <HeaderFilter
+                      label="ID"
+                      columnKey="id"
+                      uniqueValues={uniqueIds}
+                      activeFilters={activeFilters}
+                      onApplyFilter={handleApplyFilter}
+                      sortConfig={sortConfig}
+                      onSort={handleSort}
+                      isNumeric={true}
+                    />
+                  </th>
+                  <th className="py-3.5 px-4 overflow-visible min-w-[180px]">
+                    <HeaderFilter
+                      label="Applicant"
+                      columnKey="candidate"
+                      uniqueValues={uniqueCandidates}
+                      activeFilters={activeFilters}
+                      onApplyFilter={handleApplyFilter}
+                      sortConfig={sortConfig}
+                      onSort={handleSort}
+                    />
+                  </th>
+                  <th className="py-3.5 px-4 overflow-visible min-w-[180px]">
+                    <HeaderFilter
+                      label="University"
+                      columnKey="university"
+                      uniqueValues={uniqueUniversities}
+                      activeFilters={activeFilters}
+                      onApplyFilter={handleApplyFilter}
+                      sortConfig={sortConfig}
+                      onSort={handleSort}
+                    />
+                  </th>
+                  <th className="py-3.5 px-4 w-[130px] overflow-visible">
+                    <HeaderFilter
+                      label="Tier"
+                      columnKey="tier"
+                      uniqueValues={uniqueTiers}
+                      activeFilters={activeFilters}
+                      onApplyFilter={handleApplyFilter}
+                      sortConfig={sortConfig}
+                      onSort={handleSort}
+                    />
+                  </th>
+                  <th className="py-3.5 px-4 w-[115px] overflow-visible text-center">
+                    <HeaderFilter
+                      label="Score"
+                      columnKey="score"
+                      uniqueValues={uniqueScores}
+                      activeFilters={activeFilters}
+                      onApplyFilter={handleApplyFilter}
+                      sortConfig={sortConfig}
+                      onSort={handleSort}
+                      isNumeric={true}
+                    />
+                  </th>
+                  <th className="py-3.5 px-4 w-[185px] overflow-visible">
+                    <HeaderFilter
+                      label="Tech Evaluator"
+                      columnKey="clan"
+                      uniqueValues={uniqueClans}
+                      activeFilters={activeFilters}
+                      onApplyFilter={handleApplyFilter}
+                      sortConfig={sortConfig}
+                      onSort={handleSort}
+                    />
+                  </th>
+                  <th className="py-3.5 px-4 w-[185px] overflow-visible">
+                    <HeaderFilter
+                      label="Stage"
+                      columnKey="funnelStage"
+                      uniqueValues={uniqueStages}
+                      activeFilters={activeFilters}
+                      onApplyFilter={handleApplyFilter}
+                      sortConfig={sortConfig}
+                      onSort={handleSort}
+                    />
+                  </th>
+                  <th className="py-3.5 px-4 w-[120px] text-right pr-6 font-semibold uppercase tracking-wider text-muted-foreground">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {filteredApplicants.length === 0 ? (
+                {sortedAndFiltered.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="text-center py-10 text-muted-foreground font-mono text-sm">
                       No applicants matching selection.
                     </td>
                   </tr>
                 ) : (
-                  filteredApplicants.slice(0, 100).map((c) => {
+                  sortedAndFiltered.slice(0, 100).map((c) => {
                     const r1 = getR1(c);
                     const stage = getFunnelStage(c);
 
                     let stageBadge = <Badge variant="secondary" className="rounded-full px-2.5">{stage}</Badge>;
                     if (stage === 'Hired') stageBadge = <Badge className="bg-green-600 hover:bg-green-700 text-white rounded-full px-2.5 border-transparent">Hired</Badge>;
                     else if (stage.startsWith('Declined')) stageBadge = <Badge variant="destructive" className="rounded-full px-2.5">{stage}</Badge>;
-                    else if (stage === 'Tech Vetting') stageBadge = <Badge className="bg-blue-600 text-white rounded-full px-2.5 border-transparent">Tech Vetting</Badge>;
-                    else if (stage === 'Pending Screening') stageBadge = <Badge className="bg-amber-500 text-white rounded-full px-2.5 border-transparent">Unscreened</Badge>;
+                    else if (stage === 'Tech Review') stageBadge = <Badge className="bg-blue-600 text-white rounded-full px-2.5 border-transparent">Tech Review</Badge>;
+                    else if (stage === 'Pending Review') stageBadge = <Badge className="bg-amber-500 text-white rounded-full px-2.5 border-transparent">Pending Review</Badge>;
 
                     return (
                       <tr key={c.id} className="hover:bg-muted/10 transition-colors duration-150">
@@ -540,9 +843,9 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
             </table>
           </div>
           
-          {filteredApplicants.length > 100 && (
+          {sortedAndFiltered.length > 100 && (
             <div className="p-3 border-t bg-muted/20 text-center text-xs font-mono text-muted-foreground">
-              Showing first 100 results of {filteredApplicants.length} applicants matching filters.
+              Showing first 100 results of {sortedAndFiltered.length} applicants matching filters.
             </div>
           )}
         </div>

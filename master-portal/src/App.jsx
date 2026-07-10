@@ -217,10 +217,10 @@ export default function App() {
 
     const isHired = r3.verdict === 'Yes';
     const isDeclined = r1.app_status === 'Reject' || r2.moved_to_round_3 === 'No' || r3.verdict === 'No';
-    const isVetting = r1.app_status === 'Yes' && !isHired && !isDeclined;
+    const isReview = r1.app_status === 'Yes' && !isHired && !isDeclined;
     
     let baseUrl = 'https://recruiter-portal-one.vercel.app';
-    if (isVetting) {
+    if (isReview) {
       baseUrl = 'https://evaluator-portal-mu.vercel.app';
     } else if (r2.moved_to_round_3 === 'Yes' || r2.moved_to_round_3 === 'Maybe') {
       baseUrl = 'https://executive-portal-nine.vercel.app';
@@ -273,12 +273,12 @@ export default function App() {
     }
   };
 
-  const handleUpdateClan = async (candidateId, newClan) => {
+  const handleUpdateTechEvaluator = async (candidateId, newTechEvaluator) => {
     try {
-      await upsertRound1(candidateId, { eval_group: newClan });
+      await upsertRound1(candidateId, { eval_group: newTechEvaluator });
       await loadData();
     } catch (e) {
-      alert('Failed to update evaluation clan: ' + e.message);
+      alert('Failed to update evaluation tech evaluator: ' + e.message);
     }
   };
 
@@ -327,10 +327,10 @@ export default function App() {
     }).length,
   };
 
-  const clansSnapshot = ['Dharti', 'Jal', 'Agni', 'Vayu', 'Akash', 'Bijli'].map(clanId => {
-    const assigned = globalData.filter(c => getR1(c).eval_group === clanId);
+  const techEvaluatorsSnapshot = ['Dharti', 'Jal', 'Agni', 'Vayu', 'Akash', 'Bijli'].map(techEvaluatorId => {
+    const assigned = globalData.filter(c => getR1(c).eval_group === techEvaluatorId);
     return {
-      name: clanId,
+      name: techEvaluatorId,
       total: assigned.length,
       pending: assigned.filter(c => getR1(c).app_status === 'Yes' && !getR2(c).moved_to_round_3).length,
       promoted: assigned.filter(c => {
@@ -341,7 +341,7 @@ export default function App() {
     };
   });
 
-  const clanColors = {
+  const techEvaluatorColors = {
     Dharti: { border: 'border-t-emerald-500', text: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-500/5' },
     Jal: { border: 'border-t-blue-500', text: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-500/5' },
     Agni: { border: 'border-t-red-500', text: 'text-red-600 dark:text-red-400', bg: 'bg-red-500/5' },
@@ -407,7 +407,7 @@ export default function App() {
                     activeTab === 'r1' ? 'bg-[#800020] text-white hover:bg-[#800020]/90' : 'text-muted-foreground'
                   }`}
                 >
-                  <Users className="mr-2 h-4 w-4 stroke-[1.5]" /> R1: Recruiter Screening
+                  <Users className="mr-2 h-4 w-4 stroke-[1.5]" /> R1: Recruiter Review
                 </Button>
                 
                 <Button
@@ -418,7 +418,7 @@ export default function App() {
                     activeTab === 'r2' ? 'bg-[#800020] text-white hover:bg-[#800020]/90' : 'text-muted-foreground'
                   }`}
                 >
-                  <Flame className="mr-2 h-4 w-4 stroke-[1.5]" /> R2: Clan Technical Vetting
+                  <Flame className="mr-2 h-4 w-4 stroke-[1.5]" /> R2: Tech Evaluator Technical Review
                 </Button>
                 
                 <Button
@@ -440,7 +440,7 @@ export default function App() {
                     activeTab === 'university' ? 'bg-[#800020] text-white hover:bg-[#800020]/90' : 'text-muted-foreground'
                   }`}
                 >
-                  <GraduationCap className="mr-2 h-4 w-4 stroke-[1.5]" /> University Vetting
+                  <GraduationCap className="mr-2 h-4 w-4 stroke-[1.5]" /> University Review
                 </Button>
               </div>
 
@@ -461,7 +461,7 @@ export default function App() {
                   onTileClick={(stage) => {
                     if (stage === 'Hired' || stage === 'Declined') {
                       setActiveTab('r3');
-                    } else if (stage === 'Vetting') {
+                    } else if (stage === 'Review') {
                       setActiveTab('r2');
                     } else if (stage === 'Pending') {
                       setActiveTab('r1');
@@ -477,7 +477,7 @@ export default function App() {
                   <Card className="rounded-[1.5rem] border shadow-sm bg-card text-card-foreground">
                     <CardHeader className="pb-3 border-b">
                       <CardTitle className="text-base font-bold flex items-center justify-between">
-                        <span>Round 1: Recruiter Screening</span>
+                        <span>Round 1: Recruiter Review</span>
                         <Badge variant="outline" className="font-mono text-[10px] px-2 py-0.5 border-[#800020]/30 text-[#800020] bg-[#800020]/5">R1 Queue</Badge>
                       </CardTitle>
                     </CardHeader>
@@ -495,7 +495,7 @@ export default function App() {
                         <strong className="font-mono text-green-600 font-extrabold">{r1Stats.passed}</strong>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Rejected (Screening):</span>
+                        <span className="text-muted-foreground">Rejected (Review):</span>
                         <strong className="font-mono text-red-600 font-extrabold">{r1Stats.rejected}</strong>
                       </div>
                     </CardContent>
@@ -505,17 +505,17 @@ export default function App() {
                   <Card className="rounded-[1.5rem] border shadow-sm bg-card text-card-foreground">
                     <CardHeader className="pb-3 border-b">
                       <CardTitle className="text-base font-bold flex items-center justify-between">
-                        <span>Round 2: Tech Clan Vetting</span>
+                        <span>Round 2: Tech Tech Evaluator Review</span>
                         <Badge variant="outline" className="font-mono text-[10px] px-2 py-0.5 border-blue-500/30 text-blue-600 bg-blue-500/5">R2 Queue</Badge>
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="pt-4 flex flex-col gap-3 text-sm">
                       <div className="flex justify-between border-b pb-2">
-                        <span className="text-muted-foreground">Total in Vetting:</span>
+                        <span className="text-muted-foreground">Total in Review:</span>
                         <strong className="font-mono text-foreground font-extrabold">{r2Stats.total}</strong>
                       </div>
                       <div className="flex justify-between border-b pb-2">
-                        <span className="text-muted-foreground">Pending Vetting:</span>
+                        <span className="text-muted-foreground">Pending Review:</span>
                         <strong className="font-mono text-amber-600 font-extrabold">{r2Stats.pending}</strong>
                       </div>
                       <div className="flex justify-between border-b pb-2">
@@ -523,7 +523,7 @@ export default function App() {
                         <strong className="font-mono text-green-600 font-extrabold">{r2Stats.promoted}</strong>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Declined (Vetting):</span>
+                        <span className="text-muted-foreground">Declined (Review):</span>
                         <strong className="font-mono text-red-600 font-extrabold">{r2Stats.declined}</strong>
                       </div>
                     </CardContent>
@@ -558,41 +558,41 @@ export default function App() {
                   </Card>
                 </div>
 
-                {/* Clan Workload Status Snapshots */}
+                {/* Tech Evaluator Workload Status Snapshots */}
                 <div className="flex flex-col gap-1 mt-2">
-                  <h3 className="text-base font-bold text-foreground">Clan Vetting Workload Snapshots</h3>
-                  <p className="text-xs text-muted-foreground">Real-time workloads and status breakdowns for each technical review clan.</p>
+                  <h3 className="text-base font-bold text-foreground">Tech Evaluator Review Workload Snapshots</h3>
+                  <p className="text-xs text-muted-foreground">Real-time workloads and status breakdowns for each technical review techEvaluator.</p>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                  {clansSnapshot.map(clan => {
-                    const colors = clanColors[clan.name] || { border: 'border-t-slate-500', text: 'text-slate-600', bg: 'bg-slate-500/5' };
+                  {techEvaluatorsSnapshot.map(techEvaluator => {
+                    const colors = techEvaluatorColors[techEvaluator.name] || { border: 'border-t-slate-500', text: 'text-slate-600', bg: 'bg-slate-500/5' };
                     return (
-                      <Card key={clan.name} className={`rounded-xl border border-t-4 ${colors.border} shadow-sm bg-card text-card-foreground hover:scale-[1.02] transition-all duration-300`}>
+                      <Card key={techEvaluator.name} className={`rounded-xl border border-t-4 ${colors.border} shadow-sm bg-card text-card-foreground hover:scale-[1.02] transition-all duration-300`}>
                         <CardHeader className="pb-2 pt-3 px-3 border-b bg-muted/15">
                           <CardTitle className="text-sm font-bold flex items-center justify-between">
-                            <span className={colors.text}>{clan.name}</span>
+                            <span className={colors.text}>{techEvaluator.name}</span>
                             <Badge variant="outline" className={`font-mono text-[9px] px-1.5 py-0 border-transparent ${colors.text} ${colors.bg}`}>
-                              Clan
+                              Tech Evaluator
                             </Badge>
                           </CardTitle>
                         </CardHeader>
                         <CardContent className="pt-3 px-3 pb-3 flex flex-col gap-2 text-xs">
                           <div className="flex justify-between border-b pb-1">
                             <span className="text-muted-foreground">Total:</span>
-                            <strong className="font-mono text-foreground font-extrabold">{clan.total}</strong>
+                            <strong className="font-mono text-foreground font-extrabold">{techEvaluator.total}</strong>
                           </div>
                           <div className="flex justify-between border-b pb-1">
                             <span className="text-muted-foreground text-amber-600">Pending:</span>
-                            <strong className="font-mono text-amber-600 font-extrabold">{clan.pending}</strong>
+                            <strong className="font-mono text-amber-600 font-extrabold">{techEvaluator.pending}</strong>
                           </div>
                           <div className="flex justify-between border-b pb-1">
                             <span className="text-muted-foreground text-green-600 font-medium">Promoted:</span>
-                            <strong className="font-mono text-green-600 font-extrabold">{clan.promoted}</strong>
+                            <strong className="font-mono text-green-600 font-extrabold">{techEvaluator.promoted}</strong>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-muted-foreground text-red-600 font-medium">Declined:</span>
-                            <strong className="font-mono text-red-600 font-extrabold">{clan.declined}</strong>
+                            <strong className="font-mono text-red-600 font-extrabold">{techEvaluator.declined}</strong>
                           </div>
                         </CardContent>
                       </Card>
@@ -606,8 +606,8 @@ export default function App() {
             {activeTab === 'r1' && (
               <div className="flex flex-col gap-6 animate-in fade-in duration-300">
                 <div className="flex flex-col gap-1">
-                  <h2 className="text-xl font-extrabold tracking-tight">Round 1 Screening Worksheet</h2>
-                  <p className="text-xs text-muted-foreground">Manage initial resume vetting, total scores, and evaluator clan assignments.</p>
+                  <h2 className="text-xl font-extrabold tracking-tight">Round 1 Review Worksheet</h2>
+                  <p className="text-xs text-muted-foreground">Manage initial resume review, total scores, and evaluator tech evaluator assignments.</p>
                 </div>
                 
                 <StatsBanner candidates={r1Candidates} rawCount={globalData.length} />
@@ -619,9 +619,9 @@ export default function App() {
                     setSelectedRound(1);
                     setSelectedCandidate(cand);
                   }}
-                  showClanFilter={true}
+                  showTechEvaluatorFilter={true}
                   round={1}
-                  onUpdateClan={handleUpdateClan}
+                  onUpdateTechEvaluator={handleUpdateTechEvaluator}
                 />
               </div>
             )}
@@ -630,7 +630,7 @@ export default function App() {
             {activeTab === 'r2' && (
               <div className="flex flex-col gap-6 animate-in fade-in duration-300">
                 <div className="flex flex-col gap-1">
-                  <h2 className="text-xl font-extrabold tracking-tight">Round 2 Technical Vetting Worksheet</h2>
+                  <h2 className="text-xl font-extrabold tracking-tight">Round 2 Technical Review Worksheet</h2>
                   <p className="text-xs text-muted-foreground">Evaluate candidate project depth, start dates, and business-fit alignment.</p>
                 </div>
 
@@ -638,14 +638,14 @@ export default function App() {
 
                 <CandidateListTable
                   candidates={r2Candidates}
-                  actionLabel="Vet Candidate"
+                  actionLabel="Review Candidate"
                   onActionClick={(cand) => {
                     setSelectedRound(2);
                     setSelectedCandidate(cand);
                   }}
-                  showClanFilter={true}
+                  showTechEvaluatorFilter={true}
                   round={2}
-                  onUpdateClan={handleUpdateClan}
+                  onUpdateTechEvaluator={handleUpdateTechEvaluator}
                 />
               </div>
             )}
@@ -667,14 +667,14 @@ export default function App() {
                     setSelectedRound(3);
                     setSelectedCandidate(cand);
                   }}
-                  showClanFilter={true}
+                  showTechEvaluatorFilter={true}
                   round={3}
-                  onUpdateClan={handleUpdateClan}
+                  onUpdateTechEvaluator={handleUpdateTechEvaluator}
                 />
               </div>
             )}
 
-            {/* University Vetting tab content */}
+            {/* University Review tab content */}
             {activeTab === 'university' && (() => {
               // Helper to get distinctive words for adaptive merging
               const getDistinctiveWords = (str) => {
@@ -781,7 +781,7 @@ export default function App() {
                             <h2 className="text-xl font-extrabold tracking-tight flex items-center gap-2">
                               <Building className="h-5 w-5 text-[#800020]" /> {targetUni.name}
                             </h2>
-                            <p className="text-xs text-muted-foreground mt-0.5">Candidate roster and vetting workflow for {targetUni.name}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">Candidate roster and review workflow for {targetUni.name}</p>
                           </div>
                         </div>
                         <Badge variant="secondary" className="font-mono font-bold text-xs bg-[#800020]/10 text-[#800020] px-3 py-1.5 rounded-full">
@@ -867,7 +867,7 @@ export default function App() {
                 <div className="flex flex-col gap-6 animate-in fade-in duration-300">
                   <div className="flex flex-col gap-1">
                     <h2 className="text-xl font-extrabold tracking-tight flex items-center gap-2">
-                      <GraduationCap className="h-5 w-5 text-[#800020]" /> University Vetting & Vibe Checks
+                      <GraduationCap className="h-5 w-5 text-[#800020]" /> University Review & Vibe Checks
                     </h2>
                     <p className="text-xs text-muted-foreground">Monitor candidate distributions and screen applicants grouped by their academic institutions.</p>
                   </div>

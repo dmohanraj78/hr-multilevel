@@ -282,9 +282,9 @@ export default function CandidateProfileDossier({ candidate, round, onSave, onCa
                 {/* R1 History */}
                 <div className="border-l-2 border-[#800020] pl-4 py-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <Badge variant="outline" className="border-[#800020] text-[#800020] bg-[#800020]/5 font-semibold">Round 1 Screening</Badge>
+                    <Badge variant="outline" className="border-[#800020] text-[#800020] bg-[#800020]/5 font-semibold">Round 1 Review</Badge>
                     <span className="text-xs font-mono text-muted-foreground">App Status: {r1.app_status || 'Pending'}</span>
-                    <span className="text-xs font-mono text-muted-foreground ml-auto">Assigned Clan: <strong className="text-foreground">{r1.eval_group || 'None'}</strong></span>
+                    <span className="text-xs font-mono text-muted-foreground ml-auto">Assigned Tech Evaluator: <strong className="text-foreground">{r1.eval_group || 'None'}</strong></span>
                   </div>
                   <p className="text-sm mt-2 text-muted-foreground italic">
                     "{r1.review_comments || 'No screen comments logged.'}"
@@ -295,7 +295,7 @@ export default function CandidateProfileDossier({ candidate, round, onSave, onCa
                 {round === 3 && (
                   <div className="border-l-2 border-green-600 pl-4 py-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <Badge variant="outline" className="border-green-600 text-green-600 bg-green-600/5 font-semibold">Round 2 Tech Vetting</Badge>
+                      <Badge variant="outline" className="border-green-600 text-green-600 bg-green-600/5 font-semibold">Round 2 Tech Review</Badge>
                       <span className="text-xs font-mono text-muted-foreground">Start: {r2.when_can_they_start || '-'}</span>
                       <span className="text-xs font-mono text-muted-foreground">Concerns: <strong>{r2.duration_months || 'None'}</strong></span>
                       <span className="text-xs font-mono text-muted-foreground">Tech Depth: <strong>{r2.product_depth || '-'}</strong></span>
@@ -304,7 +304,7 @@ export default function CandidateProfileDossier({ candidate, round, onSave, onCa
                     <p className="text-xs font-mono text-muted-foreground mt-1.5">Stack: {r2.tech_stack || '-'}</p>
                     <p className="text-xs font-mono text-muted-foreground mt-1">Latency/Cost/Security considered: {r2.complexity || '-'}</p>
                     <p className="text-sm mt-2 text-muted-foreground italic">
-                      "{r2.demo_review_comment || 'No vetting comments logged.'}"
+                      "{r2.demo_review_comment || 'No review comments logged.'}"
                     </p>
                   </div>
                 )}
@@ -343,14 +343,14 @@ export default function CandidateProfileDossier({ candidate, round, onSave, onCa
             </CardContent>
           </Card>
 
-          {/* Vetting Input Panel */}
+          {/* Review Input Panel */}
           <Card className="border shadow-md rounded-[1.5rem]">
             <CardHeader className="pb-3 border-b">
-              <CardTitle className="text-base font-bold">Screening Inputs</CardTitle>
+              <CardTitle className="text-base font-bold">Review Inputs</CardTitle>
             </CardHeader>
             <CardContent className="pt-4 flex flex-col gap-4">
               
-              {/* Round 1 Screening Form */}
+              {/* Round 1 Review Form */}
               {round === 1 && (
                 <div className="flex flex-col gap-3">
                   <div className="flex flex-col gap-1.5">
@@ -371,10 +371,10 @@ export default function CandidateProfileDossier({ candidate, round, onSave, onCa
                   </div>
 
                   <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="evalGroup" className="font-semibold text-xs">Assign Evaluation Clan</Label>
+                    <Label htmlFor="evalGroup" className="font-semibold text-xs">Assign Tech Evaluator</Label>
                     <Select value={r1Group} onValueChange={setR1Group}>
                       <SelectTrigger id="evalGroup" className="rounded-md">
-                        <SelectValue placeholder="Select Clan" />
+                        <SelectValue placeholder="Select Tech Evaluator" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectGroup>
@@ -393,7 +393,7 @@ export default function CandidateProfileDossier({ candidate, round, onSave, onCa
                     <Label htmlFor="r1Comments" className="font-semibold text-xs">Recruiter Comments</Label>
                     <Textarea
                       id="r1Comments"
-                      placeholder="Add initial screening comments..."
+                      placeholder="Add initial review comments..."
                       value={r1Comments}
                       onChange={(e) => setR1Comments(e.target.value)}
                       rows={4}
@@ -407,13 +407,13 @@ export default function CandidateProfileDossier({ candidate, round, onSave, onCa
                 </div>
               )}
 
-              {/* Round 2 Vetting Form */}
+              {/* Round 2 Review Form */}
               {round === 2 && (
                 <div className="flex flex-col gap-3 text-sm">
                   
                   {/* Candidate Tier Display */}
                   <div className="bg-primary/5 border border-primary/20 p-3 rounded-lg flex items-center justify-between">
-                    <span className="text-xs font-semibold text-muted-foreground">Candidate Screening Tier:</span>
+                    <span className="text-xs font-semibold text-muted-foreground">Candidate Review Tier:</span>
                     <Badge variant="outline" className="font-mono font-bold text-xs border-primary/30 text-[#800020] bg-primary/5">
                       {r1.tier || 'N/A'} (Score: {r1.total || 0})
                     </Badge>
@@ -512,7 +512,7 @@ export default function CandidateProfileDossier({ candidate, round, onSave, onCa
                     <Label htmlFor="r2Comments" className="font-semibold text-xs">Reason for decision (detailed notes)</Label>
                     <Textarea
                       id="r2Comments"
-                      placeholder="Enter detailed notes explaining the vetting outcome..."
+                      placeholder="Enter detailed notes explaining the review outcome..."
                       value={r2Comments}
                       onChange={(e) => setR2Comments(e.target.value)}
                       rows={3}
@@ -521,7 +521,7 @@ export default function CandidateProfileDossier({ candidate, round, onSave, onCa
                   </div>
 
                   <Button onClick={() => handleSave(null)} className="w-full mt-2 bg-[#800020] hover:bg-[#800020]/90 text-white rounded-lg" disabled={saving}>
-                    {saving ? 'Saving...' : 'Save Vetting outcomes'}
+                    {saving ? 'Saving...' : 'Save Review outcomes'}
                   </Button>
                 </div>
               )}

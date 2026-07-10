@@ -7,20 +7,20 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { LayoutDashboard, Users, ShieldAlert, ArrowLeft, GitPullRequest, Code, FileText } from 'lucide-react';
 
-const CLANS = [
-  { id: 'Dharti', name: 'Dharti', desc: 'Earth Core Vetting', color: 'border-amber-500/20 hover:border-amber-500/80 bg-amber-500/5' },
-  { id: 'Jal', name: 'Jal', desc: 'Water Flow Vetting', color: 'border-blue-500/20 hover:border-blue-500/80 bg-blue-500/5' },
-  { id: 'Agni', name: 'Agni', desc: 'Fire Spark Vetting', color: 'border-red-500/20 hover:border-red-500/80 bg-red-500/5' },
-  { id: 'Vayu', name: 'Vayu', desc: 'Air Breeze Vetting', color: 'border-teal-500/20 hover:border-teal-500/80 bg-teal-500/5' },
-  { id: 'Akash', name: 'Akash', desc: 'Sky Space Vetting', color: 'border-indigo-500/20 hover:border-indigo-500/80 bg-indigo-500/5' },
-  { id: 'Bijli', name: 'Bijli', desc: 'Lightning Spark Vetting', color: 'border-yellow-500/20 hover:border-yellow-500/80 bg-yellow-500/5' }
+const TECH_EVALUATORS = [
+  { id: 'Dharti', name: 'Dharti', desc: 'Earth Core Review', color: 'border-amber-500/20 hover:border-amber-500/80 bg-amber-500/5' },
+  { id: 'Jal', name: 'Jal', desc: 'Water Flow Review', color: 'border-blue-500/20 hover:border-blue-500/80 bg-blue-500/5' },
+  { id: 'Agni', name: 'Agni', desc: 'Fire Spark Review', color: 'border-red-500/20 hover:border-red-500/80 bg-red-500/5' },
+  { id: 'Vayu', name: 'Vayu', desc: 'Air Breeze Review', color: 'border-teal-500/20 hover:border-teal-500/80 bg-teal-500/5' },
+  { id: 'Akash', name: 'Akash', desc: 'Sky Space Review', color: 'border-indigo-500/20 hover:border-indigo-500/80 bg-indigo-500/5' },
+  { id: 'Bijli', name: 'Bijli', desc: 'Lightning Spark Review', color: 'border-yellow-500/20 hover:border-yellow-500/80 bg-yellow-500/5' }
 ];
 
 export default function App() {
   const [candidates, setCandidates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedClan, setSelectedClan] = useState(null);
+  const [selectedTechEvaluator, setSelectedTechEvaluator] = useState(null);
   const [selectedCandidate, setSelectedCandidate] = useState(null);
 
   const loadData = async () => {
@@ -50,11 +50,11 @@ export default function App() {
         if (found) {
           setSelectedCandidate(found);
           const r1 = getRound1(found);
-          const clanId = r1?.eval_group;
-          if (clanId) {
-            const foundClan = CLANS.find(cl => cl.id.toLowerCase() === clanId.toLowerCase());
-            if (foundClan) {
-              setSelectedClan(foundClan);
+          const techEvaluatorId = r1?.eval_group;
+          if (techEvaluatorId) {
+            const foundTechEvaluator = TECH_EVALUATORS.find(cl => cl.id.toLowerCase() === techEvaluatorId.toLowerCase());
+            if (foundTechEvaluator) {
+              setSelectedTechEvaluator(foundTechEvaluator);
             }
           }
           const newUrl = window.location.pathname;
@@ -64,22 +64,22 @@ export default function App() {
     }
   }, [candidates]);
 
-  const handleSaveVetting = async (payload) => {
+  const handleSaveReview = async (payload) => {
     try {
       await upsertRound2(selectedCandidate.id, payload.round_2_evaluation);
       setSelectedCandidate(null);
       await loadData();
     } catch (e) {
-      alert('Failed to save technical vetting: ' + e.message);
+      alert('Failed to save technical review: ' + e.message);
     }
   };
 
-  const handleUpdateClan = async (candidateId, newClan) => {
+  const handleUpdateTechEvaluator = async (candidateId, newTechEvaluator) => {
     try {
-      await upsertRound1(candidateId, { eval_group: newClan });
+      await upsertRound1(candidateId, { eval_group: newTechEvaluator });
       await loadData();
     } catch (e) {
-      alert('Failed to update evaluation clan: ' + e.message);
+      alert('Failed to update evaluation tech evaluator: ' + e.message);
     }
   };
 
@@ -96,11 +96,11 @@ export default function App() {
     };
   };
 
-  // Filter candidates assigned to active clan who passed Round 1 screening
-  const getClanCandidates = (clanId) => {
+  // Filter candidates assigned to active tech evaluator who passed Round 1 review
+  const getTechEvaluatorCandidates = (techEvaluatorId) => {
     return candidates.filter(c => {
       const r1 = getRound1(c);
-      const groupMatch = r1.eval_group && r1.eval_group.toLowerCase() === clanId.toLowerCase();
+      const groupMatch = r1.eval_group && r1.eval_group.toLowerCase() === techEvaluatorId.toLowerCase();
       return groupMatch && r1.app_status === 'Yes';
     });
   };
@@ -109,7 +109,7 @@ export default function App() {
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans transition-colors duration-200">
       
       {/* Top Header */}
-      <Header title="Evaluator Vetting Stage" isDemo={!!error} />
+      <Header title="Evaluator Review Stage" isDemo={!!error} />
 
       <main className="flex-1 p-8 max-w-6xl w-full mx-auto flex flex-col gap-8">
         
@@ -134,63 +134,63 @@ export default function App() {
               <CandidateProfileDossier
                 candidate={selectedCandidate}
                 round={2}
-                onSave={handleSaveVetting}
+                onSave={handleSaveReview}
                 onCancel={() => setSelectedCandidate(null)}
               />
             )}
             
             <div className={selectedCandidate ? 'hidden' : 'flex flex-col gap-6'}>
-              {selectedClan ? (
-                // Clan Worksheet view
+              {selectedTechEvaluator ? (
+                // Tech Evaluator Worksheet view
                 <div className="flex flex-col gap-6">
                   <div className="flex items-center gap-3">
-              <Button variant="outline" size="sm" onClick={() => setSelectedClan(null)}>
-                <ArrowLeft className="mr-2 h-4 w-4" /> Back to Clans Hub
+              <Button variant="outline" size="sm" onClick={() => setSelectedTechEvaluator(null)}>
+                <ArrowLeft className="mr-2 h-4 w-4" /> Back to Tech Evaluators Hub
               </Button>
-              <h2 className="text-2xl font-bold font-heading">{selectedClan.name} Clan Worksheet</h2>
+              <h2 className="text-2xl font-bold font-heading">{selectedTechEvaluator.name} Tech Evaluator Worksheet</h2>
             </div>
             
             <p className="text-sm text-muted-foreground">
-              Reviewing candidate code-submissions currently assigned to the <strong className="text-foreground">{selectedClan.name}</strong> queue (Status: Screening Passed).
+              Reviewing candidate code-submissions currently assigned to the <strong className="text-foreground">{selectedTechEvaluator.name}</strong> queue (Status: Review Passed).
             </p>
 
             <CandidateListTable
-              candidates={getClanCandidates(selectedClan.id)}
-              actionLabel="Vet Tech Demo"
+              candidates={getTechEvaluatorCandidates(selectedTechEvaluator.id)}
+              actionLabel="Review Tech Demo"
               onActionClick={(cand) => setSelectedCandidate(cand)}
               round={2}
-              onUpdateClan={handleUpdateClan}
+              onUpdateTechEvaluator={handleUpdateTechEvaluator}
             />
           </div>
         ) : (
-          // Clan selector landing hub
+          // Tech Evaluator selector landing hub
           <div className="flex flex-col gap-6">
             <div className="text-center py-6">
               <h1 className="text-3xl font-extrabold font-heading tracking-tight flex items-center justify-center gap-2">
-                <GitPullRequest className="h-8 w-8 text-[#800020]" /> Technical Clan Vetting Hub
+                <GitPullRequest className="h-8 w-8 text-[#800020]" /> Technical Review Hub
               </h1>
               <p className="text-sm text-muted-foreground mt-2 max-w-md mx-auto">
-                Select your assigned clan review queue below to begin inspection of screening-passed technical demo submissions.
+                Select your assigned tech evaluator review queue below to begin inspection of review-passed technical demo submissions.
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {CLANS.map((clan) => {
-                const count = getClanCandidates(clan.id).length;
+              {TECH_EVALUATORS.map((techEvaluator) => {
+                const count = getTechEvaluatorCandidates(techEvaluator.id).length;
                 return (
                   <Card 
-                    key={clan.id} 
-                    className={`cursor-pointer transition-all border-2 duration-300 hover:shadow-lg ${clan.color}`}
-                    onClick={() => setSelectedClan(clan)}
+                    key={techEvaluator.id} 
+                    className={`cursor-pointer transition-all border-2 duration-300 hover:shadow-lg ${techEvaluator.color}`}
+                    onClick={() => setSelectedTechEvaluator(techEvaluator)}
                   >
                     <CardHeader className="pb-2">
                       <div className="flex items-center justify-between">
-                        <CardTitle className="text-xl font-bold font-heading">{clan.name}</CardTitle>
+                        <CardTitle className="text-xl font-bold font-heading">{techEvaluator.name}</CardTitle>
                         <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-mono font-bold">
                           {count}
                         </div>
                       </div>
-                      <CardDescription>{clan.desc}</CardDescription>
+                      <CardDescription>{techEvaluator.desc}</CardDescription>
                     </CardHeader>
                     <CardContent className="pt-2 flex items-center justify-between">
                       <span className="text-xs font-mono text-muted-foreground flex items-center gap-1">

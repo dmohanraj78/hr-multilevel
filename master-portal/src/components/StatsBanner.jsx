@@ -26,7 +26,7 @@ export default function StatsBanner({ candidates, round = 1, rawCount = 0 }) {
   let stats = [];
 
   if (round === 2) {
-    const pendingVetting = candidates.filter(c => {
+    const pendingReview = candidates.filter(c => {
       const r2 = getR2(c);
       return !r2.moved_to_round_3;
     }).length;
@@ -42,10 +42,10 @@ export default function StatsBanner({ candidates, round = 1, rawCount = 0 }) {
     }).length;
 
     stats = [
-      { title: 'Total in Vetting', value: total, icon: Users, color: 'text-blue-500 bg-blue-500/10' },
-      { title: 'Pending Vetting', value: pendingVetting, icon: Hourglass, color: 'text-amber-500 bg-amber-500/10' },
+      { title: 'Total in Review', value: total, icon: Users, color: 'text-blue-500 bg-blue-500/10' },
+      { title: 'Pending Review', value: pendingReview, icon: Hourglass, color: 'text-amber-500 bg-amber-500/10' },
       { title: 'Promoted (R3)', value: promoted, icon: CheckCircle2, color: 'text-green-500 bg-green-500/10' },
-      { title: 'Vetting Declined', value: declined, icon: XCircle, color: 'text-red-500 bg-red-500/10' }
+      { title: 'Review Declined', value: declined, icon: XCircle, color: 'text-red-500 bg-red-500/10' }
     ];
   } else if (round === 3) {
     const pendingVerdict = candidates.filter(c => {
@@ -87,8 +87,8 @@ export default function StatsBanner({ candidates, round = 1, rawCount = 0 }) {
 
     stats = [
       { title: 'Total Candidates', value: total, icon: Users, color: 'text-blue-500 bg-blue-500/10', subtitle: rawCount > total ? `${rawCount - total} duplicates filtered` : null },
-      { title: 'Pending Screenings', value: pendingScreen, icon: Hourglass, color: 'text-amber-500 bg-amber-500/10' },
-      { title: 'Screening Passed (R2)', value: approvedR1, icon: CheckCircle2, color: 'text-green-500 bg-green-500/10' },
+      { title: 'Pending Reviews', value: pendingScreen, icon: Hourglass, color: 'text-amber-500 bg-amber-500/10' },
+      { title: 'Review Passed (R2)', value: approvedR1, icon: CheckCircle2, color: 'text-green-500 bg-green-500/10' },
       { title: 'Rejected Submissions', value: rejected, icon: XCircle, color: 'text-red-500 bg-red-500/10' }
     ];
   }

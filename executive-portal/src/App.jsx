@@ -57,12 +57,12 @@ export default function App() {
     }
   };
 
-  const handleUpdateClan = async (candidateId, newClan) => {
+  const handleUpdateTechEvaluator = async (candidateId, newTechEvaluator) => {
     try {
-      await upsertRound1(candidateId, { eval_group: newClan });
+      await upsertRound1(candidateId, { eval_group: newTechEvaluator });
       await loadData();
     } catch (e) {
-      alert('Failed to update evaluation clan: ' + e.message);
+      alert('Failed to update evaluation tech evaluator: ' + e.message);
     }
   };
 
@@ -83,7 +83,7 @@ export default function App() {
     };
   };
 
-  // Filter candidates that passed Round 2 vetting (moved_to_round_3 is Yes or Maybe)
+  // Filter candidates that passed Round 2 review (moved_to_round_3 is Yes or Maybe)
   const getExecutiveCandidates = () => {
     return candidates.filter(c => {
       const r2 = getRound2(c);
@@ -135,7 +135,7 @@ export default function App() {
                 <Award className="h-8 w-8 text-[#800020]" /> Executive Verdict Dashboard
               </h1>
               <p className="text-sm text-muted-foreground">
-                Vetted candidates currently approved by the clans (Moved to R3: Yes/Maybe) awaiting your final verdict.
+                Vetted candidates currently approved by the tech evaluators (Moved to R3: Yes/Maybe) awaiting your final verdict.
               </p>
             </div>
 
@@ -144,9 +144,9 @@ export default function App() {
                 candidates={candidates}
                 actionLabel="Review & Decide"
                 onActionClick={(cand) => setSelectedCandidate(cand)}
-                showClanFilter={true}
+                showTechEvaluatorFilter={true}
                 round={3}
-                onUpdateClan={handleUpdateClan}
+                onUpdateTechEvaluator={handleUpdateTechEvaluator}
               />
             </div>
             </div>
