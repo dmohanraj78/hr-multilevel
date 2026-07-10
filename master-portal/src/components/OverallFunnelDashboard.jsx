@@ -468,7 +468,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
             AI Builder Intern — Applicant Funnel
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            <strong className="text-[#800020]">{stats.total} applicants</strong> processed · v2 evaluation rubric (max score 30)
+            <strong className="text-[#800020]">{sortedAndFiltered.length} applicants</strong> processed · v2 evaluation rubric (max score 30)
           </p>
         </div>
         <Button onClick={exportToCSV} className="bg-[#800020] hover:bg-[#800020]/90 text-white rounded-xl shadow-md shrink-0">
@@ -489,7 +489,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
           <CardContent className="pt-4 pb-3 flex flex-col gap-1">
             <span className="text-xs font-mono text-muted-foreground uppercase tracking-wider block">Applicants</span>
             <div className="flex items-baseline justify-between mt-1">
-              <span className="text-3xl font-extrabold font-mono text-foreground">{stats.total}</span>
+              <span className="text-3xl font-extrabold font-mono text-foreground">{sortedAndFiltered.length}</span>
               <Users className="h-5 w-5 text-slate-400 stroke-[1.5]" />
             </div>
             <span className="text-[10px] text-muted-foreground">Total submissions</span>
@@ -530,23 +530,6 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
           </CardContent>
         </Card>
 
-        {/* Rejected Tile */}
-        <Card 
-          onClick={() => handleTileClick('Declined')}
-          className={`rounded-2xl border border-red-500/20 bg-red-500/5 shadow-sm hover:shadow-md transition-all cursor-pointer hover:scale-[1.02] ${
-            currentActiveTile === 'Declined' ? 'ring-2 ring-red-500 border-transparent' : ''
-          }`}
-        >
-          <CardContent className="pt-4 pb-3 flex flex-col gap-1">
-            <span className="text-xs font-mono text-red-700 dark:text-red-400 uppercase tracking-wider block">Declined</span>
-            <div className="flex items-baseline justify-between mt-1">
-              <span className="text-3xl font-extrabold font-mono text-red-600 dark:text-red-400">{stats.rejected}</span>
-              <XOctagon className="h-5 w-5 text-red-500 stroke-[1.5]" />
-            </div>
-            <span className="text-[10px] text-red-600/80">Any funnel stage</span>
-          </CardContent>
-        </Card>
-
         {/* Pending Review Tile */}
         <Card 
           onClick={() => handleTileClick('Pending')}
@@ -564,12 +547,90 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
           </CardContent>
         </Card>
 
+        {/* Rejected Tile */}
+        <Card 
+          onClick={() => handleTileClick('Declined')}
+          className={`rounded-2xl border border-red-500/20 bg-red-500/5 shadow-sm hover:shadow-md transition-all cursor-pointer hover:scale-[1.02] ${
+            currentActiveTile === 'Declined' ? 'ring-2 ring-red-500 border-transparent' : ''
+          }`}
+        >
+          <CardContent className="pt-4 pb-3 flex flex-col gap-1">
+            <span className="text-xs font-mono text-red-700 dark:text-red-400 uppercase tracking-wider block">Declined</span>
+            <div className="flex items-baseline justify-between mt-1">
+              <span className="text-3xl font-extrabold font-mono text-red-600 dark:text-red-400">{stats.rejected}</span>
+              <XOctagon className="h-5 w-5 text-red-500 stroke-[1.5]" />
+            </div>
+            <span className="text-[10px] text-red-600/80">Any funnel stage</span>
+          </CardContent>
+        </Card>
+
       </div>
 
       {/* Visual Analytics Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        {/* Funnel Conversion Chart */}
+        {/* Tier & score distribution stack (Candidate Tiers first) */}
+        <Card className="rounded-[1.5rem] border shadow-sm lg:col-span-1">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-bold flex items-center gap-2">
+              <LayoutGrid className="h-4.5 w-4.5 text-[#800020]" /> Candidate Tiers
+            </CardTitle>
+            <CardDescription className="text-xs">Evaluator-assigned tier counts</CardDescription>
+          </CardHeader>
+          <CardContent className="pt-4 flex flex-col gap-3">
+            {Object.entries(chartData.tiers).map(([tier, count]) => {
+              const max = Math.max(...Object.values(chartData.tiers), 1);
+              const percent = Math.round((count / (globalData.length || 1)) * 100);
+              return (
+                <div key={tier} className="flex items-center justify-between text-xs gap-3">
+                  <Badge variant="outline" className="font-mono w-14 shrink-0 font-bold justify-center border-primary/20 text-[#800020] bg-primary/5">
+                    {tier}
+                  </Badge>
+                  <div className="flex-1 bg-muted h-3 rounded-full overflow-hidden border">
+                    <div 
+                      className="bg-[#800020] h-full rounded-full transition-all"
+                      style={{ width: `${percent}%` }}
+                    />
+                  </div>
+                  <span className="font-mono text-muted-foreground text-right w-12 shrink-0">{count} ({percent}%)</span>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+
+        {/* Technical Reviewer Workloads table (Middle) */}
+        <Card className="rounded-[1.5rem] border shadow-sm lg:col-span-1 flex flex-col justify-between">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-bold flex items-center gap-2">
+              <BarChart3 className="h-4.5 w-4.5 text-[#800020]" /> Technical Reviewer Workloads
+            </CardTitle>
+            <CardDescription className="text-xs">Candidates assigned to technical reviewers</CardDescription>
+          </CardHeader>
+          <CardContent className="pt-2 overflow-y-auto flex-1 px-4 max-h-[300px]">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-muted/40 border-b">
+                  <th className="py-2 px-1 font-bold text-muted-foreground">Technical Reviewer</th>
+                  <th className="py-2 px-1 font-bold text-muted-foreground text-right w-[80px]">Candidates</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y font-mono">
+                {Object.entries(chartData.clans)
+                  .filter(([_, count]) => count > 0)
+                  .sort((a, b) => b[1] - a[1])
+                  .map(([clan, count]) => (
+                    <tr key={clan} className="hover:bg-muted/10">
+                      <td className="py-2 px-1 font-sans font-semibold text-foreground">{clan}</td>
+                      <td className="py-2 px-1 text-right text-foreground font-extrabold">{count}</td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+
+        {/* Funnel Conversion Chart (Last) */}
         <Card className="rounded-[1.5rem] border shadow-sm lg:col-span-1">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-bold flex items-center gap-2">
@@ -605,68 +666,6 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
                 </div>
               </div>
             ))}
-          </CardContent>
-        </Card>
-
-        {/* Clan workload workload bar chart */}
-        <Card className="rounded-[1.5rem] border shadow-sm lg:col-span-1">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-bold flex items-center gap-2">
-              <BarChart3 className="h-4.5 w-4.5 text-[#800020]" /> Technical Reviewer Workloads
-            </CardTitle>
-            <CardDescription className="text-xs">Candidates assigned to technical evaluators</CardDescription>
-          </CardHeader>
-          <CardContent className="pt-4 flex items-end justify-between gap-2 h-44">
-            {Object.entries(chartData.clans).map(([clan, count]) => {
-              const max = Math.max(...Object.values(chartData.clans), 1);
-              const heightPercent = Math.round((count / max) * 100);
-              return (
-                <div key={clan} className="flex flex-col items-center gap-2 flex-1 group">
-                  <div className="text-[10px] font-mono font-bold text-foreground opacity-0 group-hover:opacity-100 transition-opacity bg-muted px-1 rounded">
-                    {count}
-                  </div>
-                  <div className="w-full bg-muted rounded-md h-28 flex items-end overflow-hidden border">
-                    <div 
-                      className="w-full bg-[#800020] rounded-b-sm group-hover:bg-[#800020]/80 transition-all duration-300"
-                      style={{ height: `${heightPercent}%` }}
-                    />
-                  </div>
-                  <span className="text-[10px] font-mono text-muted-foreground font-semibold truncate max-w-[50px]">
-                    {clan}
-                  </span>
-                </div>
-              );
-            })}
-          </CardContent>
-        </Card>
-
-        {/* Tier & score distribution stack */}
-        <Card className="rounded-[1.5rem] border shadow-sm lg:col-span-1">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-bold flex items-center gap-2">
-              <LayoutGrid className="h-4.5 w-4.5 text-[#800020]" /> Candidate Tiers
-            </CardTitle>
-            <CardDescription className="text-xs">Evaluator-assigned tier counts</CardDescription>
-          </CardHeader>
-          <CardContent className="pt-4 flex flex-col gap-3">
-            {Object.entries(chartData.tiers).map(([tier, count]) => {
-              const max = Math.max(...Object.values(chartData.tiers), 1);
-              const percent = Math.round((count / (globalData.length || 1)) * 100);
-              return (
-                <div key={tier} className="flex items-center justify-between text-xs gap-3">
-                  <Badge variant="outline" className="font-mono w-14 shrink-0 font-bold justify-center border-primary/20 text-[#800020] bg-primary/5">
-                    {tier}
-                  </Badge>
-                  <div className="flex-1 bg-muted h-3 rounded-full overflow-hidden border">
-                    <div 
-                      className="bg-[#800020] h-full rounded-full transition-all"
-                      style={{ width: `${percent}%` }}
-                    />
-                  </div>
-                  <span className="font-mono text-muted-foreground text-right w-12 shrink-0">{count} ({percent}%)</span>
-                </div>
-              );
-            })}
           </CardContent>
         </Card>
 

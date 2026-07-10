@@ -219,11 +219,11 @@ export default function App() {
     const isDeclined = r1.app_status === 'Reject' || r2.moved_to_round_3 === 'No' || r3.verdict === 'No';
     const isReview = r1.app_status === 'Yes' && !isHired && !isDeclined;
     
-    let baseUrl = 'https://recruiter-portal-one.vercel.app';
+    let baseUrl = 'https://hr-round.vercel.app';
     if (isReview) {
       baseUrl = 'https://technical-review.vercel.app';
     } else if (r2.moved_to_round_3 === 'Yes' || r2.moved_to_round_3 === 'Maybe') {
-      baseUrl = 'https://executive-portal-nine.vercel.app';
+      baseUrl = 'https://executive-portal.vercel.app';
     }
 
     return `${baseUrl}/?candidateId=${cand.id}`;
@@ -586,7 +586,7 @@ export default function App() {
                       </CardContent>
                     </div>
                     <div className="p-4 pt-0">
-                      <Button variant="outline" size="sm" className="text-[#800020] border-[#800020]/30 hover:bg-[#800020]/10 rounded-lg w-full font-bold" onClick={() => window.open('https://recruiter-portal-one.vercel.app', '_blank')}>
+                      <Button variant="outline" size="sm" className="text-[#800020] border-[#800020]/30 hover:bg-[#800020]/10 rounded-lg w-full font-bold" onClick={() => window.open('https://hr-round.vercel.app', '_blank')}>
                         Go to HR Workspace ↗
                       </Button>
                     </div>
@@ -656,7 +656,7 @@ export default function App() {
                       </CardContent>
                     </div>
                     <div className="p-4 pt-0">
-                      <Button variant="outline" size="sm" className="text-purple-600 border-purple-500/30 hover:bg-purple-500/10 rounded-lg w-full font-bold" onClick={() => window.open('https://executive-portal-nine.vercel.app', '_blank')}>
+                      <Button variant="outline" size="sm" className="text-purple-600 border-purple-500/30 hover:bg-purple-500/10 rounded-lg w-full font-bold" onClick={() => window.open('https://executive-portal.vercel.app', '_blank')}>
                         Go to Executive Portal ↗
                       </Button>
                     </div>
