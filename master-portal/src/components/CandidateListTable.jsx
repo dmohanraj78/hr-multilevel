@@ -343,17 +343,30 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
       'Review Status',
       'Technical Evaluator Assigned',
       'Start Date',
-      'College Commitment',
-      'Technical Depth',
-      'Tech Stack',
+      'Duration (Months)',
+      'College Commitment / Concerns',
+      'Contact Status',
       'Problem Fit',
-      'Latency/Security/Cost'
+      'Technical Depth',
+      'Latency/Security/Cost',
+      'Tech Stack',
+      'TR Decision',
+      'TR Comments'
     ];
 
     const rows = sortedAndFiltered.map(c => {
       const r1 = c.round_1_evaluation?.[0] || c.round_1_evaluation || c || {};
       const r2 = c.round_2_evaluation?.[0] || c.round_2_evaluation || {};
       const r3 = c.round_3_evaluation?.[0] || c.round_3_evaluation || {};
+
+      // Parse combined columns or use new separate fields
+      const rawSolves = r2.solves_business_problem || '';
+      const r2Solves = r2.contact_status || (rawSolves.includes('Contact: ') ? rawSolves.split('Contact: ')[1].split(' | ')[0] : (['Yet to Speak', 'Spoke', 'Scheduled', 'No response'].includes(rawSolves) ? rawSolves : ''));
+      const r2ProblemFit = r2.problem_fit || (rawSolves.includes('Fit: ') ? rawSolves.split('Fit: ')[1] : (['Yes', 'Maybe', 'No'].includes(rawSolves) ? rawSolves : ''));
+
+      const rawDepth = r2.product_depth || '';
+      const r2ProductDepth = r2.tech_depth || (rawDepth.includes('Depth: ') ? rawDepth.split('Depth: ')[1].split(' | ')[0] : (['High', 'Medium', 'Low', 'None'].includes(rawDepth) ? rawDepth : ''));
+      const r2Latency = r2.latency_considerations || (rawDepth.includes('Latency: ') ? rawDepth.split('Latency: ')[1] : (!['High', 'Medium', 'Low', 'None'].includes(rawDepth) ? rawDepth : ''));
 
       return [
         c.id || '',
@@ -366,11 +379,15 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
         getStatusInfo(c).text,
         getEval1(c, 'eval_group') || 'None',
         r2.when_can_they_start || '',
+        r2.duration_months || '',
         r2.complexity || '',
-        r2.demo_review_comment || '',
+        r2Solves || '',
+        r2ProblemFit || '',
+        r2ProductDepth || '',
+        r2Latency || '',
         r2.tech_stack || '',
-        r2.solves_business_problem || '',
-        r2.product_depth || ''
+        r2.moved_to_round_3 || 'Pending',
+        r2.demo_review_comment || ''
       ];
     });
 

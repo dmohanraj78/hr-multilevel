@@ -443,7 +443,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     const headers = [
       'Applicant ID', 'Full Name', 'Email', 'Role', 'UG University', 
       'R1 Review Status', 'R1 Assigned Technical Evaluator', 'R1 AI Score', 'R1 Tier', 'R1 Comments',
-      'R2 Start Date', 'R2 Concerns/Restrictions', 'R2 Tech Depth', 'R2 Solves Biz?', 'R2 Tech Stack', 'R2 Latency/Cost considered', 'R2 Decision', 'R2 Comments',
+      'R2 Start Date', 'R2 Duration', 'R2 Concerns/Restrictions', 'R2 Contact Status', 'R2 Problem Fit', 'R2 Tech Depth', 'R2 Latency/Cost considered', 'R2 Tech Stack', 'R2 Decision', 'R2 Comments',
       'R3 Verdict', 'R3 Executive Comments'
     ];
 
@@ -451,6 +451,15 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       const r1 = getR1(c);
       const r2 = getR2(c);
       const r3 = getR3(c);
+
+      // Parse combined columns or use new separate fields
+      const rawSolves = r2.solves_business_problem || '';
+      const r2Solves = r2.contact_status || (rawSolves.includes('Contact: ') ? rawSolves.split('Contact: ')[1].split(' | ')[0] : (['Yet to Speak', 'Spoke', 'Scheduled', 'No response'].includes(rawSolves) ? rawSolves : ''));
+      const r2ProblemFit = r2.problem_fit || (rawSolves.includes('Fit: ') ? rawSolves.split('Fit: ')[1] : (['Yes', 'Maybe', 'No'].includes(rawSolves) ? rawSolves : ''));
+
+      const rawDepth = r2.product_depth || '';
+      const r2ProductDepth = r2.tech_depth || (rawDepth.includes('Depth: ') ? rawDepth.split('Depth: ')[1].split(' | ')[0] : (['High', 'Medium', 'Low', 'None'].includes(rawDepth) ? rawDepth : ''));
+      const r2Latency = r2.latency_considerations || (rawDepth.includes('Latency: ') ? rawDepth.split('Latency: ')[1] : (!['High', 'Medium', 'Low', 'None'].includes(rawDepth) ? rawDepth : ''));
 
       return [
         c.id,
@@ -462,17 +471,19 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
         r1.eval_group || 'None',
         r1.total || '0',
         r1.tier || 'N/A',
-        (r1.review_comments || '').replace(/"/g, '""'),
+        String(r1.review_comments || '').replace(/"/g, '""'),
         r2.when_can_they_start || '',
-        (r2.duration_months || '').replace(/"/g, '""'),
-        r2.product_depth || '',
-        r2.solves_business_problem || '',
+        String(r2.duration_months || '').replace(/"/g, '""'),
+        String(r2.complexity || '').replace(/"/g, '""'),
+        r2Solves || '',
+        r2ProblemFit || '',
+        r2ProductDepth || '',
+        r2Latency || '',
         r2.tech_stack || '',
-        r2.complexity || '',
         r2.moved_to_round_3 || '',
-        (r2.demo_review_comment || '').replace(/"/g, '""'),
+        String(r2.demo_review_comment || '').replace(/"/g, '""'),
         r3.verdict || 'Pending',
-        (r3.review_comments || '').replace(/"/g, '""')
+        String(r3.review_comments || '').replace(/"/g, '""')
       ];
     });
 

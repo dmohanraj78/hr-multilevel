@@ -124,7 +124,11 @@ export const upsertRound2 = async (id, r2Data) => {
       tech_stack: r2Data.tech_stack,
       demo_review_comment: r2Data.demo_review_comment,
       moved_to_round_3: r2Data.moved_to_round_3,
-      product_depth: r2Data.product_depth
+      product_depth: r2Data.product_depth,
+      contact_status: r2Data.contact_status,
+      problem_fit: r2Data.problem_fit,
+      tech_depth: r2Data.tech_depth,
+      latency_considerations: r2Data.latency_considerations
     });
   if (error) throw error;
   return data;

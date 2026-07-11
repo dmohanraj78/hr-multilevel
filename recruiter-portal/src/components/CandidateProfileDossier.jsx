@@ -53,6 +53,10 @@ export default function CandidateProfileDossier({ candidate, round, onSave, onCa
       tech_stack: c.tech_stack !== undefined ? c.tech_stack : valParsed?.tech_stack,
       demo_review_comment: c.demo_review_comment !== undefined ? c.demo_review_comment : valParsed?.demo_review_comment,
       product_depth: c.product_depth !== undefined ? c.product_depth : valParsed?.product_depth,
+      contact_status: c.contact_status !== undefined ? c.contact_status : valParsed?.contact_status,
+      problem_fit: c.problem_fit !== undefined ? c.problem_fit : valParsed?.problem_fit,
+      tech_depth: c.tech_depth !== undefined ? c.tech_depth : valParsed?.tech_depth,
+      latency_considerations: c.latency_considerations !== undefined ? c.latency_considerations : valParsed?.latency_considerations,
     };
   };
 
@@ -88,10 +92,10 @@ export default function CandidateProfileDossier({ candidate, round, onSave, onCa
   const [r2Duration, setR2Duration] = useState(r2.duration_months || '');
   const [r2Complexity, setR2Complexity] = useState(r2.complexity || '');
   
-  // Custom combined column parsing for Contact Status and Problem Fit
+  // Custom combined column parsing for Contact Status and Problem Fit (with new columns fallback)
   const rawSolves = r2.solves_business_problem || '';
-  const initialContact = rawSolves.includes('Contact: ') ? rawSolves.split('Contact: ')[1].split(' | ')[0] : (['Yet to Speak', 'Spoke', 'Scheduled', 'No response'].includes(rawSolves) ? rawSolves : '');
-  const initialFit = rawSolves.includes('Fit: ') ? rawSolves.split('Fit: ')[1] : (['Yes', 'Maybe', 'No'].includes(rawSolves) ? rawSolves : '');
+  const initialContact = r2.contact_status || (rawSolves.includes('Contact: ') ? rawSolves.split('Contact: ')[1].split(' | ')[0] : (['Yet to Speak', 'Spoke', 'Scheduled', 'No response'].includes(rawSolves) ? rawSolves : ''));
+  const initialFit = r2.problem_fit || (rawSolves.includes('Fit: ') ? rawSolves.split('Fit: ')[1] : (['Yes', 'Maybe', 'No'].includes(rawSolves) ? rawSolves : ''));
   
   const [r2Solves, setR2Solves] = useState(initialContact);
   const [r2ProblemFit, setR2ProblemFit] = useState(initialFit);
@@ -100,10 +104,10 @@ export default function CandidateProfileDossier({ candidate, round, onSave, onCa
   const [r2Comments, setR2Comments] = useState(r2.demo_review_comment || '');
   const [r2NextStep, setR2NextStep] = useState(r2.moved_to_round_3 ? r2.moved_to_round_3.replace('_draft', '') : '');
   
-  // Custom combined column parsing for Tech Depth and Latency Considered
+  // Custom combined column parsing for Tech Depth and Latency Considered (with new columns fallback)
   const rawDepth = r2.product_depth || '';
-  const initialDepth = rawDepth.includes('Depth: ') ? rawDepth.split('Depth: ')[1].split(' | ')[0] : (['High', 'Medium', 'Low', 'None'].includes(rawDepth) ? rawDepth : '');
-  const initialLatency = rawDepth.includes('Latency: ') ? rawDepth.split('Latency: ')[1] : (!['High', 'Medium', 'Low', 'None'].includes(rawDepth) ? rawDepth : '');
+  const initialDepth = r2.tech_depth || (rawDepth.includes('Depth: ') ? rawDepth.split('Depth: ')[1].split(' | ')[0] : (['High', 'Medium', 'Low', 'None'].includes(rawDepth) ? rawDepth : ''));
+  const initialLatency = r2.latency_considerations || (rawDepth.includes('Latency: ') ? rawDepth.split('Latency: ')[1] : (!['High', 'Medium', 'Low', 'None'].includes(rawDepth) ? rawDepth : ''));
   
   const [r2ProductDepth, setR2ProductDepth] = useState(initialDepth);
   const [r2Latency, setR2Latency] = useState(initialLatency);
@@ -179,7 +183,11 @@ export default function CandidateProfileDossier({ candidate, round, onSave, onCa
             tech_stack: r2Stack,
             demo_review_comment: r2Comments,
             moved_to_round_3: finalDecision,
-            product_depth: r2ProductDepth || r2Latency ? `Depth: ${r2ProductDepth || ''} | Latency: ${r2Latency || ''}` : ''
+            product_depth: r2ProductDepth || r2Latency ? `Depth: ${r2ProductDepth || ''} | Latency: ${r2Latency || ''}` : '',
+            contact_status: r2Solves,
+            problem_fit: r2ProblemFit,
+            tech_depth: r2ProductDepth,
+            latency_considerations: r2Latency
           },
           round_1_evaluation: {
             ...r1,
