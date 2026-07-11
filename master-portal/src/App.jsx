@@ -896,7 +896,7 @@ export default function App() {
 
                 <CandidateListTable
                   candidates={r3Candidates}
-                  actionLabel="Decide Verdict"
+                  actionLabel="Review"
                   onActionClick={(cand) => {
                     setSelectedRound(3);
                     setSelectedCandidate(cand);
