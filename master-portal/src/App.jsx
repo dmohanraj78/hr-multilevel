@@ -264,6 +264,9 @@ export default function App() {
         await upsertRound1(selectedCandidate.id, payload.round_1_evaluation);
       } else if (selectedRound === 2) {
         await upsertRound2(selectedCandidate.id, payload.round_2_evaluation);
+        if (payload.round_1_evaluation?.eval_group) {
+          await upsertRound1(selectedCandidate.id, { eval_group: payload.round_1_evaluation.eval_group });
+        }
       } else if (selectedRound === 3) {
         await upsertRound3(selectedCandidate.id, payload.round_3_evaluation);
       }
