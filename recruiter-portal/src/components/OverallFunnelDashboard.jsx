@@ -215,16 +215,11 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
   // Funnel Stage Determinator
   const getFunnelStage = (c) => {
     const r1 = getR1(c);
-    const r2 = getR2(c);
     const r3 = getR3(c);
 
     if (r3.verdict === 'Yes') return 'Hired';
     if (r3.verdict === 'No') return 'Declined (Offer)';
     
-    const r2Decision = r2.moved_to_round_3;
-    const isR2Finished = r2Decision && !r2Decision.endsWith('_draft');
-    
-    if (isR2Finished && (r2Decision === 'No' || r2Decision === 'Declined')) return 'Declined (Review)';
     if (r1.app_status === 'Reject') return 'Declined (Review)';
     if (r1.app_status === 'Yes') return 'Tech Review';
     if (r1.app_status === 'Maybe') return 'Maybe (Reviewed)';
@@ -232,49 +227,46 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     return 'Pending Review';
   };
 
-  // Deduplicate globalData first (before stats) so all counts are in sync
-  const deduplicatedGlobal = useMemo(() => {
-    return globalData.reduce((acc, current) => {
-      const x = acc.find(item => item.email?.trim().toLowerCase() === current.email?.trim().toLowerCase());
-      if (!x) return acc.concat([current]);
-      return acc;
-    }, []);
+  // Base list containing only evaluated candidates (those with a round_1_evaluation record)
+  const evaluatedCandidates = useMemo(() => {
+    return globalData.filter(c => c.round_1_evaluation !== null);
   }, [globalData]);
 
-  // Number of candidates with an R1 evaluation record = 682 (consistent with R1 tab)
-  const evaluatedCount = globalData.filter(c => c.round_1_evaluation !== null).length;
-  const rawTotal = globalData.length; // 697 total raw submissions
-  const duplicatesRemoved = rawTotal - evaluatedCount; // 697 - 682 = 15 duplicates removed
+  const evaluatedCount = evaluatedCandidates.length;
+  const rawTotal = globalData.length; // total raw submissions
+  const duplicatesRemoved = rawTotal - evaluatedCount; // duplicates removed
 
-  // 1. Calculate Metrics — use globalData (reflects actual round_1_evaluation records)
+  // 1. Calculate Metrics — use evaluatedCandidates (reflects actual round_1_evaluation records)
   const stats = useMemo(() => {
-    let total = evaluatedCount; // 682 — same as R1 tab StatsBanner
+    const total = evaluatedCount;
     let hired = 0;
     let rejected = 0;
     let review = 0;
     let pendingScreening = 0;
     let maybeCount = 0;
 
-    globalData.forEach(c => {
-      if (c.round_1_evaluation === null) return; // Skip unevaluated submissions (the 15 duplicates/drafts)
-      const stage = getFunnelStage(c);
-      if (stage === 'Hired') hired++;
-      else if (stage.startsWith('Declined')) rejected++;
-      else if (stage === 'Tech Review') review++;
-      else if (stage === 'Pending Review') pendingScreening++;
-      else if (stage.startsWith('Maybe')) maybeCount++;
+    evaluatedCandidates.forEach(c => {
+      const r1 = getR1(c);
+      const status = r1.app_status || 'Pending';
+      if (status === 'Yes') review++;
+      else if (status === 'Reject') rejected++;
+      else if (status === 'Maybe') maybeCount++;
+      else pendingScreening++;
     });
 
-    return { total, hired, rejected, review, pendingScreening, maybeCount };
-  }, [globalData, evaluatedCount]);
+    // Hired count is candidates in round_3_evaluation with verdict === 'Yes'
+    hired = evaluatedCandidates.filter(c => getR3(c).verdict === 'Yes').length;
 
-  // 2. Chart Calculations — use globalData so Technical Reviewer counts reflect actual eval records
+    return { total, hired, rejected, review, pendingScreening, maybeCount };
+  }, [evaluatedCandidates, evaluatedCount]);
+
+  // 2. Chart Calculations — use evaluatedCandidates so Technical Reviewer counts reflect actual eval records
   const chartData = useMemo(() => {
     const clans = { Tejaswini: 0, Sohan: 0, Basvaraj: 0, Pushkaraj: 0, Akash: 0, Anmol: 0, Sachin: 0, 'Akhil L': 0, Vedant: 0, 'Akhil M': 0, Samit: 0, Snehanshu: 0, Ankita: 0, Kaushik: 0, Unassigned: 0 };
     const tiers = { 'T1+': 0, 'T1': 0, 'T2+': 0, 'T2': 0, 'T3': 0, 'N/A': 0 };
     const scores = { '0-5': 0, '6-10': 0, '11-15': 0, '16-20': 0, '21-25': 0, '26-30': 0 };
 
-    globalData.forEach(c => {
+    evaluatedCandidates.forEach(c => {
       const r1 = getR1(c);
       
       const clan = r1.eval_group || 'Unassigned';
@@ -295,7 +287,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     });
 
     return { clans, tiers, scores };
-  }, [globalData]);
+  }, [evaluatedCandidates]);
 
 
 
@@ -312,20 +304,20 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
 
   // Helpers to get unique lists
   const getUniqueValues = (columnKey, extractor) => {
-    const vals = globalData.map(extractor);
+    const vals = evaluatedCandidates.map(extractor);
     return Array.from(new Set(vals)).sort((a, b) => {
       if (typeof a === 'number' && typeof b === 'number') return a - b;
       return String(a).localeCompare(String(b));
     });
   };
 
-  const uniqueIds = useMemo(() => getUniqueValues('id', getFieldVal.id), [globalData]);
-  const uniqueCandidates = useMemo(() => getUniqueValues('candidate', getFieldVal.candidate), [globalData]);
-  const uniqueUniversities = useMemo(() => getUniqueValues('university', getFieldVal.university), [globalData]);
-  const uniqueTiers = useMemo(() => getUniqueValues('tier', getFieldVal.tier), [globalData]);
-  const uniqueScores = useMemo(() => getUniqueValues('score', getFieldVal.score), [globalData]);
-  const uniqueClans = useMemo(() => getUniqueValues('clan', getFieldVal.clan), [globalData]);
-  const uniqueStages = useMemo(() => getUniqueValues('funnelStage', getFieldVal.funnelStage), [globalData]);
+  const uniqueIds = useMemo(() => getUniqueValues('id', getFieldVal.id), [evaluatedCandidates]);
+  const uniqueCandidates = useMemo(() => getUniqueValues('candidate', getFieldVal.candidate), [evaluatedCandidates]);
+  const uniqueUniversities = useMemo(() => getUniqueValues('university', getFieldVal.university), [evaluatedCandidates]);
+  const uniqueTiers = useMemo(() => getUniqueValues('tier', getFieldVal.tier), [evaluatedCandidates]);
+  const uniqueScores = useMemo(() => getUniqueValues('score', getFieldVal.score), [evaluatedCandidates]);
+  const uniqueClans = useMemo(() => getUniqueValues('clan', getFieldVal.clan), [evaluatedCandidates]);
+  const uniqueStages = useMemo(() => getUniqueValues('funnelStage', getFieldVal.funnelStage), [evaluatedCandidates]);
 
   const handleApplyFilter = (columnKey, selectedValues) => {
     setActiveFilters(prev => {
@@ -345,7 +337,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
 
   // Filtering logic
   const filteredApplicants = useMemo(() => {
-    return globalData.filter(c => {
+    return evaluatedCandidates.filter(c => {
       const r1 = getR1(c);
       const stage = getFunnelStage(c);
 
@@ -370,7 +362,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
 
       return true;
     });
-  }, [globalData, search, activeFilters]);
+  }, [evaluatedCandidates, search, activeFilters]);
 
   // Sorting logic
   const sortedAndFiltered = useMemo(() => {
@@ -393,18 +385,12 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     });
   }, [filteredApplicants, sortConfig]);
 
-  // Deduplicated sortedAndFiltered list
-  const deduplicatedFiltered = useMemo(() => {
-    return sortedAndFiltered.reduce((acc, current) => {
-      const x = acc.find(item => item.email?.trim().toLowerCase() === current.email?.trim().toLowerCase());
-      if (!x) return acc.concat([current]);
-      return acc;
-    }, []);
-  }, [sortedAndFiltered]);
+  // Direct mapping without email deduplication to ensure perfect alignment with Supabase table row counts
+  const deduplicatedFiltered = sortedAndFiltered;
 
-  // Filtered count matching R1 eval records (for the APPLICANTS card = 682 when no filter)
-  const evaluatedFiltered = filteredApplicants.filter(c => c.round_1_evaluation !== null);
-  const filteredDuplicatesRemoved = sortedAndFiltered.length - evaluatedFiltered.length;
+  // Filtered count matching R1 eval records (for the APPLICANTS card = 688 when no filter)
+  const evaluatedFiltered = filteredApplicants;
+  const filteredDuplicatesRemoved = duplicatesRemoved;
 
   // Tile Clicks Map to Header Filter
   const handleTileClick = (stageType) => {
