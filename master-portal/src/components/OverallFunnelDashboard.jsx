@@ -3,7 +3,8 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Download, Search, LayoutGrid, Users, CheckCircle, Flame, XOctagon, HelpCircle, BarChart3, TrendingUp, Filter, ArrowUp, ArrowDown } from 'lucide-react';
+import { Download, Search, LayoutGrid, Users, CheckCircle, Flame, XOctagon, HelpCircle, BarChart3, TrendingUp, Filter, ArrowUp, ArrowDown, FileSpreadsheet } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 function HeaderFilter({
   label,
@@ -485,6 +486,152 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     document.body.removeChild(link);
   };
 
+  const downloadExcelReport = () => {
+    // 1. Sheet 1: Daily Evaluation Summary
+    const dailyStats = {}; // format: { 'YYYY-MM-DD': { r1: 0, r2: 0, r3: 0 } }
+
+    evaluatedCandidates.forEach(c => {
+      const r1 = getR1(c);
+      const r2 = getR2(c);
+      const r3 = getR3(c);
+
+      // Round 1 evaluation date
+      if (r1.app_status && r1.updated_at) {
+        const dateStr = new Date(r1.updated_at).toLocaleDateString('en-CA'); // YYYY-MM-DD
+        if (dateStr && dateStr !== 'Invalid Date') {
+          if (!dailyStats[dateStr]) dailyStats[dateStr] = { r1: 0, r2: 0, r3: 0 };
+          dailyStats[dateStr].r1++;
+        }
+      }
+
+      // Round 2 evaluation date
+      if (r2.moved_to_round_3 && r2.updated_at) {
+        const dateStr = new Date(r2.updated_at).toLocaleDateString('en-CA');
+        if (dateStr && dateStr !== 'Invalid Date') {
+          if (!dailyStats[dateStr]) dailyStats[dateStr] = { r1: 0, r2: 0, r3: 0 };
+          dailyStats[dateStr].r2++;
+        }
+      }
+
+      // Round 3 evaluation date
+      if (r3.verdict && r3.updated_at) {
+        const dateStr = new Date(r3.updated_at).toLocaleDateString('en-CA');
+        if (dateStr && dateStr !== 'Invalid Date') {
+          if (!dailyStats[dateStr]) dailyStats[dateStr] = { r1: 0, r2: 0, r3: 0 };
+          dailyStats[dateStr].r3++;
+        }
+      }
+    });
+
+    const summaryRows = Object.keys(dailyStats)
+      .sort((a, b) => b.localeCompare(a))
+      .map(date => ({
+        'Date': date,
+        'Round 1 Screened': dailyStats[date].r1,
+        'Round 2 Tech Evaluated': dailyStats[date].r2,
+        'Round 3 Executive Verdicts': dailyStats[date].r3,
+        'Total Daily Evaluations': dailyStats[date].r1 + dailyStats[date].r2 + dailyStats[date].r3
+      }));
+
+    if (summaryRows.length === 0) {
+      summaryRows.push({
+        'Date': 'No evaluations found',
+        'Round 1 Screened': 0,
+        'Round 2 Tech Evaluated': 0,
+        'Round 3 Executive Verdicts': 0,
+        'Total Daily Evaluations': 0
+      });
+    }
+
+    // 2. Sheet 2: Round 1 Screening
+    const r1Rows = evaluatedCandidates
+      .filter(c => getR1(c).app_status)
+      .map(c => {
+        const r1 = getR1(c);
+        return {
+          'Applicant ID': c.id,
+          'Full Name': c.full_name,
+          'Email': c.email,
+          'Role': c.applied_role || '-',
+          'UG University': c.ug_university || '-',
+          'Claude AI Score': parseFloat(r1.total || 0),
+          'Recruiter Tier': r1.tier || 'N/A',
+          'Recruiter Status': r1.app_status,
+          'Technical Reviewer Assigned': r1.eval_group || 'Unassigned',
+          'Recruiter Screening Comments': r1.review_comments || '',
+          'Evaluation Date': r1.updated_at ? new Date(r1.updated_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : '-'
+        };
+      });
+
+    // 3. Sheet 3: Round 2 Tech Vetting
+    const r2Rows = evaluatedCandidates
+      .filter(c => getR2(c).moved_to_round_3)
+      .map(c => {
+        const r1 = getR1(c);
+        const r2 = getR2(c);
+        
+        const rawSolves = r2.solves_business_problem || '';
+        const r2Solves = r2.contact_status || (rawSolves.includes('Contact: ') ? rawSolves.split('Contact: ')[1].split(' | ')[0] : (['Yet to Speak', 'Spoke', 'Scheduled', 'No response'].includes(rawSolves) ? rawSolves : ''));
+        const r2ProblemFit = r2.problem_fit || (rawSolves.includes('Fit: ') ? rawSolves.split('Fit: ')[1] : (['Yes', 'Maybe', 'No'].includes(rawSolves) ? rawSolves : ''));
+
+        const rawDepth = r2.product_depth || '';
+        const r2ProductDepth = r2.tech_depth || (rawDepth.includes('Depth: ') ? rawDepth.split('Depth: ')[1].split(' | ')[0] : (['High', 'Medium', 'Low', 'None'].includes(rawDepth) ? rawDepth : ''));
+        const r2Latency = r2.latency_considerations || (rawDepth.includes('Latency: ') ? rawDepth.split('Latency: ')[1] : (!['High', 'Medium', 'Low', 'None'].includes(rawDepth) ? rawDepth : ''));
+
+        return {
+          'Applicant ID': c.id,
+          'Full Name': c.full_name,
+          'Email': c.email,
+          'Assigned Technical Reviewer': r1.eval_group || 'Unassigned',
+          'Contact Status': r2Solves || '',
+          'Problem-Solution Fit': r2ProblemFit || '',
+          'Technical Depth': r2ProductDepth || '',
+          'Latency/Cost considered': r2Latency || '',
+          'Project Complexity': r2.complexity || '',
+          'Tech Stack': r2.tech_stack || '',
+          'Decision': r2.moved_to_round_3,
+          'Tech Reviewer Vetting Comments': r2.demo_review_comment || '',
+          'Earliest Start Date': r2.when_can_they_start || '',
+          'Duration Available': r2.duration_months || '',
+          'Evaluation Date': r2.updated_at ? new Date(r2.updated_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : '-'
+        };
+      });
+
+    // 4. Sheet 4: Round 3 Executive Verdict
+    const r3Rows = evaluatedCandidates
+      .filter(c => getR3(c).verdict)
+      .map(c => {
+        const r3 = getR3(c);
+        return {
+          'Applicant ID': c.id,
+          'Full Name': c.full_name,
+          'Email': c.email,
+          'Verdict': r3.verdict,
+          'Executive Decision Comments': r3.review_comments || '',
+          'Evaluation Date': r3.updated_at ? new Date(r3.updated_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : '-'
+        };
+      });
+
+    // Create a new workbook
+    const wb = XLSX.utils.book_new();
+
+    // Add sheets
+    const wsSummary = XLSX.utils.json_to_sheet(summaryRows);
+    XLSX.utils.book_append_sheet(wb, wsSummary, "Daily Summary");
+
+    const wsR1 = XLSX.utils.json_to_sheet(r1Rows);
+    XLSX.utils.book_append_sheet(wb, wsR1, "Round 1 Screening");
+
+    const wsR2 = XLSX.utils.json_to_sheet(r2Rows);
+    XLSX.utils.book_append_sheet(wb, wsR2, "Round 2 Tech Vetting");
+
+    const wsR3 = XLSX.utils.json_to_sheet(r3Rows);
+    XLSX.utils.book_append_sheet(wb, wsR3, "Round 3 Executive Verdict");
+
+    // Write file
+    XLSX.writeFile(wb, `aviators_compiled_report_${new Date().toLocaleDateString('en-CA')}.xlsx`);
+  };
+
   return (
     <div className="flex flex-col gap-8">
       
@@ -498,9 +645,14 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
             <strong className="text-[#800020]">{rawTotal} applications</strong> processed · {duplicatesRemoved} duplicates removed · v2 rubric (max score 30)
           </p>
         </div>
-        <Button onClick={exportToCSV} className="bg-[#800020] hover:bg-[#800020]/90 text-white rounded-xl shadow-md shrink-0">
-          <Download className="mr-2 h-4 w-4 stroke-[1.5]" /> Export Filtered ({deduplicatedFiltered.length}) Records (CSV)
-        </Button>
+        <div className="flex flex-wrap gap-3 items-center shrink-0">
+          <Button onClick={exportToCSV} className="bg-[#800020] hover:bg-[#800020]/90 text-white rounded-xl shadow-md">
+            <Download className="mr-2 h-4 w-4 stroke-[1.5]" /> Export Filtered ({deduplicatedFiltered.length}) Records (CSV)
+          </Button>
+          <Button onClick={downloadExcelReport} className="bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl shadow-md">
+            <FileSpreadsheet className="mr-2 h-4 w-4 stroke-[1.5]" /> Download Excel Report
+          </Button>
+        </div>
       </div>
 
       {/* Tiles Metrics Grid */}
