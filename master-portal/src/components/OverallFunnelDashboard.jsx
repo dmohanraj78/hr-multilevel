@@ -789,6 +789,76 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       formatSheet(sheet);
     };
 
+    // --- Tab: R1 & R2 Side-by-Side ---
+    const addSideBySideTab = () => {
+      const sheet = workbook.addWorksheet("R1 & R2 Side-by-Side");
+      sheet.columns = [
+        { header: 'Candidate ID', key: 'id', width: 12 },
+        { header: 'Candidate Name', key: 'name', width: 25 },
+        { header: 'Email', key: 'email', width: 30 },
+        { header: 'UG University', key: 'college', width: 35 },
+        
+        // R1 columns
+        { header: 'R1 Score', key: 'r1_score', width: 12 },
+        { header: 'R1 Tier', key: 'r1_tier', width: 12 },
+        { header: 'R1 Recruiter Status', key: 'r1_status', width: 18 },
+        { header: 'R1 Screening Comments', key: 'r1_comments', width: 45 },
+        { header: 'R1 Assigned Reviewer', key: 'r1_reviewer', width: 25 },
+        
+        // R2 columns
+        { header: 'R2 Contact Status', key: 'r2_contact_status', width: 18 },
+        { header: 'R2 Start Date', key: 'r2_start_date', width: 15 },
+        { header: 'R2 Duration', key: 'r2_duration', width: 15 },
+        { header: 'R2 Problem Fit', key: 'r2_problem_fit', width: 15 },
+        { header: 'R2 Technical Depth', key: 'r2_tech_depth', width: 18 },
+        { header: 'R2 Latency/Cost/Security', key: 'r2_latency', width: 22 },
+        { header: 'R2 Tech Stack', key: 'r2_tech_stack', width: 30 },
+        { header: 'R2 Commitments/Concerns', key: 'r2_concerns', width: 35 },
+        { header: 'R2 Decision', key: 'r2_decision', width: 15 },
+        { header: 'R2 Evaluator Comments', key: 'r2_comments', width: 45 }
+      ];
+
+      evaluatedCandidates
+        .filter(c => getR1(c).id !== undefined)
+        .filter(c => isWithinDateRange(getR2(c).updated_at || getR1(c).updated_at || c.submission_date))
+        .forEach(c => {
+          const r1 = getR1(c);
+          const r2 = getR2(c);
+
+          const rawSolves = r2.solves_business_problem || '';
+          const contactStatus = r2.contact_status || (rawSolves.includes('Contact: ') ? rawSolves.split('Contact: ')[1].split(' | ')[0] : (['Yet to Speak', 'Spoke', 'Scheduled', 'No response'].includes(rawSolves) ? rawSolves : ''));
+          const problemFit = r2.problem_fit || (rawSolves.includes('Fit: ') ? rawSolves.split('Fit: ')[1] : (['Yes', 'Maybe', 'No'].includes(rawSolves) ? rawSolves : ''));
+
+          const rawDepth = r2.product_depth || '';
+          const techDepth = r2.tech_depth || (rawDepth.includes('Depth: ') ? rawDepth.split('Depth: ')[1].split(' | ')[0] : (['High', 'Medium', 'Low', 'None'].includes(rawDepth) ? rawDepth : ''));
+          const latency = r2.latency_considerations || (rawDepth.includes('Latency: ') ? rawDepth.split('Latency: ')[1] : (!['High', 'Medium', 'Low', 'None'].includes(rawDepth) ? rawDepth : ''));
+
+          sheet.addRow({
+            id: c.id,
+            name: c.full_name,
+            email: c.email,
+            college: c.ug_university || '-',
+            r1_score: parseFloat(r1.total || 0),
+            r1_tier: r1.tier || 'N/A',
+            r1_status: r1.app_status || 'Pending',
+            r1_comments: r1.review_comments || '',
+            r1_reviewer: r1.eval_group || 'Unassigned',
+            r2_contact_status: r2.id ? (contactStatus || 'Pending') : '-',
+            r2_start_date: r2.when_can_they_start || '-',
+            r2_duration: r2.duration_months || '-',
+            r2_problem_fit: r2.id ? (problemFit || 'Pending') : '-',
+            r2_tech_depth: r2.id ? (techDepth || 'Pending') : '-',
+            r2_latency: r2.id ? (latency || '-') : '-',
+            r2_tech_stack: r2.tech_stack || '-',
+            r2_concerns: r2.complexity || '-',
+            r2_decision: r2.id ? (r2.moved_to_round_3 ? r2.moved_to_round_3.replace('_draft', '') : 'Pending') : '-',
+            r2_comments: r2.demo_review_comment || '-'
+          });
+        });
+
+      formatSheet(sheet);
+    };
+
     let filename = '';
     const dateSuffix = new Date().toLocaleDateString('en-CA');
     
@@ -801,6 +871,9 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     } else if (roundType === 3) {
       addR3Tab();
       filename = `round_3_executive_verdicts_${dateSuffix}.xlsx`;
+    } else if (roundType === 'side-by-side') {
+      addSideBySideTab();
+      filename = `r1_r2_side_by_side_report_${dateSuffix}.xlsx`;
     } else {
       addSummaryTab();
       addR1Tab();
@@ -884,6 +957,12 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
             className="bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-semibold h-10 shadow-sm transition-all"
           >
             <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5" /> Download R2 Report
+          </Button>
+          <Button 
+            onClick={() => downloadExcelReport('side-by-side')} 
+            className="bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-semibold h-10 shadow-sm transition-all"
+          >
+            <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5" /> R1 & R2 Side-by-Side
           </Button>
           <Button 
             onClick={() => downloadExcelReport(3)} 
