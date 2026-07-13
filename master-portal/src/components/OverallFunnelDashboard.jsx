@@ -947,9 +947,19 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
         medianScore = scores.length % 2 !== 0 ? scores[mid] : (scores[mid - 1] + scores[mid]) / 2;
       }
 
+      // Funnel reconciliation counts — these mirror the dashboard tiles and the
+      // Supabase tables directly so the sheet's numbers can be sanity-checked
+      const fMovedToR2 = candidatesToExport.filter(c => (getR1(c).app_status || '').trim().toLowerCase() === 'yes').length;
+      const fR2Evaluated = candidatesToExport.filter(c => {
+        const r2 = getR2(c);
+        return r2.id !== undefined && r2.id !== null;
+      }).length;
+      const fRejected = candidatesToExport.filter(c => ['no', 'rejected', 'invalid', 'reject'].includes((getR1(c).app_status || '').trim().toLowerCase())).length;
+      const fPending = totalApplicants - fMovedToR2 - fRejected - candidatesToExport.filter(c => (getR1(c).app_status || '').trim().toLowerCase() === 'maybe').length;
+
       // Write Row 3 (values)
       sheet.getRow(3).height = 20;
-      const statsVals = [totalApplicants, t1, t1Minus, t2, t2Minus, t3, t4, parseFloat(avgScore.toFixed(1)), topScore, medianScore];
+      const statsVals = [totalApplicants, t1, t1Minus, t2, t2Minus, t3, t4, parseFloat(avgScore.toFixed(1)), topScore, medianScore, fMovedToR2, fR2Evaluated, fRejected, fPending];
       statsVals.forEach((val, idx) => {
         const colLetter = String.fromCharCode(65 + idx); // A to J
         const cell = unshareStyle(sheet.getCell(`${colLetter}3`));
@@ -967,7 +977,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
 
       // Write Row 4 (labels)
       sheet.getRow(4).height = 18;
-      const statsLabels = ["Applicants", "Tier 1", "Tier 1-", "Tier 2", "Tier 2-", "Tier 3", "Tier 4", "Avg Total", "Top Score", "Median"];
+      const statsLabels = ["Applicants", "Tier 1", "Tier 1-", "Tier 2", "Tier 2-", "Tier 3", "Tier 4", "Avg Total", "Top Score", "Median", "Moved to R2", "R2 Evaluated", "Rejected", "Pending"];
       statsLabels.forEach((label, idx) => {
         const colLetter = String.fromCharCode(65 + idx);
         const cell = unshareStyle(sheet.getCell(`${colLetter}4`));

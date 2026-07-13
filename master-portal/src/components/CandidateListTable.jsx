@@ -569,13 +569,16 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
                   />
                 </TableHead>
               )}
+              {round === 3 && (
+                <TableHead className="min-w-[240px] font-semibold">TR Comments</TableHead>
+              )}
               <TableHead className="w-[150px] text-right font-semibold pr-6">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {sortedAndFiltered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={showTechEvaluatorFilter ? 9 : 8} className="text-center py-10 text-muted-foreground font-mono text-sm">
+                <TableCell colSpan={(showTechEvaluatorFilter ? 9 : 8) + (round === 3 ? 1 : 0)} className="text-center py-10 text-muted-foreground font-mono text-sm">
                   No applicants matching active selection filters.
                 </TableCell>
               </TableRow>
@@ -646,6 +649,21 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
                         )}
                       </TableCell>
                     )}
+                    {round === 3 && (() => {
+                      const r2val = cand.round_2_evaluation;
+                      const r2 = Array.isArray(r2val) ? (r2val[0] || {}) : (r2val || {});
+                      const trComment = r2.demo_review_comment || '';
+                      return (
+                        <TableCell className="max-w-[280px]">
+                          <span
+                            title={trComment}
+                            className="text-xs text-muted-foreground line-clamp-2 whitespace-normal block"
+                          >
+                            {trComment || '—'}
+                          </span>
+                        </TableCell>
+                      );
+                    })()}
                     <TableCell className="text-right pr-6">
                       <Button size="sm" variant="outline" onClick={() => onActionClick(cand)} className="rounded-md font-semibold text-xs border-[#800020] text-[#800020] hover:bg-[#800020] hover:text-white transition-colors duration-300">
                         {actionLabel}

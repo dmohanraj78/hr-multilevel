@@ -188,8 +188,18 @@ def build_excel_report():
     ws.row_dimensions[3].height = 20
     ws.row_dimensions[4].height = 18
 
-    stats_vals = [total_applicants, t1, t1_minus, t2, t2_minus, t3, t4, round(avg_score, 1), top_score, median_score]
-    stats_labels = ["Applicants", "Tier 1", "Tier 1-", "Tier 2", "Tier 2-", "Tier 3", "Tier 4", "Avg Total", "Top Score", "Median"]
+    # Funnel reconciliation counts — mirror the Supabase tables directly so the
+    # sheet's numbers can be sanity-checked against the dashboard
+    def _r1_status(cand):
+        return str(cand["r1"].get("app_status") or "").strip().lower()
+    f_moved_to_r2 = sum(1 for cand in candidates if _r1_status(cand) == "yes")
+    f_r2_evaluated = sum(1 for cand in candidates if cand["r2"].get("id") is not None)
+    f_rejected = sum(1 for cand in candidates if _r1_status(cand) in ["no", "rejected", "invalid", "reject"])
+    f_maybe = sum(1 for cand in candidates if _r1_status(cand) == "maybe")
+    f_pending = total_applicants - f_moved_to_r2 - f_rejected - f_maybe
+
+    stats_vals = [total_applicants, t1, t1_minus, t2, t2_minus, t3, t4, round(avg_score, 1), top_score, median_score, f_moved_to_r2, f_r2_evaluated, f_rejected, f_pending]
+    stats_labels = ["Applicants", "Tier 1", "Tier 1-", "Tier 2", "Tier 2-", "Tier 3", "Tier 4", "Avg Total", "Top Score", "Median", "Moved to R2", "R2 Evaluated", "Rejected", "Pending"]
 
     thin_border = Border(
         left=Side(style='thin', color='D9D9D9'),
@@ -200,7 +210,7 @@ def build_excel_report():
 
     light_blue_fill = PatternFill(start_color="F2F5FB", end_color="F2F5FB", fill_type="solid")
 
-    for i in range(10):
+    for i in range(len(stats_vals)):
         col_letter = get_column_letter(i + 1)
         
         # Row 3 Value
