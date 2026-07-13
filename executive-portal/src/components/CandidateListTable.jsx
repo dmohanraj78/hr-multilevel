@@ -307,7 +307,34 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
 
   // Sorting logic
   const sortedAndFiltered = useMemo(() => {
-    if (!sortConfig.key) return filtered;
+    if (!sortConfig.key) {
+      // Default Executive R3 sequence: Pending first, TR Decision 'Yes' > 'Maybe', Completed verdict at bottom
+      return [...filtered].sort((a, b) => {
+        const r3A = getR3(a);
+        const r3B = getR3(b);
+        const hasVerdictA = !!r3A.verdict;
+        const hasVerdictB = !!r3B.verdict;
+
+        // 1. Sort by R3 Verdict completed status (Pending first, Completed last)
+        if (hasVerdictA !== hasVerdictB) {
+          return hasVerdictA ? 1 : -1;
+        }
+
+        // 2. Sort by TR Decision (Yes first, Maybe second)
+        const trA = getR2(a).moved_to_round_3 || '';
+        const trB = getR2(b).moved_to_round_3 || '';
+        
+        if (trA !== trB) {
+          if (trA === 'Yes') return -1;
+          if (trB === 'Yes') return 1;
+          if (trA === 'Maybe') return -1;
+          if (trB === 'Maybe') return 1;
+        }
+
+        // 3. Fallback to ID
+        return parseInt(a.id) - parseInt(b.id);
+      });
+    }
 
     return [...filtered].sort((a, b) => {
       let valA = getCandValue[sortConfig.key](a);
