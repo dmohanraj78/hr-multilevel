@@ -496,8 +496,8 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       const r3 = getR3(c);
 
       // Round 1 evaluation date
-      if (r1.app_status && r1.updated_at) {
-        const dateStr = new Date(r1.updated_at).toLocaleDateString('en-CA'); // YYYY-MM-DD
+      if (r1.app_status) {
+        const dateStr = new Date(r1.updated_at || c.submission_date).toLocaleDateString('en-CA'); // YYYY-MM-DD
         if (dateStr && dateStr !== 'Invalid Date') {
           if (!dailyStats[dateStr]) dailyStats[dateStr] = { r1: 0, r2: 0, r3: 0 };
           dailyStats[dateStr].r1++;
@@ -505,8 +505,8 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       }
 
       // Round 2 evaluation date
-      if (r2.moved_to_round_3 && r2.updated_at) {
-        const dateStr = new Date(r2.updated_at).toLocaleDateString('en-CA');
+      if (r2.moved_to_round_3) {
+        const dateStr = new Date(r2.updated_at || c.submission_date).toLocaleDateString('en-CA');
         if (dateStr && dateStr !== 'Invalid Date') {
           if (!dailyStats[dateStr]) dailyStats[dateStr] = { r1: 0, r2: 0, r3: 0 };
           dailyStats[dateStr].r2++;
@@ -514,8 +514,8 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       }
 
       // Round 3 evaluation date
-      if (r3.verdict && r3.updated_at) {
-        const dateStr = new Date(r3.updated_at).toLocaleDateString('en-CA');
+      if (r3.verdict) {
+        const dateStr = new Date(r3.updated_at || c.submission_date).toLocaleDateString('en-CA');
         if (dateStr && dateStr !== 'Invalid Date') {
           if (!dailyStats[dateStr]) dailyStats[dateStr] = { r1: 0, r2: 0, r3: 0 };
           dailyStats[dateStr].r3++;
@@ -559,7 +559,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
           'Recruiter Status': r1.app_status,
           'Technical Reviewer Assigned': r1.eval_group || 'Unassigned',
           'Recruiter Screening Comments': r1.review_comments || '',
-          'Evaluation Date': r1.updated_at ? new Date(r1.updated_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : '-'
+          'Evaluation Date': (r1.updated_at || c.submission_date) ? new Date(r1.updated_at || c.submission_date).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : '-'
         };
       });
 
@@ -593,7 +593,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
           'Tech Reviewer Vetting Comments': r2.demo_review_comment || '',
           'Earliest Start Date': r2.when_can_they_start || '',
           'Duration Available': r2.duration_months || '',
-          'Evaluation Date': r2.updated_at ? new Date(r2.updated_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : '-'
+          'Evaluation Date': (r2.updated_at || c.submission_date) ? new Date(r2.updated_at || c.submission_date).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : '-'
         };
       });
 
@@ -608,7 +608,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
           'Email': c.email,
           'Verdict': r3.verdict,
           'Executive Decision Comments': r3.review_comments || '',
-          'Evaluation Date': r3.updated_at ? new Date(r3.updated_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : '-'
+          'Evaluation Date': (r3.updated_at || c.submission_date) ? new Date(r3.updated_at || c.submission_date).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : '-'
         };
       });
 
