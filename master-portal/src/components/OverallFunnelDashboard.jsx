@@ -1216,34 +1216,10 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
 
         <div className="flex flex-wrap gap-2 md:items-end justify-end self-stretch md:self-auto">
           <Button 
-            onClick={() => downloadExcelReport(1)} 
-            className="bg-sky-700 hover:bg-sky-800 text-white rounded-xl text-xs font-semibold h-10 shadow-sm transition-all"
-          >
-            <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5" /> Download R1 Report
-          </Button>
-          <Button 
-            onClick={() => downloadExcelReport(2)} 
-            className="bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-semibold h-10 shadow-sm transition-all"
-          >
-            <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5" /> Download R2 Report
-          </Button>
-          <Button 
             onClick={() => downloadExcelReport('side-by-side')} 
-            className="bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-semibold h-10 shadow-sm transition-all"
-          >
-            <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5" /> R1 & R2 Side-by-Side
-          </Button>
-          <Button 
-            onClick={() => downloadExcelReport(3)} 
-            className="bg-violet-700 hover:bg-violet-800 text-white rounded-xl text-xs font-semibold h-10 shadow-sm transition-all"
-          >
-            <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5" /> Download R3 Report
-          </Button>
-          <Button 
-            onClick={() => downloadExcelReport('combined')} 
             className="bg-[#800020] hover:bg-[#800020]/90 text-white rounded-xl text-xs font-semibold h-10 shadow-sm transition-all"
           >
-            <Download className="mr-1.5 h-3.5 w-3.5" /> All Rounds Combined
+            <Download className="mr-1.5 h-3.5 w-3.5" /> Download Report
           </Button>
         </div>
       </div>
