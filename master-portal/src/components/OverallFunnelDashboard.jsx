@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Download, Search, LayoutGrid, Users, CheckCircle, Flame, XOctagon, HelpCircle, BarChart3, TrendingUp, Filter, ArrowUp, ArrowDown, FileSpreadsheet } from 'lucide-react';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 function HeaderFilter({
   label,
@@ -193,6 +193,8 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
   const [search, setSearch] = useState('');
   const [activeFilters, setActiveFilters] = useState({});
   const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   // Helper selectors
   const getR1 = (c) => {
@@ -486,150 +488,336 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     document.body.removeChild(link);
   };
 
-  const downloadExcelReport = () => {
-    // 1. Sheet 1: Daily Evaluation Summary
-    const dailyStats = {}; // format: { 'YYYY-MM-DD': { r1: 0, r2: 0, r3: 0 } }
-
-    evaluatedCandidates.forEach(c => {
-      const r1 = getR1(c);
-      const r2 = getR2(c);
-      const r3 = getR3(c);
-
-      // Round 1 evaluation date
-      if (r1.app_status) {
-        const dateStr = new Date(r1.updated_at || c.submission_date).toLocaleDateString('en-CA'); // YYYY-MM-DD
-        if (dateStr && dateStr !== 'Invalid Date') {
-          if (!dailyStats[dateStr]) dailyStats[dateStr] = { r1: 0, r2: 0, r3: 0 };
-          dailyStats[dateStr].r1++;
-        }
+  const downloadExcelReport = async (roundType = 'combined') => {
+    const workbook = new ExcelJS.Workbook();
+    
+    // Helper to filter candidates by date range
+    const isWithinDateRange = (dateStr) => {
+      if (!startDate && !endDate) return true;
+      if (!dateStr || dateStr === '-') return false;
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return false;
+      
+      const checkDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      
+      if (startDate) {
+        const start = new Date(startDate);
+        const startOnly = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+        if (checkDate < startOnly) return false;
       }
-
-      // Round 2 evaluation date
-      if (r2.moved_to_round_3) {
-        const dateStr = new Date(r2.updated_at || c.submission_date).toLocaleDateString('en-CA');
-        if (dateStr && dateStr !== 'Invalid Date') {
-          if (!dailyStats[dateStr]) dailyStats[dateStr] = { r1: 0, r2: 0, r3: 0 };
-          dailyStats[dateStr].r2++;
-        }
+      if (endDate) {
+        const end = new Date(endDate);
+        const endOnly = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+        if (checkDate > endOnly) return false;
       }
+      return true;
+    };
 
-      // Round 3 evaluation date
-      if (r3.verdict) {
-        const dateStr = new Date(r3.updated_at || c.submission_date).toLocaleDateString('en-CA');
-        if (dateStr && dateStr !== 'Invalid Date') {
-          if (!dailyStats[dateStr]) dailyStats[dateStr] = { r1: 0, r2: 0, r3: 0 };
-          dailyStats[dateStr].r3++;
-        }
-      }
-    });
+    // Helper to format cells and apply border/font/coloring
+    const formatSheet = (sheet) => {
+      // Style headers
+      const headerRow = sheet.getRow(1);
+      headerRow.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
+      headerRow.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF800020' } // Mondee Maroon
+      };
+      headerRow.height = 24;
+      headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
 
-    const summaryRows = Object.keys(dailyStats)
-      .sort((a, b) => b.localeCompare(a))
-      .map(date => ({
-        'Date': date,
-        'Round 1 Screened': dailyStats[date].r1,
-        'Round 2 Tech Evaluated': dailyStats[date].r2,
-        'Round 3 Executive Verdicts': dailyStats[date].r3,
-        'Total Daily Evaluations': dailyStats[date].r1 + dailyStats[date].r2 + dailyStats[date].r3
-      }));
+      // Style grid cells
+      sheet.eachRow((row, rowNumber) => {
+        if (rowNumber === 1) return;
+        row.height = 20;
+        row.alignment = { vertical: 'middle' };
+        row.eachCell((cell) => {
+          cell.font = { name: 'Segoe UI', size: 9.5 };
+          cell.border = {
+            top: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+            bottom: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+            left: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+            right: { style: 'thin', color: { argb: 'FFE0E0E0' } }
+          };
 
-    if (summaryRows.length === 0) {
-      summaryRows.push({
-        'Date': 'No evaluations found',
-        'Round 1 Screened': 0,
-        'Round 2 Tech Evaluated': 0,
-        'Round 3 Executive Verdicts': 0,
-        'Total Daily Evaluations': 0
+          const val = String(cell.value || '').trim();
+          const valLower = val.toLowerCase();
+          
+          // Green highlighting (Yes, Promoted, Approved, Strong, Hired)
+          if (['yes', 'promoted', 'approved', 'strong', 'hired', 't1+', 't1'].includes(valLower)) {
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFE2F0D9' } // Light Green
+            };
+            cell.font = { name: 'Segoe UI', size: 9.5, color: { argb: 'FF385723' }, bold: true };
+          } 
+          // Amber highlighting (Maybe, Good)
+          else if (['maybe', 'good', 't2+', 't2'].includes(valLower)) {
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFFFF3CD' } // Light Amber
+            };
+            cell.font = { name: 'Segoe UI', size: 9.5, color: { argb: 'FF856404' }, bold: true };
+          } 
+          // Red highlighting (No, Reject, Declined, Invalid)
+          else if (['no', 'reject', 'declined', 'invalid', 't3', 't4', 'duplicate'].includes(valLower)) {
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFF8D7DA' } // Light Red
+            };
+            cell.font = { name: 'Segoe UI', size: 9.5, color: { argb: 'FF721C24' }, bold: true };
+          }
+        });
       });
-    }
+    };
 
-    // 2. Sheet 2: Round 1 Screening
-    const r1Rows = evaluatedCandidates
-      .filter(c => getR1(c).app_status)
-      .map(c => {
-        const r1 = getR1(c);
-        return {
-          'Applicant ID': c.id,
-          'Full Name': c.full_name,
-          'Email': c.email,
-          'Role': c.applied_role || '-',
-          'UG University': c.ug_university || '-',
-          'Claude AI Score': parseFloat(r1.total || 0),
-          'Recruiter Tier': r1.tier || 'N/A',
-          'Recruiter Status': r1.app_status,
-          'Technical Reviewer Assigned': r1.eval_group || 'Unassigned',
-          'Recruiter Screening Comments': r1.review_comments || '',
-          'Evaluation Date': (r1.updated_at || c.submission_date) ? new Date(r1.updated_at || c.submission_date).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : '-'
-        };
-      });
-
-    // 3. Sheet 3: Round 2 Tech Vetting
-    const r2Rows = evaluatedCandidates
-      .filter(c => getR2(c).moved_to_round_3)
-      .map(c => {
+    // --- Tab 1: Daily Activity Summary ---
+    const addSummaryTab = () => {
+      const dailyStats = {};
+      evaluatedCandidates.forEach(c => {
         const r1 = getR1(c);
         const r2 = getR2(c);
-        
-        const rawSolves = r2.solves_business_problem || '';
-        const r2Solves = r2.contact_status || (rawSolves.includes('Contact: ') ? rawSolves.split('Contact: ')[1].split(' | ')[0] : (['Yet to Speak', 'Spoke', 'Scheduled', 'No response'].includes(rawSolves) ? rawSolves : ''));
-        const r2ProblemFit = r2.problem_fit || (rawSolves.includes('Fit: ') ? rawSolves.split('Fit: ')[1] : (['Yes', 'Maybe', 'No'].includes(rawSolves) ? rawSolves : ''));
-
-        const rawDepth = r2.product_depth || '';
-        const r2ProductDepth = r2.tech_depth || (rawDepth.includes('Depth: ') ? rawDepth.split('Depth: ')[1].split(' | ')[0] : (['High', 'Medium', 'Low', 'None'].includes(rawDepth) ? rawDepth : ''));
-        const r2Latency = r2.latency_considerations || (rawDepth.includes('Latency: ') ? rawDepth.split('Latency: ')[1] : (!['High', 'Medium', 'Low', 'None'].includes(rawDepth) ? rawDepth : ''));
-
-        return {
-          'Applicant ID': c.id,
-          'Full Name': c.full_name,
-          'Email': c.email,
-          'Assigned Technical Reviewer': r1.eval_group || 'Unassigned',
-          'Contact Status': r2Solves || '',
-          'Problem-Solution Fit': r2ProblemFit || '',
-          'Technical Depth': r2ProductDepth || '',
-          'Latency/Cost considered': r2Latency || '',
-          'Project Complexity': r2.complexity || '',
-          'Tech Stack': r2.tech_stack || '',
-          'Decision': r2.moved_to_round_3,
-          'Tech Reviewer Vetting Comments': r2.demo_review_comment || '',
-          'Earliest Start Date': r2.when_can_they_start || '',
-          'Duration Available': r2.duration_months || '',
-          'Evaluation Date': (r2.updated_at || c.submission_date) ? new Date(r2.updated_at || c.submission_date).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : '-'
-        };
-      });
-
-    // 4. Sheet 4: Round 3 Executive Verdict
-    const r3Rows = evaluatedCandidates
-      .filter(c => getR3(c).verdict)
-      .map(c => {
         const r3 = getR3(c);
-        return {
-          'Applicant ID': c.id,
-          'Full Name': c.full_name,
-          'Email': c.email,
-          'Verdict': r3.verdict,
-          'Executive Decision Comments': r3.review_comments || '',
-          'Evaluation Date': (r3.updated_at || c.submission_date) ? new Date(r3.updated_at || c.submission_date).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : '-'
-        };
+
+        if (r1.app_status) {
+          const dateStr = new Date(r1.updated_at || c.submission_date).toLocaleDateString('en-CA');
+          if (isWithinDateRange(r1.updated_at || c.submission_date)) {
+            if (!dailyStats[dateStr]) dailyStats[dateStr] = { r1: 0, r2: 0, r3: 0 };
+            dailyStats[dateStr].r1++;
+          }
+        }
+        if (r2.moved_to_round_3) {
+          const dateStr = new Date(r2.updated_at || c.submission_date).toLocaleDateString('en-CA');
+          if (isWithinDateRange(r2.updated_at || c.submission_date)) {
+            if (!dailyStats[dateStr]) dailyStats[dateStr] = { r1: 0, r2: 0, r3: 0 };
+            dailyStats[dateStr].r2++;
+          }
+        }
+        if (r3.verdict) {
+          const dateStr = new Date(r3.updated_at || c.submission_date).toLocaleDateString('en-CA');
+          if (isWithinDateRange(r3.updated_at || c.submission_date)) {
+            if (!dailyStats[dateStr]) dailyStats[dateStr] = { r1: 0, r2: 0, r3: 0 };
+            dailyStats[dateStr].r3++;
+          }
+        }
       });
 
-    // Create a new workbook
-    const wb = XLSX.utils.book_new();
+      const sheet = workbook.addWorksheet("Daily Summary");
+      sheet.columns = [
+        { header: 'Date', key: 'date', width: 18 },
+        { header: 'Round 1 Screened', key: 'r1', width: 22 },
+        { header: 'Round 2 Tech Vetting', key: 'r2', width: 22 },
+        { header: 'Round 3 Executive Verdicts', key: 'r3', width: 25 },
+        { header: 'Total Daily Evaluations', key: 'total', width: 22 }
+      ];
 
-    // Add sheets
-    const wsSummary = XLSX.utils.json_to_sheet(summaryRows);
-    XLSX.utils.book_append_sheet(wb, wsSummary, "Daily Summary");
+      Object.keys(dailyStats)
+        .sort((a, b) => b.localeCompare(a))
+        .forEach(date => {
+          sheet.addRow({
+            date: date,
+            r1: dailyStats[date].r1,
+            r2: dailyStats[date].r2,
+            r3: dailyStats[date].r3,
+            total: dailyStats[date].r1 + dailyStats[date].r2 + dailyStats[date].r3
+          });
+        });
 
-    const wsR1 = XLSX.utils.json_to_sheet(r1Rows);
-    XLSX.utils.book_append_sheet(wb, wsR1, "Round 1 Screening");
+      if (sheet.rowCount === 1) {
+        sheet.addRow({ date: 'No activity found', r1: 0, r2: 0, r3: 0, total: 0 });
+      }
+      formatSheet(sheet);
+    };
 
-    const wsR2 = XLSX.utils.json_to_sheet(r2Rows);
-    XLSX.utils.book_append_sheet(wb, wsR2, "Round 2 Tech Vetting");
+    // --- Tab 2: Round 1 Screening ---
+    const addR1Tab = () => {
+      const sheet = workbook.addWorksheet("Round 1 Screening");
+      sheet.columns = [
+        { header: 'Candidate ID', key: 'id', width: 15 },
+        { header: 'Name', key: 'name', width: 25 },
+        { header: 'Email', key: 'email', width: 30 },
+        { header: 'Role', key: 'role', width: 25 },
+        { header: 'UG University', key: 'college', width: 35 },
+        { header: 'Claude AI Score', key: 'score', width: 18 },
+        { header: 'Recruiter Tier', key: 'tier', width: 15 },
+        { header: 'Recruiter Status', key: 'status', width: 18 },
+        { header: 'Technical Reviewer Assigned', key: 'evaluator', width: 28 },
+        { header: 'Recruiter Screening Comments', key: 'comments', width: 45 },
+        { header: 'Evaluation Date', key: 'date', width: 22 }
+      ];
 
-    const wsR3 = XLSX.utils.json_to_sheet(r3Rows);
-    XLSX.utils.book_append_sheet(wb, wsR3, "Round 3 Executive Verdict");
+      evaluatedCandidates
+        .filter(c => getR1(c).app_status)
+        .filter(c => isWithinDateRange(getR1(c).updated_at || c.submission_date))
+        .forEach(c => {
+          const r1 = getR1(c);
+          sheet.addRow({
+            id: c.id,
+            name: c.full_name,
+            email: c.email,
+            role: c.applied_role || '-',
+            college: c.ug_university || '-',
+            score: parseFloat(r1.total || 0),
+            tier: r1.tier || 'N/A',
+            status: r1.app_status,
+            evaluator: r1.eval_group || 'Unassigned',
+            comments: r1.review_comments || '',
+            date: r1.updated_at ? new Date(r1.updated_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : new Date(c.submission_date).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
+          });
+        });
 
-    // Write file
-    XLSX.writeFile(wb, `aviators_compiled_report_${new Date().toLocaleDateString('en-CA')}.xlsx`);
+      formatSheet(sheet);
+    };
+
+    // --- Tab 3: Round 2 Tech Vetting (Matches candidates_combined.xlsx Columns) ---
+    const addR2Tab = () => {
+      const sheet = workbook.addWorksheet(roundType === 2 ? "Candidates" : "Round 2 Tech Vetting");
+      sheet.columns = [
+        { header: 'Candidate ID', key: 'id', width: 15 },
+        { header: 'Name', key: 'name', width: 25 },
+        { header: 'Email', key: 'email', width: 30 },
+        { header: 'Tier', key: 'tier', width: 12 },
+        { header: 'Review Score', key: 'score', width: 15 },
+        { header: 'Demo-AI Review', key: 'review_cat', width: 18 },
+        { header: 'Review Status', key: 'status', width: 18 },
+        { header: 'Technical Evaluator Assigned', key: 'evaluator', width: 28 },
+        { header: 'Start Date', key: 'start_date', width: 15 },
+        { header: 'Duration (Months)', key: 'duration', width: 18 },
+        { header: 'College Commitment / Concerns', key: 'concerns', width: 35 },
+        { header: 'Contact Status', key: 'contact_status', width: 18 },
+        { header: 'Problem Fit', key: 'problem_fit', width: 15 },
+        { header: 'Technical Depth', key: 'tech_depth', width: 15 },
+        { header: 'Latency/Security/Cost', key: 'latency', width: 22 },
+        { header: 'Tech Stack', key: 'tech_stack', width: 30 },
+        { header: 'TR Decision', key: 'tr_decision', width: 15 },
+        { header: 'TR Comments', key: 'tr_comments', width: 45 }
+      ];
+
+      evaluatedCandidates
+        .filter(c => getR1(c).app_status === 'Yes') // Cleared R1
+        .filter(c => isWithinDateRange(getR2(c).updated_at || c.submission_date))
+        .forEach(c => {
+          const r1 = getR1(c);
+          const r2 = getR2(c);
+          const r3 = getR3(c);
+
+          // Map overall Review Status
+          let reviewStatus = 'Pending Review';
+          if (r3.verdict === 'Yes') reviewStatus = 'Promoted';
+          else if (r3.verdict === 'No') reviewStatus = 'Declined';
+          else if (r2.moved_to_round_3 === 'No' || r2.moved_to_round_3 === 'Declined') reviewStatus = 'Declined';
+          else if (r2.moved_to_round_3 === 'Yes' || r2.moved_to_round_3 === 'Maybe') reviewStatus = 'Promoted';
+          else if (r1.app_status === 'Reject') reviewStatus = 'Declined';
+          else if (r1.app_status === 'Maybe') reviewStatus = 'Maybe';
+
+          const rawSolves = r2.solves_business_problem || '';
+          const contactStatus = r2.contact_status || (rawSolves.includes('Contact: ') ? rawSolves.split('Contact: ')[1].split(' | ')[0] : (['Yet to Speak', 'Spoke', 'Scheduled', 'No response'].includes(rawSolves) ? rawSolves : ''));
+          const problemFit = r2.problem_fit || (rawSolves.includes('Fit: ') ? rawSolves.split('Fit: ')[1] : (['Yes', 'Maybe', 'No'].includes(rawSolves) ? rawSolves : ''));
+
+          const rawDepth = r2.product_depth || '';
+          const techDepth = r2.tech_depth || (rawDepth.includes('Depth: ') ? rawDepth.split('Depth: ')[1].split(' | ')[0] : (['High', 'Medium', 'Low', 'None'].includes(rawDepth) ? rawDepth : ''));
+          const latency = r2.latency_considerations || (rawDepth.includes('Latency: ') ? rawDepth.split('Latency: ')[1] : (!['High', 'Medium', 'Low', 'None'].includes(rawDepth) ? rawDepth : ''));
+
+          sheet.addRow({
+            id: c.id,
+            name: c.full_name,
+            email: c.email,
+            tier: r1.tier || 'N/A',
+            score: parseFloat(r1.total || 0),
+            review_cat: r1.review_cat || 'N/A',
+            status: reviewStatus,
+            evaluator: r1.eval_group || 'Unassigned',
+            start_date: r2.when_can_they_start || '',
+            duration: r2.duration_months || '',
+            concerns: r2.complexity || '',
+            contact_status: contactStatus || '',
+            problem_fit: problemFit || '',
+            tech_depth: techDepth || '',
+            latency: latency || '',
+            tech_stack: r2.tech_stack || '',
+            tr_decision: r2.moved_to_round_3 || 'Pending',
+            tr_comments: r2.demo_review_comment || ''
+          });
+        });
+
+      formatSheet(sheet);
+    };
+
+    // --- Tab 4: Round 3 Executive Verdict ---
+    const addR3Tab = () => {
+      const sheet = workbook.addWorksheet("Round 3 Executive Verdict");
+      sheet.columns = [
+        { header: 'Candidate ID', key: 'id', width: 15 },
+        { header: 'Name', key: 'name', width: 25 },
+        { header: 'Email', key: 'email', width: 30 },
+        { header: 'Tier', key: 'tier', width: 12 },
+        { header: 'Review Score', key: 'score', width: 15 },
+        { header: 'Technical Reviewer Assigned', key: 'evaluator', width: 28 },
+        { header: 'TR Decision', key: 'tr_decision', width: 15 },
+        { header: 'TR Comments', key: 'tr_comments', width: 45 },
+        { header: 'Verdict', key: 'verdict', width: 15 },
+        { header: 'Executive Decision Comments', key: 'comments', width: 45 },
+        { header: 'Verdict Date', key: 'date', width: 22 }
+      ];
+
+      evaluatedCandidates
+        .filter(c => getR2(c).moved_to_round_3 === 'Yes' || getR2(c).moved_to_round_3 === 'Maybe')
+        .filter(c => isWithinDateRange(getR3(c).updated_at || c.submission_date))
+        .forEach(c => {
+          const r1 = getR1(c);
+          const r2 = getR2(c);
+          const r3 = getR3(c);
+
+          sheet.addRow({
+            id: c.id,
+            name: c.full_name,
+            email: c.email,
+            tier: r1.tier || 'N/A',
+            score: parseFloat(r1.total || 0),
+            evaluator: r1.eval_group || 'Unassigned',
+            tr_decision: r2.moved_to_round_3,
+            tr_comments: r2.demo_review_comment || '',
+            verdict: r3.verdict || 'Pending',
+            comments: r3.review_comments || '',
+            date: r3.updated_at ? new Date(r3.updated_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : new Date(c.submission_date).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
+          });
+        });
+
+      formatSheet(sheet);
+    };
+
+    let filename = '';
+    const dateSuffix = new Date().toLocaleDateString('en-CA');
+    
+    if (roundType === 1) {
+      addR1Tab();
+      filename = `round_1_screening_report_${dateSuffix}.xlsx`;
+    } else if (roundType === 2) {
+      addR2Tab();
+      filename = `round_2_tech_vetting_report_${dateSuffix}.xlsx`;
+    } else if (roundType === 3) {
+      addR3Tab();
+      filename = `round_3_executive_verdicts_${dateSuffix}.xlsx`;
+    } else {
+      addSummaryTab();
+      addR1Tab();
+      addR2Tab();
+      addR3Tab();
+      filename = `aviators_compiled_report_${dateSuffix}.xlsx`;
+    }
+
+    // Trigger browser download
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.click();
+    window.URL.revokeObjectURL(url);
   };
 
   return (
@@ -649,8 +837,65 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
           <Button onClick={exportToCSV} className="bg-[#800020] hover:bg-[#800020]/90 text-white rounded-xl shadow-md">
             <Download className="mr-2 h-4 w-4 stroke-[1.5]" /> Export Filtered ({deduplicatedFiltered.length}) Records (CSV)
           </Button>
-          <Button onClick={downloadExcelReport} className="bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl shadow-md">
-            <FileSpreadsheet className="mr-2 h-4 w-4 stroke-[1.5]" /> Download Excel Report
+        </div>
+      </div>
+
+      {/* Date-wise Custom Downloader Card */}
+      <div className="bg-card border border-muted-foreground/10 rounded-2xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Date Selector (Optional Filter)</label>
+            <div className="flex items-center gap-2">
+              <Input 
+                type="date" 
+                value={startDate} 
+                onChange={(e) => setStartDate(e.target.value)} 
+                className="h-10 text-xs w-[145px] bg-card border-muted-foreground/20 rounded-xl"
+              />
+              <span className="text-muted-foreground text-xs font-semibold px-0.5">to</span>
+              <Input 
+                type="date" 
+                value={endDate} 
+                onChange={(e) => setEndDate(e.target.value)} 
+                className="h-10 text-xs w-[145px] bg-card border-muted-foreground/20 rounded-xl"
+              />
+              {(startDate || endDate) && (
+                <Button 
+                  onClick={() => { setStartDate(''); setEndDate(''); }} 
+                  variant="ghost" 
+                  className="h-10 px-3 text-xs text-rose-500 hover:text-rose-600 font-semibold hover:bg-rose-50/50 rounded-xl transition-all"
+                >
+                  Clear Range
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2 md:items-end justify-end self-stretch md:self-auto">
+          <Button 
+            onClick={() => downloadExcelReport(1)} 
+            className="bg-sky-700 hover:bg-sky-800 text-white rounded-xl text-xs font-semibold h-10 shadow-sm transition-all"
+          >
+            <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5" /> Download R1 Report
+          </Button>
+          <Button 
+            onClick={() => downloadExcelReport(2)} 
+            className="bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-semibold h-10 shadow-sm transition-all"
+          >
+            <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5" /> Download R2 Report
+          </Button>
+          <Button 
+            onClick={() => downloadExcelReport(3)} 
+            className="bg-violet-700 hover:bg-violet-800 text-white rounded-xl text-xs font-semibold h-10 shadow-sm transition-all"
+          >
+            <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5" /> Download R3 Report
+          </Button>
+          <Button 
+            onClick={() => downloadExcelReport('combined')} 
+            className="bg-[#800020] hover:bg-[#800020]/90 text-white rounded-xl text-xs font-semibold h-10 shadow-sm transition-all"
+          >
+            <Download className="mr-1.5 h-3.5 w-3.5" /> All Rounds Combined
           </Button>
         </div>
       </div>
