@@ -2,8 +2,9 @@ name: Daily Morning Candidate Report
 
 on:
   schedule:
-    # 14:00 UTC = 8:00 AM CST (winter) / 9:00 AM CDT (summer) — always in the 8-9 AM Chicago window
-    - cron: '0 14 * * *'
+    # Trigger at 14:00 UTC (9:00 AM CDT) and 15:00 UTC (9:00 AM CST)
+    # The python script will check the timezone and only execute at exactly 9:00 AM Chicago local time.
+    - cron: '0 14,15 * * *'
   workflow_dispatch: # Allows manual trigger from GitHub UI
 
 jobs:

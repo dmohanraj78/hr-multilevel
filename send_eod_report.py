@@ -24,6 +24,24 @@ def load_dotenv():
 
 load_dotenv()
 
+# Enforce exactly 9 AM local Chicago time (CDT/CST) in GitHub Actions runs
+def check_chicago_hour():
+    if not os.getenv("GITHUB_ACTIONS"):
+        return
+    try:
+        from zoneinfo import ZoneInfo
+        chicago_tz = ZoneInfo("America/Chicago")
+        now_chicago = datetime.now(chicago_tz)
+        hour = now_chicago.hour
+        print(f"Checking Chicago hour: {now_chicago.strftime('%Y-%m-%d %I:%M %p')}")
+        if hour != 9:
+            print(f"Chicago hour is {hour}, not 9 AM. Skipping daily run.")
+            sys.exit(0)
+    except Exception as e:
+        print(f"Error checking Chicago timezone hour: {e}. Proceeding anyway.")
+
+check_chicago_hour()
+
 # Configuration
 SUPABASE_URL = os.getenv("SUPABASE_URL", "https://mujqmdmzloizqhglayxe.supabase.co")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11anFtZG16bG9penFoZ2xheXhlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MjgxNTk0OCwiZXhwIjoyMDk4MzkxOTQ4fQ.G7AmEylxPwm6TWZ3xjCcBhvhfNPYHdj0V08My0A_rEc")
