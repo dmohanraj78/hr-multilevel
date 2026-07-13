@@ -493,7 +493,7 @@ def build_excel_report():
             ws.column_dimensions[get_column_letter(idx + 1)].width = w
 
     date_str = datetime.now().strftime("%Y-%m-%d")
-    output_filename = f"r1_r2_side_by_side_report_{date_str}.xlsx"
+    output_filename = f"R1_R2_EOD_REPORT_{date_str}.xlsx"
     wb.save(output_filename)
     print(f"Report saved successfully as {output_filename}")
     return output_filename
@@ -508,17 +508,11 @@ def send_email(filename):
     msg['From'] = EMAIL_FROM or SMTP_USER
     msg['To'] = EMAIL_TO
     date_str = datetime.now().strftime("%Y-%m-%d")
-    msg['Subject'] = f"Aviators AI Builder Intern - Daily R1 & R2 Combined Report ({date_str})"
+    msg['Subject'] = f"Aviators R1 & R2 EOD Report - {date_str}"
 
-    body = f"""Hi Manish,
+    body = f"""Hello Mayank,
 
-Please find attached the Daily R1 & R2 Combined Report auto-generated on {date_str} (sent every morning at 8 AM CST / 9 AM CDT).
-
-Report includes:
-  - Candidate profile & R1 evaluation details
-  - R2 screening inputs (where available)
-  - Sorted by: Reviewed / Moved to Round 2 first (R2-vetted on top) → Rejected → Pending Decisions
-  - R1 Status and R2 Decision columns are color-coded (Green = Yes, Amber = Maybe, Red = No)
+Aviators R1 and R2 EOD report of {date_str} is attached.
 
 Best Regards,
 Aviators Recruitment Bot"""
