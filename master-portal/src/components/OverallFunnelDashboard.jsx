@@ -825,14 +825,23 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       }
       sheet.views = [{ showGridLines: true }];
 
+      // Cells loaded from the template SHARE style objects in exceljs, so
+      // mutating cell.font/fill/border on one cell silently restyles every
+      // other cell in the same shared group (this is what randomly wiped the
+      // decision-column colors). Clone the style first to break the sharing.
+      const unshareStyle = (cell) => {
+        cell.style = { ...cell.style };
+        return cell;
+      };
+
       // Set up title lines
       sheet.getRow(1).height = 28;
-      const cellA1 = sheet.getCell('A1');
+      const cellA1 = unshareStyle(sheet.getCell('A1'));
       cellA1.value = "Scored Candidates — Analysis";
       cellA1.font = { name: 'Segoe UI', size: 16, bold: true, color: { argb: 'FF1F3864' } };
 
       sheet.getRow(2).height = 42;
-      const cellA2 = sheet.getCell('A2');
+      const cellA2 = unshareStyle(sheet.getCell('A2'));
       cellA2.value = "Demo Review Notes (AG): DARK GREEN = Industry problem + advanced AI + complex + not a student project · LIGHT GREEN = Function problem + advanced AI + complex + not common student project · PINK = unclear/unassessable · RED = everything else.   Demo cell (AE) RED = invalid/missing demo link.";
       cellA2.font = { name: 'Segoe UI', size: 9.5, italic: true, color: { argb: 'FF595959' } };
       cellA2.alignment = { wrapText: true, vertical: 'middle' };
@@ -943,7 +952,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       const statsVals = [totalApplicants, t1, t1Minus, t2, t2Minus, t3, t4, parseFloat(avgScore.toFixed(1)), topScore, medianScore];
       statsVals.forEach((val, idx) => {
         const colLetter = String.fromCharCode(65 + idx); // A to J
-        const cell = sheet.getCell(`${colLetter}3`);
+        const cell = unshareStyle(sheet.getCell(`${colLetter}3`));
         cell.value = val;
         cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF1F3864' } };
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2F5FB' } };
@@ -961,7 +970,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       const statsLabels = ["Applicants", "Tier 1", "Tier 1-", "Tier 2", "Tier 2-", "Tier 3", "Tier 4", "Avg Total", "Top Score", "Median"];
       statsLabels.forEach((label, idx) => {
         const colLetter = String.fromCharCode(65 + idx);
-        const cell = sheet.getCell(`${colLetter}4`);
+        const cell = unshareStyle(sheet.getCell(`${colLetter}4`));
         cell.value = label;
         cell.font = { name: 'Segoe UI', size: 9, color: { argb: 'FF595959' } };
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2F5FB' } };
@@ -976,25 +985,25 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
 
       // Write Row 5 (merged labels above R1/R2)
       sheet.getRow(5).height = 18;
+      // The template ships with its own row-5 merge (e.g. AM5:AV5 "Screening").
+      // unMergeCells (capital M — exceljs API) dissolves every merge group
+      // intersecting the range so the two new merges below cannot collide.
       try {
-        sheet.unmergeCells('A5:AM5');
+        sheet.unMergeCells('A5:AV5');
       } catch (e) {}
       try {
         sheet.mergeCells('A5:AM5');
       } catch (e) {}
-      const cellR1Header = sheet.getCell('A5');
+      const cellR1Header = unshareStyle(sheet.getCell('A5'));
       cellR1Header.value = "Round 1 Inputs";
       cellR1Header.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
       cellR1Header.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F3864' } };
       cellR1Header.alignment = { horizontal: 'center', vertical: 'middle' };
 
       try {
-        sheet.unmergeCells('AN5:AV5');
-      } catch (e) {}
-      try {
         sheet.mergeCells('AN5:AV5');
       } catch (e) {}
-      const cellR2Header = sheet.getCell('AN5');
+      const cellR2Header = unshareStyle(sheet.getCell('AN5'));
       cellR2Header.value = "Round 2 Inputs";
       cellR2Header.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
       cellR2Header.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0070C0' } };
@@ -1011,7 +1020,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
 
       sheet.getRow(6).height = 24;
       headers.forEach((h, idx) => {
-        const cell = sheet.getCell(6, idx + 1);
+        const cell = unshareStyle(sheet.getCell(6, idx + 1));
         cell.value = h;
         cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
         
@@ -1120,9 +1129,9 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
         ];
 
         rowData.forEach((val, idx) => {
-          const cell = sheet.getCell(rowNumber, idx + 1);
+          const cell = unshareStyle(sheet.getCell(rowNumber, idx + 1));
           cell.value = val;
-          
+
           cell.font = { name: 'Segoe UI', size: 9.5 };
           cell.alignment = { vertical: 'middle', horizontal: (typeof val === 'number') ? 'center' : 'left' };
           cell.border = {
