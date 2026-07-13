@@ -65,9 +65,9 @@ export default function StatsBanner({ candidates, round = 1, rawCount = 0 }) {
 
     stats = [
       { title: 'Total Promoted', value: total, icon: Users, color: 'text-blue-500 bg-blue-500/10' },
-      { title: 'Pending Verdict', value: pendingVerdict, icon: Hourglass, color: 'text-amber-500 bg-amber-500/10' },
+      { title: 'Pending Decisions', value: pendingVerdict, icon: Hourglass, color: 'text-amber-500 bg-amber-500/10' },
       { title: 'Hired (Approved)', value: hired, icon: CheckCircle2, color: 'text-green-500 bg-green-500/10' },
-      { title: 'Verdict Declined', value: declined, icon: XCircle, color: 'text-red-500 bg-red-500/10' }
+      { title: 'Declined', value: declined, icon: XCircle, color: 'text-red-500 bg-red-500/10' }
     ];
   } else {
     const pendingScreen = candidates.filter(c => {

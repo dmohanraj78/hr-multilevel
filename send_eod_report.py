@@ -32,7 +32,7 @@ SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
 SMTP_USER = os.getenv("SMTP_USER", "")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
 EMAIL_FROM = os.getenv("EMAIL_FROM", "")
-EMAIL_TO = os.getenv("EMAIL_TO", "")
+EMAIL_TO = os.getenv("EMAIL_TO", "mgoel@mondee.com")  # Default recipient
 
 def get_median(lst):
     n = len(lst)
@@ -84,8 +84,30 @@ def build_excel_report():
             "r2": r2_map.get(r1["id"], {})
         })
 
-    # Sort by total score descending to determine rank
-    candidates.sort(key=lambda x: float(x["r1"].get("total") or 0), reverse=True)
+    # Sort order: Yes first → Maybe → Pending (no R2 decision) → Rejected
+    # Within each group, sort by total score descending
+    def sort_key(cand):
+        r1_status = str(cand["r1"].get("app_status") or "").strip().lower()
+        r2_decision = str(cand["r2"].get("moved_to_round_3") or "").strip().lower()
+        score = float(cand["r1"].get("total") or 0)
+
+        # Determine primary group order
+        # Group 0 = Yes (R1 yes, or R2 yes/promoted)
+        # Group 1 = Maybe
+        # Group 2 = Pending (no R1 or R2 decision yet)
+        # Group 3 = Rejected / No
+        if r1_status in ["yes"] or r2_decision in ["yes", "promoted", "yes_draft"]:
+            group = 0
+        elif r1_status in ["maybe"] or r2_decision in ["maybe", "maybe_draft"]:
+            group = 1
+        elif r1_status in ["no", "rejected", "invalid"] or r2_decision in ["no", "no_draft"]:
+            group = 3
+        else:
+            group = 2  # Pending Decisions (no decision yet)
+
+        return (group, -score)  # sort by group asc, then score desc within group
+
+    candidates.sort(key=sort_key)
 
     # Initialize Workbook from template if exists
     template_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Copy of AI_Builder_Intern_v9.xlsx")
@@ -356,8 +378,8 @@ def build_excel_report():
             r1.get("degree") or "-",
             r1.get("stream") or "-",
             c.get("ug_university") or "-",
-            r1.get("f_college") or "-",
-            r1.get("f_university") or "-",
+            r1.get("college") or "-",
+            c.get("ug_university") or "-",
             r1.get("location") or "-",
             float(r1.get("ai_proj") or 0),
             float(r1.get("fs_proj") or 0),
@@ -388,6 +410,10 @@ def build_excel_report():
             r2.get("demo_review_comment") or "-" if r2.get("id") else "-"
         ]
 
+        # Column indices (0-based) for decision cells that get color-coded:
+        # idx 38 = R1 "Status" (col 39), idx 45 = R2 "Decision" (col 46)
+        DECISION_COLS = {38, 45}
+
         for idx, val in enumerate(row_data):
             cell = ws.cell(row=row_number, column=idx + 1)
             cell.value = val
@@ -395,17 +421,18 @@ def build_excel_report():
             cell.alignment = Alignment(vertical="center", horizontal="center" if isinstance(val, (int, float)) else "left")
             cell.border = grid_border
 
-            # Highlights
-            val_str = str(val or "").strip().lower()
-            if val_str in ["yes", "promoted", "approved", "strong", "hired", "t1+", "t1"]:
-                cell.fill = green_fill
-                cell.font = green_font
-            elif val_str in ["maybe", "good", "t2+", "t2"]:
-                cell.fill = amber_fill
-                cell.font = amber_font
-            elif val_str in ["no", "reject", "declined", "invalid", "t3", "t4", "duplicate"]:
-                cell.fill = red_fill
-                cell.font = red_font
+            # Color-code ONLY the R1 Status and R2 Decision columns
+            if idx in DECISION_COLS:
+                val_str = str(val or "").strip().lower()
+                if val_str in ["yes", "promoted", "approved"]:
+                    cell.fill = green_fill
+                    cell.font = green_font
+                elif val_str in ["maybe"]:
+                    cell.fill = amber_fill
+                    cell.font = amber_font
+                elif val_str in ["no", "rejected", "invalid"]:
+                    cell.fill = red_fill
+                    cell.font = red_font
 
     # Set Column Widths only if template not loaded
     if not template_loaded:
@@ -435,11 +462,15 @@ def send_email(filename):
     date_str = datetime.now().strftime("%Y-%m-%d")
     msg['Subject'] = f"Aviators AI Builder Intern - EOD R1 & R2 Combined Report ({date_str})"
 
-    body = f"""Dear Team,
+    body = f"""Hi Manish,
 
-Please find attached the EOD R1 & R2 Combined Report generated automatically on {date_str} at 9:00 PM IST.
+Please find attached the EOD R1 & R2 Combined Report auto-generated on {date_str} at 8:00 PM CDT.
 
-Total Applicants Screened: {datetime.now().strftime('%d %B %Y')}
+Report includes:
+  - Candidate profile & R1 evaluation details
+  - R2 screening inputs (where available)
+  - Sorted by: Yes → Maybe → Pending Decisions → Rejected
+  - R1 Status and R2 Decision columns are color-coded (Green = Yes, Amber = Maybe, Red = No)
 
 Best Regards,
 Aviators Recruitment Bot"""

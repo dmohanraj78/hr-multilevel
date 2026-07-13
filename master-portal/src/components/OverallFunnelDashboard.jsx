@@ -1004,11 +1004,19 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
         };
       });
 
-      // Sort by score descending to calculate rank
+      // Sort order: Yes → Maybe → Pending Decisions → Rejected, then by score within each group
+      const getSortGroup = (cand) => {
+        const r1Status = (getR1(cand).app_status || '').trim().toLowerCase();
+        const r2Decision = (getR2(cand).moved_to_round_3 || '').trim().toLowerCase();
+        if (r1Status === 'yes' || ['yes', 'promoted', 'yes_draft'].includes(r2Decision)) return 0;
+        if (r1Status === 'maybe' || ['maybe', 'maybe_draft'].includes(r2Decision)) return 1;
+        if (['no', 'rejected', 'invalid'].includes(r1Status) || ['no', 'no_draft'].includes(r2Decision)) return 3;
+        return 2; // Pending Decisions
+      };
       const sortedCandidates = [...candidatesToExport].sort((a, b) => {
-        const scoreA = parseFloat(getR1(a).total || 0);
-        const scoreB = parseFloat(getR1(b).total || 0);
-        return scoreB - scoreA;
+        const groupDiff = getSortGroup(a) - getSortGroup(b);
+        if (groupDiff !== 0) return groupDiff;
+        return parseFloat(getR1(b).total || 0) - parseFloat(getR1(a).total || 0);
       });
 
       // Write data starting from Row 7
@@ -1044,8 +1052,8 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
           r1.degree || '-',
           r1.stream || '-',
           c.ug_university || '-',
-          r1.f_college || '-',
-          r1.f_university || '-',
+          r1.college || '-',
+          c.ug_university || '-',
           r1.location || '-',
           parseFloat(r1.ai_proj || 0),
           parseFloat(r1.fs_proj || 0),
@@ -1089,16 +1097,20 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
             right: { style: 'thin', color: { argb: 'FFE0E0E0' } }
           };
 
-          const valStr = String(val || '').trim().toLowerCase();
-          if (['yes', 'promoted', 'approved', 'strong', 'hired', 't1+', 't1'].includes(valStr)) {
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE2F0D9' } };
-            cell.font = { name: 'Segoe UI', size: 9.5, color: { argb: 'FF385723' }, bold: true };
-          } else if (['maybe', 'good', 't2+', 't2'].includes(valStr)) {
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF3CD' } };
-            cell.font = { name: 'Segoe UI', size: 9.5, color: { argb: 'FF856404' }, bold: true };
-          } else if (['no', 'reject', 'declined', 'invalid', 't3', 't4', 'duplicate'].includes(valStr)) {
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8D7DA' } };
-            cell.font = { name: 'Segoe UI', size: 9.5, color: { argb: 'FF721C24' }, bold: true };
+          // Color-code ONLY R1 Status (idx 38) and R2 Decision (idx 45)
+          const DECISION_COLS = new Set([38, 45]);
+          if (DECISION_COLS.has(idx)) {
+            const valStr = String(val || '').trim().toLowerCase();
+            if (['yes', 'promoted', 'approved'].includes(valStr)) {
+              cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE2F0D9' } };
+              cell.font = { name: 'Segoe UI', size: 9.5, color: { argb: 'FF385723' }, bold: true };
+            } else if (['maybe'].includes(valStr)) {
+              cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF3CD' } };
+              cell.font = { name: 'Segoe UI', size: 9.5, color: { argb: 'FF856404' }, bold: true };
+            } else if (['no', 'rejected', 'invalid'].includes(valStr)) {
+              cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8D7DA' } };
+              cell.font = { name: 'Segoe UI', size: 9.5, color: { argb: 'FF721C24' }, bold: true };
+            }
           }
         });
 
