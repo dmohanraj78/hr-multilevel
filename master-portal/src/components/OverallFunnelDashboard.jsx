@@ -496,7 +496,8 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
   };
 
   const downloadExcelReport = async (roundType = 'combined') => {
-    let workbook = new ExcelJS.Workbook();
+    try {
+      let workbook = new ExcelJS.Workbook();
     
     if (roundType === 'side-by-side') {
       try {
@@ -975,14 +976,24 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
 
       // Write Row 5 (merged labels above R1/R2)
       sheet.getRow(5).height = 18;
-      sheet.mergeCells('A5:AM5');
+      try {
+        sheet.unmergeCells('A5:AM5');
+      } catch (e) {}
+      try {
+        sheet.mergeCells('A5:AM5');
+      } catch (e) {}
       const cellR1Header = sheet.getCell('A5');
       cellR1Header.value = "Round 1 Inputs";
       cellR1Header.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
       cellR1Header.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F3864' } };
       cellR1Header.alignment = { horizontal: 'center', vertical: 'middle' };
 
-      sheet.mergeCells('AN5:AV5');
+      try {
+        sheet.unmergeCells('AN5:AV5');
+      } catch (e) {}
+      try {
+        sheet.mergeCells('AN5:AV5');
+      } catch (e) {}
       const cellR2Header = sheet.getCell('AN5');
       cellR2Header.value = "Round 2 Inputs";
       cellR2Header.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
@@ -1175,6 +1186,10 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     anchor.download = filename;
     anchor.click();
     window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error generating Excel report:", error);
+      alert("Failed to generate Excel report: " + error.message);
+    }
   };
 
   return (
