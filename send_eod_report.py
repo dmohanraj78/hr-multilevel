@@ -152,11 +152,11 @@ def build_excel_report():
     for cand in candidates:
         r1 = cand["r1"]
         tier = str(r1.get("tier") or "").strip().upper()
-        if tier in ["T1", "T1+", "TIER 1"]:
+        if tier in ["T1", "T1+", "TIER 1", "TIER 1+"]:
             t1 += 1
         elif tier in ["T1-", "TIER 1-"]:
             t1_minus += 1
-        elif tier in ["T2", "T2+", "TIER 2"]:
+        elif tier in ["T2", "T2+", "TIER 2", "TIER 2+"]:
             t2 += 1
         elif tier in ["T2-", "TIER 2-"]:
             t2_minus += 1
@@ -279,15 +279,31 @@ def build_excel_report():
         bottom=Side(style='thin', color='E0E0E0')
     )
 
-    if not template_loaded:
-        # Row 5: Screening header above Status (AM5)
-        ws.row_dimensions[5].height = 18
-        cell_scr = ws["AM5"]
-        cell_scr.value = "Screening"
-        cell_scr.font = Font(name="Segoe UI", size=10, bold=True, color="1F3864")
-        cell_scr.fill = PatternFill(start_color="8DB3E2", end_color="8DB3E2", fill_type="solid")
-        cell_scr.alignment = Alignment(horizontal="center", vertical="center")
+    # Row 5: Merged Headers for Round 1 & Round 2 Inputs
+    ws.row_dimensions[5].height = 18
+    # Safely unmerge if already merged
+    for r in list(ws.merged_cells.ranges):
+        if r.coord in ['A5:AM5', 'AN5:AV5', 'AM5']:
+            try:
+                ws.unmerge_cells(r.coord)
+            except Exception:
+                pass
 
+    ws.merge_cells('A5:AM5')
+    cell_r1 = ws['A5']
+    cell_r1.value = "Round 1 Inputs"
+    cell_r1.font = Font(name="Segoe UI", size=10, bold=True, color="FFFFFF")
+    cell_r1.fill = PatternFill(start_color="1F3864", end_color="1F3864", fill_type="solid")
+    cell_r1.alignment = Alignment(horizontal="center", vertical="center")
+
+    ws.merge_cells('AN5:AV5')
+    cell_r2 = ws['AN5']
+    cell_r2.value = "Round 2 Inputs"
+    cell_r2.font = Font(name="Segoe UI", size=10, bold=True, color="FFFFFF")
+    cell_r2.fill = PatternFill(start_color="0070C0", end_color="0070C0", fill_type="solid")
+    cell_r2.alignment = Alignment(horizontal="center", vertical="center")
+
+    if not template_loaded:
         # Row 6: Column Headers
         headers = [
             "Rank", "Name", "Gender", "Cat", "Graduation", "Tier", "Total", "Edu", "Exp", "Proj", 
@@ -393,7 +409,7 @@ def build_excel_report():
             c.get("resume_drive_url") or "-",
             c.get("github_url") or "-",
             c.get("demo_link") or "-",
-            c.get("demo_explanation") or "-",
+            c.get("demo_explanation") or c.get("current_project") or "-",
             r1.get("demo_review_notes_ai") or "-",
             r1.get("review_comments") or "-",
             r1.get("r1_interview_priority") or "-",
@@ -430,7 +446,7 @@ def build_excel_report():
                 elif val_str in ["maybe"]:
                     cell.fill = amber_fill
                     cell.font = amber_font
-                elif val_str in ["no", "rejected", "invalid"]:
+                elif val_str in ["no", "rejected", "invalid", "reject"]:
                     cell.fill = red_fill
                     cell.font = red_font
 

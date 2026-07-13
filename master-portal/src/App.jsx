@@ -471,13 +471,13 @@ export default function App() {
       
       group.candidates.forEach(cand => {
         let tier = cand.tier || 'N/A';
-        if (tier === 'T1+') tier = 'Tier 1+';
-        else if (tier === 'T1') tier = 'Tier 1';
-        else if (tier === 'T2+') tier = 'Tier 2+';
-        else if (tier === 'T2') tier = 'Tier 2';
-        else if (tier === 'T3') tier = 'Tier 3';
-        else if (tier === 'T4') tier = 'T4';
-        else if (tier === 'N/A') tier = 'N/A';
+        if (tier === 'T1+' || tier === 'Tier 1+') tier = 'Tier 1+';
+        else if (tier === 'T1' || tier === 'Tier 1') tier = 'Tier 1';
+        else if (tier === 'T2+' || tier === 'Tier 2+') tier = 'Tier 2+';
+        else if (tier === 'T2' || tier === 'Tier 2') tier = 'Tier 2';
+        else if (tier === 'T3' || tier === 'Tier 3') tier = 'Tier 3';
+        else if (tier === 'T4' || tier === 'Tier 4') tier = 'T4';
+        else tier = 'N/A';
         
         tiers[tier] = (tiers[tier] || 0) + 1;
       });

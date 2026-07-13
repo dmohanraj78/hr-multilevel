@@ -259,12 +259,13 @@ export default function App() {
     const getTierWeight = (tier) => {
       if (!tier) return 0;
       const t = String(tier).toUpperCase();
-      if (t.includes('T1+')) return 6;
-      if (t.includes('T1')) return 5;
-      if (t.includes('T2+')) return 4;
-      if (t.includes('T2')) return 3;
-      if (t.includes('T3')) return 2;
-      return 1;
+      if (t.includes('T1+') || t.includes('TIER 1+')) return 6;
+      if (t.includes('T1') || t.includes('TIER 1')) return 5;
+      if (t.includes('T2+') || t.includes('TIER 2+')) return 4;
+      if (t.includes('T2') || t.includes('TIER 2')) return 3;
+      if (t.includes('T3') || t.includes('TIER 3')) return 2;
+      if (t.includes('T4') || t.includes('TIER 4')) return 1;
+      return 0;
     };
 
     const sorted = [...candidates].sort((a, b) => {
@@ -369,13 +370,13 @@ export default function App() {
       
       group.candidates.forEach(cand => {
         let tier = cand.tier || 'N/A';
-        if (tier === 'T1+') tier = 'Tier 1+';
-        else if (tier === 'T1') tier = 'Tier 1';
-        else if (tier === 'T2+') tier = 'Tier 2+';
-        else if (tier === 'T2') tier = 'Tier 2';
-        else if (tier === 'T3') tier = 'Tier 3';
-        else if (tier === 'T4') tier = 'T4';
-        else if (tier === 'N/A') tier = 'N/A';
+        if (tier === 'T1+' || tier === 'Tier 1+') tier = 'Tier 1+';
+        else if (tier === 'T1' || tier === 'Tier 1') tier = 'Tier 1';
+        else if (tier === 'T2+' || tier === 'Tier 2+') tier = 'Tier 2+';
+        else if (tier === 'T2' || tier === 'Tier 2') tier = 'Tier 2';
+        else if (tier === 'T3' || tier === 'Tier 3') tier = 'Tier 3';
+        else if (tier === 'T4' || tier === 'Tier 4') tier = 'T4';
+        else tier = 'N/A';
         
         tiers[tier] = (tiers[tier] || 0) + 1;
       });

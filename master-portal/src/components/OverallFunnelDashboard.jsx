@@ -266,7 +266,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
   // 2. Chart Calculations — use evaluatedCandidates so Technical Reviewer counts reflect actual eval records
   const chartData = useMemo(() => {
     const clans = { Tejaswini: 0, Sohan: 0, Basvaraj: 0, Pushkaraj: 0, Akash: 0, Anmol: 0, Sachin: 0, 'Akhil L': 0, Vedant: 0, 'Akhil M': 0, Samit: 0, Snehanshu: 0, Ankita: 0, Kaushik: 0, Unassigned: 0 };
-    const tiers = { 'T1+': 0, 'T1': 0, 'T2+': 0, 'T2': 0, 'T3': 0, 'N/A': 0 };
+    const tiers = { 'T1+': 0, 'T1': 0, 'T2+': 0, 'T2': 0, 'T3': 0, 'T4': 0, 'N/A': 0 };
     const scores = { '0-5': 0, '6-10': 0, '11-15': 0, '16-20': 0, '21-25': 0, '26-30': 0 };
 
     evaluatedCandidates.forEach(c => {
@@ -276,7 +276,14 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       if (clans[clan] !== undefined) clans[clan]++;
       else clans['Unassigned']++;
 
-      const tier = r1.tier || 'N/A';
+      let tier = r1.tier || 'N/A';
+      if (tier === 'Tier 1+') tier = 'T1+';
+      else if (tier === 'Tier 1') tier = 'T1';
+      else if (tier === 'Tier 2+') tier = 'T2+';
+      else if (tier === 'Tier 2') tier = 'T2';
+      else if (tier === 'Tier 3') tier = 'T3';
+      else if (tier === 'Tier 4') tier = 'T4';
+
       if (tiers[tier] !== undefined) tiers[tier]++;
       else tiers['N/A']++;
 
@@ -910,12 +917,12 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       candidatesToExport.forEach(c => {
         const r1 = getR1(c);
         const tier = (r1.tier || '').trim().toUpperCase();
-        if (tier === 'T1' || tier === 'T1+' || tier === 'TIER 1') t1++;
-        else if (tier === 'T1-' || tier === 'TIER 1-') t1Minus++;
-        else if (tier === 'T2' || tier === 'T2+' || tier === 'TIER 2') t2++;
-        else if (tier === 'T2-' || tier === 'TIER 2-') t2Minus++;
-        else if (tier === 'T3' || tier === 'TIER 3') t3++;
-        else if (tier === 'T4' || tier === 'TIER 4') t4++;
+        if (['T1', 'T1+', 'TIER 1', 'TIER 1+'].includes(tier)) t1++;
+        else if (['T1-', 'TIER 1-'].includes(tier)) t1Minus++;
+        else if (['T2', 'T2+', 'TIER 2', 'TIER 2+'].includes(tier)) t2++;
+        else if (['T2-', 'TIER 2-'].includes(tier)) t2Minus++;
+        else if (['T3', 'TIER 3'].includes(tier)) t3++;
+        else if (['T4', 'TIER 4'].includes(tier)) t4++;
 
         const scoreVal = parseFloat(r1.total || 0);
         scores.push(scoreVal);
@@ -966,13 +973,21 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
         };
       });
 
-      // Write Row 5 (group label above Status)
+      // Write Row 5 (merged labels above R1/R2)
       sheet.getRow(5).height = 18;
-      const cellAM5 = sheet.getCell('AM5');
-      cellAM5.value = "Screening";
-      cellAM5.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF1F3864' } };
-      cellAM5.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF8DB3E2' } };
-      cellAM5.alignment = { horizontal: 'center', vertical: 'middle' };
+      sheet.mergeCells('A5:AM5');
+      const cellR1Header = sheet.getCell('A5');
+      cellR1Header.value = "Round 1 Inputs";
+      cellR1Header.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
+      cellR1Header.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F3864' } };
+      cellR1Header.alignment = { horizontal: 'center', vertical: 'middle' };
+
+      sheet.mergeCells('AN5:AV5');
+      const cellR2Header = sheet.getCell('AN5');
+      cellR2Header.value = "Round 2 Inputs";
+      cellR2Header.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
+      cellR2Header.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0070C0' } };
+      cellR2Header.alignment = { horizontal: 'center', vertical: 'middle' };
 
       // Row 6 Headers
       const headers = [
@@ -1067,7 +1082,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
           c.resume_drive_url || '-',
           c.github_url || '-',
           c.demo_link || '-',
-          c.demo_explanation || '-',
+          c.demo_explanation || c.current_project || '-',
           r1.demo_review_notes_ai || '-',
           r1.review_comments || '-',
           r1.r1_interview_priority || '-',
@@ -1107,7 +1122,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
             } else if (['maybe'].includes(valStr)) {
               cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF3CD' } };
               cell.font = { name: 'Segoe UI', size: 9.5, color: { argb: 'FF856404' }, bold: true };
-            } else if (['no', 'rejected', 'invalid'].includes(valStr)) {
+            } else if (['no', 'rejected', 'invalid', 'reject'].includes(valStr)) {
               cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8D7DA' } };
               cell.font = { name: 'Segoe UI', size: 9.5, color: { argb: 'FF721C24' }, bold: true };
             }

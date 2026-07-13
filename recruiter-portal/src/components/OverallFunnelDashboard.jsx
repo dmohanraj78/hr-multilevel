@@ -263,7 +263,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
   // 2. Chart Calculations — use evaluatedCandidates so Technical Reviewer counts reflect actual eval records
   const chartData = useMemo(() => {
     const clans = { Tejaswini: 0, Sohan: 0, Basvaraj: 0, Pushkaraj: 0, Akash: 0, Anmol: 0, Sachin: 0, 'Akhil L': 0, Vedant: 0, 'Akhil M': 0, Samit: 0, Snehanshu: 0, Ankita: 0, Kaushik: 0, Unassigned: 0 };
-    const tiers = { 'T1+': 0, 'T1': 0, 'T2+': 0, 'T2': 0, 'T3': 0, 'N/A': 0 };
+    const tiers = { 'T1+': 0, 'T1': 0, 'T2+': 0, 'T2': 0, 'T3': 0, 'T4': 0, 'N/A': 0 };
     const scores = { '0-5': 0, '6-10': 0, '11-15': 0, '16-20': 0, '21-25': 0, '26-30': 0 };
 
     evaluatedCandidates.forEach(c => {
@@ -273,7 +273,14 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       if (clans[clan] !== undefined) clans[clan]++;
       else clans['Unassigned']++;
 
-      const tier = r1.tier || 'N/A';
+      let tier = r1.tier || 'N/A';
+      if (tier === 'Tier 1+') tier = 'T1+';
+      else if (tier === 'Tier 1') tier = 'T1';
+      else if (tier === 'Tier 2+') tier = 'T2+';
+      else if (tier === 'Tier 2') tier = 'T2';
+      else if (tier === 'Tier 3') tier = 'T3';
+      else if (tier === 'Tier 4') tier = 'T4';
+
       if (tiers[tier] !== undefined) tiers[tier]++;
       else tiers['N/A']++;
 
