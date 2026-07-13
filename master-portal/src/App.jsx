@@ -922,7 +922,7 @@ export default function App() {
               return (
                 <div className="flex flex-col gap-6 animate-in fade-in duration-300">
                   <div className="flex flex-col gap-1">
-                    <h2 className="text-xl font-extrabold tracking-tight">Round 3 Executive Verdict Worksheet</h2>
+                    <h2 className="text-xl font-extrabold tracking-tight">Round 3 Executive Decisions Worksheet</h2>
                     <p className="text-xs text-muted-foreground">Decide final internship offers and add onboard guidelines comments.</p>
                   </div>
 

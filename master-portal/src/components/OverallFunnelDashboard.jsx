@@ -440,7 +440,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       'Applicant ID', 'Full Name', 'Email', 'Role', 'UG University', 
       'R1 Review Status', 'R1 Assigned Technical Evaluator', 'R1 AI Score', 'R1 Tier', 'R1 Comments',
       'R2 Start Date', 'R2 Duration', 'R2 Concerns/Restrictions', 'R2 Contact Status', 'R2 Problem Fit', 'R2 Tech Depth', 'R2 Latency/Cost considered', 'R2 Tech Stack', 'R2 Decision', 'R2 Comments',
-      'R3 Verdict', 'R3 Executive Comments'
+      'R3 Decision', 'R3 Executive Comments'
     ];
 
     const rows = deduplicatedFiltered.map(c => {
@@ -632,7 +632,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
         { header: 'Date', key: 'date', width: 18 },
         { header: 'Round 1 Screened', key: 'r1', width: 22 },
         { header: 'Round 2 Tech Vetting', key: 'r2', width: 22 },
-        { header: 'Round 3 Executive Verdicts', key: 'r3', width: 25 },
+        { header: 'Round 3 Executive Decisions', key: 'r3', width: 25 },
         { header: 'Total Daily Evaluations', key: 'total', width: 22 }
       ];
 
@@ -770,7 +770,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
 
     // --- Tab 4: Round 3 Executive Verdict ---
     const addR3Tab = () => {
-      const sheet = workbook.addWorksheet("Round 3 Executive Verdict");
+      const sheet = workbook.addWorksheet("Round 3 Executive Decisions");
       sheet.columns = [
         { header: 'Candidate ID', key: 'id', width: 15 },
         { header: 'Name', key: 'name', width: 25 },
@@ -780,9 +780,9 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
         { header: 'Technical Reviewer Assigned', key: 'evaluator', width: 28 },
         { header: 'TR Decision', key: 'tr_decision', width: 15 },
         { header: 'TR Comments', key: 'tr_comments', width: 45 },
-        { header: 'Verdict', key: 'verdict', width: 15 },
+        { header: 'Decision', key: 'verdict', width: 15 },
         { header: 'Executive Decision Comments', key: 'comments', width: 45 },
-        { header: 'Verdict Date', key: 'date', width: 22 }
+        { header: 'Decision Date', key: 'date', width: 22 }
       ];
 
       evaluatedCandidates

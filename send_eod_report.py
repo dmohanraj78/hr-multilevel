@@ -291,9 +291,9 @@ def build_excel_report():
 
     # Row 5: Merged Headers for Round 1 & Round 2 Inputs
     ws.row_dimensions[5].height = 18
-    # Safely unmerge if already merged
+    # Unmerge ANY existing merged range that touches row 5 so we can re-merge cleanly
     for r in list(ws.merged_cells.ranges):
-        if r.coord in ['A5:AM5', 'AN5:AV5', 'AM5']:
+        if r.min_row <= 5 <= r.max_row:
             try:
                 ws.unmerge_cells(r.coord)
             except Exception:
@@ -489,11 +489,11 @@ def send_email(filename):
     msg['From'] = EMAIL_FROM or SMTP_USER
     msg['To'] = EMAIL_TO
     date_str = datetime.now().strftime("%Y-%m-%d")
-    msg['Subject'] = f"Aviators AI Builder Intern - EOD R1 & R2 Combined Report ({date_str})"
+    msg['Subject'] = f"Aviators AI Builder Intern - Daily R1 & R2 Combined Report ({date_str})"
 
     body = f"""Hi Manish,
 
-Please find attached the EOD R1 & R2 Combined Report auto-generated on {date_str} at 8:00 PM CDT.
+Please find attached the Daily R1 & R2 Combined Report auto-generated on {date_str} (sent every morning at 8 AM CST / 9 AM CDT).
 
 Report includes:
   - Candidate profile & R1 evaluation details

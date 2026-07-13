@@ -437,7 +437,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       'Applicant ID', 'Full Name', 'Email', 'Role', 'UG University', 
       'R1 Review Status', 'R1 Assigned Technical Evaluator', 'R1 AI Score', 'R1 Tier', 'R1 Comments',
       'R2 Start Date', 'R2 Duration', 'R2 Concerns/Restrictions', 'R2 Contact Status', 'R2 Problem Fit', 'R2 Tech Depth', 'R2 Latency/Cost considered', 'R2 Tech Stack', 'R2 Decision', 'R2 Comments',
-      'R3 Verdict', 'R3 Executive Comments'
+      'R3 Decision', 'R3 Executive Comments'
     ];
 
     const rows = deduplicatedFiltered.map(c => {

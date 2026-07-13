@@ -259,7 +259,7 @@ export default function CandidateProfileDossier({ candidate, round, onSave, onCa
                     <span className="text-sm text-muted-foreground">{getBio('applied_role') || 'ML Engineer Intern'}</span>
                     <span className="text-muted-foreground text-xs">•</span>
                     <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
-                      TR Verdict:
+                      TR Decision:
                       <Badge className={`border-transparent rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
                         r2.moved_to_round_3 === 'Yes' 
                           ? 'bg-green-600 text-white' 
