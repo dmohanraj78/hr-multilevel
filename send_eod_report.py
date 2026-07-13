@@ -531,4 +531,8 @@ Aviators Recruitment Bot"""
 
 if __name__ == "__main__":
     report_file = build_excel_report()
-    send_email(report_file)
+    sent = send_email(report_file)
+    # Fail the scheduled run visibly (e.g. GitHub Actions red X) if the email
+    # could not be delivered, instead of silently succeeding.
+    if not sent and os.getenv("GITHUB_ACTIONS"):
+        sys.exit(1)
