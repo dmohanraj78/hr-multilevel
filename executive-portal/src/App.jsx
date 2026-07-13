@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import CandidateListTable from '@/components/CandidateListTable';
 import CandidateProfileDossier from '@/components/CandidateProfileDossier';
+import StatsBanner from '@/components/StatsBanner';
 import { fetchRound3Candidates, upsertRound3, upsertRound1 } from '@/lib/supabase';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -137,6 +138,10 @@ export default function App() {
               <p className="text-sm text-muted-foreground">
                 Reviewed candidates currently approved by the technical evaluators (Moved to R3: Yes/Maybe) awaiting your final verdict.
               </p>
+            </div>
+
+            <div className="mt-2">
+              <StatsBanner candidates={executiveCandidates} />
             </div>
 
             <div className="mt-2">

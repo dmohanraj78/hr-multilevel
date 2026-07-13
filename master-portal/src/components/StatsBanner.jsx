@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Users, Hourglass, CheckCircle2, XCircle } from 'lucide-react';
+import { Users, Hourglass, CheckCircle2, XCircle, HelpCircle } from 'lucide-react';
 
 export default function StatsBanner({ candidates, round = 1, rawCount = 0 }) {
   const total = candidates.length;
@@ -48,26 +48,26 @@ export default function StatsBanner({ candidates, round = 1, rawCount = 0 }) {
       { title: 'Review Declined', value: declined, icon: XCircle, color: 'text-red-500 bg-red-500/10' }
     ];
   } else if (round === 3) {
-    const pendingVerdict = candidates.filter(c => {
-      const r3 = getR3(c);
-      return !r3.verdict;
-    }).length;
-
-    const hired = candidates.filter(c => {
+    const yesCount = candidates.filter(c => {
       const r3 = getR3(c);
       return r3.verdict === 'Yes';
     }).length;
 
-    const declined = candidates.filter(c => {
+    const maybeCount = candidates.filter(c => {
+      const r3 = getR3(c);
+      return r3.verdict === 'Maybe';
+    }).length;
+
+    const noCount = candidates.filter(c => {
       const r3 = getR3(c);
       return r3.verdict === 'No';
     }).length;
 
     stats = [
       { title: 'Total Promoted', value: total, icon: Users, color: 'text-blue-500 bg-blue-500/10' },
-      { title: 'Pending Verdict', value: pendingVerdict, icon: Hourglass, color: 'text-amber-500 bg-amber-500/10' },
-      { title: 'Hired (Approved)', value: hired, icon: CheckCircle2, color: 'text-green-500 bg-green-500/10' },
-      { title: 'Verdict Declined', value: declined, icon: XCircle, color: 'text-red-500 bg-red-500/10' }
+      { title: 'Approved (Yes)', value: yesCount, icon: CheckCircle2, color: 'text-green-500 bg-green-500/10' },
+      { title: 'Maybe', value: maybeCount, icon: HelpCircle, color: 'text-amber-500 bg-amber-500/10' },
+      { title: 'Declined (No)', value: noCount, icon: XCircle, color: 'text-red-500 bg-red-500/10' }
     ];
   } else {
     const pendingScreen = candidates.filter(c => {

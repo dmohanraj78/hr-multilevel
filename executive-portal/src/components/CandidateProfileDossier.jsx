@@ -686,10 +686,13 @@ export default function CandidateProfileDossier({ candidate, round, onSave, onCa
                   </div>
 
                   <div className="flex gap-2 mt-2">
-                    <Button onClick={() => handleSave('No', false)} variant="outline" className="flex-1 border-red-500 hover:bg-red-500/10 text-red-500 rounded-lg font-bold" disabled={saving}>
+                    <Button onClick={() => handleSave('No', false)} variant="outline" className="flex-1 border-red-500 hover:bg-red-500/10 text-red-500 rounded-lg font-bold text-xs" disabled={saving}>
                       Decline
                     </Button>
-                    <Button onClick={() => handleSave('Yes', false)} className="flex-1 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold" disabled={saving}>
+                    <Button onClick={() => handleSave('Maybe', false)} variant="outline" className="flex-1 border-amber-500 hover:bg-amber-500/10 text-amber-500 rounded-lg font-bold text-xs" disabled={saving}>
+                      Maybe
+                    </Button>
+                    <Button onClick={() => handleSave('Yes', false)} className="flex-1 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold text-xs" disabled={saving}>
                       Approve Hire
                     </Button>
                   </div>

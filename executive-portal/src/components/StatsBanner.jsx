@@ -1,38 +1,36 @@
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Users, Hourglass, CheckCircle2, XCircle } from 'lucide-react';
+import { Users, CheckCircle2, HelpCircle, XCircle } from 'lucide-react';
 
 export default function StatsBanner({ candidates }) {
-  const total = candidates.length;
-  
-  // Safe helper to extract fields flatly or relationally
-  const getEvalField = (c, field) => {
-    if (!c) return '';
-    const r1 = c.round_1_evaluation;
-    const r1Parsed = Array.isArray(r1) ? r1[0] : r1;
-    return c[field] !== undefined ? c[field] : (r1Parsed?.[field] || '');
+  const getR3 = (c) => {
+    if (!c) return {};
+    const val = c.round_3_evaluation;
+    return Array.isArray(val) ? val[0] || {} : val || {};
   };
 
-  const pendingScreen = candidates.filter(c => {
-    const status = getEvalField(c, 'app_status');
-    return !status || status === 'Pending';
-  }).length;
+  const total = candidates.length;
   
-  const approvedR1 = candidates.filter(c => {
-    const status = getEvalField(c, 'app_status');
-    return status === 'Yes';
+  const yesCount = candidates.filter(c => {
+    const r3 = getR3(c);
+    return r3.verdict === 'Yes';
   }).length;
 
-  const rejected = candidates.filter(c => {
-    const status = getEvalField(c, 'app_status');
-    return status === 'Reject';
+  const maybeCount = candidates.filter(c => {
+    const r3 = getR3(c);
+    return r3.verdict === 'Maybe';
+  }).length;
+
+  const noCount = candidates.filter(c => {
+    const r3 = getR3(c);
+    return r3.verdict === 'No';
   }).length;
 
   const stats = [
     { title: 'Total Candidates', value: total, icon: Users, color: 'text-blue-500 bg-blue-500/10' },
-    { title: 'Pending Screenings', value: pendingScreen, icon: Hourglass, color: 'text-amber-500 bg-amber-500/10' },
-    { title: 'Screening Passed (R2)', value: approvedR1, icon: CheckCircle2, color: 'text-green-500 bg-green-500/10' },
-    { title: 'Rejected Submissions', value: rejected, icon: XCircle, color: 'text-red-500 bg-red-500/10' }
+    { title: 'Approved (Yes)', value: yesCount, icon: CheckCircle2, color: 'text-green-500 bg-green-500/10' },
+    { title: 'Maybe', value: maybeCount, icon: HelpCircle, color: 'text-amber-500 bg-amber-500/10' },
+    { title: 'Declined (No)', value: noCount, icon: XCircle, color: 'text-red-500 bg-red-500/10' }
   ];
 
   return (
