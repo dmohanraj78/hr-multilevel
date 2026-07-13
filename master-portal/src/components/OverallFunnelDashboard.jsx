@@ -791,72 +791,237 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
 
     // --- Tab: R1 & R2 Side-by-Side ---
     const addSideBySideTab = () => {
-      const sheet = workbook.addWorksheet("R1 & R2 Side-by-Side");
-      sheet.columns = [
-        { header: 'Candidate ID', key: 'id', width: 12 },
-        { header: 'Candidate Name', key: 'name', width: 25 },
-        { header: 'Email', key: 'email', width: 30 },
-        { header: 'UG University', key: 'college', width: 35 },
-        
-        // R1 columns
-        { header: 'R1 Score', key: 'r1_score', width: 12 },
-        { header: 'R1 Tier', key: 'r1_tier', width: 12 },
-        { header: 'R1 Recruiter Status', key: 'r1_status', width: 18 },
-        { header: 'R1 Screening Comments', key: 'r1_comments', width: 45 },
-        { header: 'R1 Assigned Reviewer', key: 'r1_reviewer', width: 25 },
-        
-        // R2 columns
-        { header: 'R2 Contact Status', key: 'r2_contact_status', width: 18 },
-        { header: 'R2 Start Date', key: 'r2_start_date', width: 15 },
-        { header: 'R2 Duration', key: 'r2_duration', width: 15 },
-        { header: 'R2 Problem Fit', key: 'r2_problem_fit', width: 15 },
-        { header: 'R2 Technical Depth', key: 'r2_tech_depth', width: 18 },
-        { header: 'R2 Latency/Cost/Security', key: 'r2_latency', width: 22 },
-        { header: 'R2 Tech Stack', key: 'r2_tech_stack', width: 30 },
-        { header: 'R2 Commitments/Concerns', key: 'r2_concerns', width: 35 },
-        { header: 'R2 Decision', key: 'r2_decision', width: 15 },
-        { header: 'R2 Evaluator Comments', key: 'r2_comments', width: 45 }
+      const sheet = workbook.addWorksheet("Analysis");
+      sheet.views = [{ showGridLines: true }];
+
+      // Set up title lines
+      sheet.getRow(1).height = 28;
+      const cellA1 = sheet.getCell('A1');
+      cellA1.value = "Scored Candidates — Analysis";
+      cellA1.font = { name: 'Segoe UI', size: 16, bold: true, color: { argb: 'FF1F3864' } };
+
+      sheet.getRow(2).height = 42;
+      const cellA2 = sheet.getCell('A2');
+      cellA2.value = "Demo Review Notes (AG): DARK GREEN = Industry problem + advanced AI + complex + not a student project · LIGHT GREEN = Function problem + advanced AI + complex + not common student project · PINK = unclear/unassessable · RED = everything else.   Demo cell (AE) RED = invalid/missing demo link.";
+      cellA2.font = { name: 'Segoe UI', size: 9.5, italic: true, color: { argb: 'FF595959' } };
+      cellA2.alignment = { wrapText: true, vertical: 'middle' };
+
+      // Filter and prepare candidates
+      const candidatesToExport = evaluatedCandidates
+        .filter(c => getR1(c).id !== undefined)
+        .filter(c => isWithinDateRange(getR2(c).updated_at || getR1(c).updated_at || c.submission_date));
+
+      // Calculate stats
+      const totalApplicants = candidatesToExport.length;
+      let t1 = 0, t1Minus = 0, t2 = 0, t2Minus = 0, t3 = 0, t4 = 0;
+      let scores = [];
+      candidatesToExport.forEach(c => {
+        const r1 = getR1(c);
+        const tier = (r1.tier || '').trim().toUpperCase();
+        if (tier === 'T1' || tier === 'T1+' || tier === 'TIER 1') t1++;
+        else if (tier === 'T1-' || tier === 'TIER 1-') t1Minus++;
+        else if (tier === 'T2' || tier === 'T2+' || tier === 'TIER 2') t2++;
+        else if (tier === 'T2-' || tier === 'TIER 2-') t2Minus++;
+        else if (tier === 'T3' || tier === 'TIER 3') t3++;
+        else if (tier === 'T4' || tier === 'TIER 4') t4++;
+
+        const scoreVal = parseFloat(r1.total || 0);
+        scores.push(scoreVal);
+      });
+
+      scores.sort((a, b) => a - b);
+      const avgScore = scores.length ? (scores.reduce((sum, s) => sum + s, 0) / scores.length) : 0;
+      const topScore = scores.length ? scores[scores.length - 1] : 0;
+      let medianScore = 0;
+      if (scores.length) {
+        const mid = Math.floor(scores.length / 2);
+        medianScore = scores.length % 2 !== 0 ? scores[mid] : (scores[mid - 1] + scores[mid]) / 2;
+      }
+
+      // Write Row 3 (values)
+      sheet.getRow(3).height = 20;
+      const statsVals = [totalApplicants, t1, t1Minus, t2, t2Minus, t3, t4, parseFloat(avgScore.toFixed(1)), topScore, medianScore];
+      statsVals.forEach((val, idx) => {
+        const colLetter = String.fromCharCode(65 + idx); // A to J
+        const cell = sheet.getCell(`${colLetter}3`);
+        cell.value = val;
+        cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF1F3864' } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2F5FB' } };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FFD9D9D9' } },
+          bottom: { style: 'thin', color: { argb: 'FFD9D9D9' } },
+          left: { style: 'thin', color: { argb: 'FFD9D9D9' } },
+          right: { style: 'thin', color: { argb: 'FFD9D9D9' } }
+        };
+      });
+
+      // Write Row 4 (labels)
+      sheet.getRow(4).height = 18;
+      const statsLabels = ["Applicants", "Tier 1", "Tier 1-", "Tier 2", "Tier 2-", "Tier 3", "Tier 4", "Avg Total", "Top Score", "Median"];
+      statsLabels.forEach((label, idx) => {
+        const colLetter = String.fromCharCode(65 + idx);
+        const cell = sheet.getCell(`${colLetter}4`);
+        cell.value = label;
+        cell.font = { name: 'Segoe UI', size: 9, color: { argb: 'FF595959' } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2F5FB' } };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FFD9D9D9' } },
+          bottom: { style: 'thin', color: { argb: 'FFD9D9D9' } },
+          left: { style: 'thin', color: { argb: 'FFD9D9D9' } },
+          right: { style: 'thin', color: { argb: 'FFD9D9D9' } }
+        };
+      });
+
+      // Write Row 5 (group label above Status)
+      sheet.getRow(5).height = 18;
+      const cellAM5 = sheet.getCell('AM5');
+      cellAM5.value = "Screening";
+      cellAM5.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF1F3864' } };
+      cellAM5.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF8DB3E2' } };
+      cellAM5.alignment = { horizontal: 'center', vertical: 'middle' };
+
+      // Row 6 Headers
+      const headers = [
+        "Rank", "Name", "Gender", "Cat", "Graduation", "Tier", "Total", "Edu", "Exp", "Proj", 
+        "Substance", "Deploy", "Artifact", "Skills", "Domain", "Degree", "Stream", "College", "F_college", "F_University", 
+        "Location", "AI Proj", "FS Proj", "Intern Mo", "Co.Tier", "Deploy Stage", "#Skills", "Claude Lvl", "AI/ML Exp", "Email", 
+        "Résumé", "GitHub", "Demo", "Demo Explanation (their project)", "Demo Review Notes (AI)", "R1 Review", "R1 Interview Priority", "To be screened by", 
+        "Status", "Earliest date they can start the internship", "Any concerns / restrictions (with college commitment, personal, others)", "Technical depth of demo / product", "Tech stack used", "Problem-solution fit", "Areas like latency, cost, security, etc been considered", "Decision", "Tier", "Reason for decision (detailed notes)"
       ];
 
-      evaluatedCandidates
-        .filter(c => getR1(c).id !== undefined)
-        .filter(c => isWithinDateRange(getR2(c).updated_at || getR1(c).updated_at || c.submission_date))
-        .forEach(c => {
-          const r1 = getR1(c);
-          const r2 = getR2(c);
+      sheet.getRow(6).height = 24;
+      headers.forEach((h, idx) => {
+        const cell = sheet.getCell(6, idx + 1);
+        cell.value = h;
+        cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
+        
+        const isR2 = idx >= 38;
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: isR2 ? 'FF0070C0' : 'FF1F3864' }
+        };
+        cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+          bottom: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+          left: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+          right: { style: 'thin', color: { argb: 'FFE0E0E0' } }
+        };
+      });
 
-          const rawSolves = r2.solves_business_problem || '';
-          const contactStatus = r2.contact_status || (rawSolves.includes('Contact: ') ? rawSolves.split('Contact: ')[1].split(' | ')[0] : (['Yet to Speak', 'Spoke', 'Scheduled', 'No response'].includes(rawSolves) ? rawSolves : ''));
-          const problemFit = r2.problem_fit || (rawSolves.includes('Fit: ') ? rawSolves.split('Fit: ')[1] : (['Yes', 'Maybe', 'No'].includes(rawSolves) ? rawSolves : ''));
+      // Sort by score descending to calculate rank
+      const sortedCandidates = [...candidatesToExport].sort((a, b) => {
+        const scoreA = parseFloat(getR1(a).total || 0);
+        const scoreB = parseFloat(getR1(b).total || 0);
+        return scoreB - scoreA;
+      });
 
-          const rawDepth = r2.product_depth || '';
-          const techDepth = r2.tech_depth || (rawDepth.includes('Depth: ') ? rawDepth.split('Depth: ')[1].split(' | ')[0] : (['High', 'Medium', 'Low', 'None'].includes(rawDepth) ? rawDepth : ''));
-          const latency = r2.latency_considerations || (rawDepth.includes('Latency: ') ? rawDepth.split('Latency: ')[1] : (!['High', 'Medium', 'Low', 'None'].includes(rawDepth) ? rawDepth : ''));
+      // Write data starting from Row 7
+      sortedCandidates.forEach((c, index) => {
+        const rowNumber = index + 7;
+        const r1 = getR1(c);
+        const r2 = getR2(c);
 
-          sheet.addRow({
-            id: c.id,
-            name: c.full_name,
-            email: c.email,
-            college: c.ug_university || '-',
-            r1_score: parseFloat(r1.total || 0),
-            r1_tier: r1.tier || 'N/A',
-            r1_status: r1.app_status || 'Pending',
-            r1_comments: r1.review_comments || '',
-            r1_reviewer: r1.eval_group || 'Unassigned',
-            r2_contact_status: r2.id ? (contactStatus || 'Pending') : '-',
-            r2_start_date: r2.when_can_they_start || '-',
-            r2_duration: r2.duration_months || '-',
-            r2_problem_fit: r2.id ? (problemFit || 'Pending') : '-',
-            r2_tech_depth: r2.id ? (techDepth || 'Pending') : '-',
-            r2_latency: r2.id ? (latency || '-') : '-',
-            r2_tech_stack: r2.tech_stack || '-',
-            r2_concerns: r2.complexity || '-',
-            r2_decision: r2.id ? (r2.moved_to_round_3 ? r2.moved_to_round_3.replace('_draft', '') : 'Pending') : '-',
-            r2_comments: r2.demo_review_comment || '-'
-          });
+        const rawSolves = r2.solves_business_problem || '';
+        const contactStatus = r2.contact_status || (rawSolves.includes('Contact: ') ? rawSolves.split('Contact: ')[1].split(' | ')[0] : (['Yet to Speak', 'Spoke', 'Scheduled', 'No response'].includes(rawSolves) ? rawSolves : ''));
+        const problemFit = r2.problem_fit || (rawSolves.includes('Fit: ') ? rawSolves.split('Fit: ')[1] : (['Yes', 'Maybe', 'No'].includes(rawSolves) ? rawSolves : ''));
+
+        const rawDepth = r2.product_depth || '';
+        const techDepth = r2.tech_depth || (rawDepth.includes('Depth: ') ? rawDepth.split('Depth: ')[1].split(' | ')[0] : (['High', 'Medium', 'Low', 'None'].includes(rawDepth) ? rawDepth : ''));
+        const latency = r2.latency_considerations || (rawDepth.includes('Latency: ') ? rawDepth.split('Latency: ')[1] : (!['High', 'Medium', 'Low', 'None'].includes(rawDepth) ? rawDepth : ''));
+
+        const rowData = [
+          index + 1, // Rank
+          c.full_name, // Name
+          r1.gender || '-',
+          r1.cat || '-',
+          r1.graduation || '-',
+          r1.tier || '-',
+          parseFloat(r1.total || 0), // Total
+          parseFloat(r1.edu || 0),
+          parseFloat(r1.exp || 0),
+          parseFloat(r1.proj || 0),
+          parseFloat(r1.substance || 0),
+          parseFloat(r1.deploy || 0),
+          parseFloat(r1.artifact || 0),
+          parseFloat(r1.skills || 0),
+          r1.domain || '-',
+          r1.degree || '-',
+          r1.stream || '-',
+          c.ug_university || '-',
+          r1.f_college || '-',
+          r1.f_university || '-',
+          r1.location || '-',
+          parseFloat(r1.ai_proj || 0),
+          parseFloat(r1.fs_proj || 0),
+          parseFloat(r1.intern_mo || 0),
+          parseFloat(r1.co_tier || 0),
+          r1.deploy_stage || '-',
+          parseFloat(r1.num_skills || 0),
+          r1.claude_lvl || '-',
+          r1.aiml_exp || '-',
+          c.email || '-',
+          c.resume_drive_url || '-',
+          c.github_url || '-',
+          c.demo_link || '-',
+          c.demo_explanation || '-',
+          r1.demo_review_notes_ai || '-',
+          r1.review_comments || '-',
+          r1.r1_interview_priority || '-',
+          r1.eval_group || '-',
+          r1.app_status || '-', // Status (R2 Status)
+          r2.id ? (r2.when_can_they_start || '-') : '-',
+          r2.id ? (r2.complexity || '-') : '-',
+          r2.id ? (techDepth || '-') : '-',
+          r2.id ? (r2.tech_stack || '-') : '-',
+          r2.id ? (problemFit || '-') : '-',
+          r2.id ? (latency || '-') : '-',
+          r2.id ? (r2.moved_to_round_3 ? r2.moved_to_round_3.replace('_draft', '') : '-') : '-',
+          "-", // Tier (R2 tier placeholder)
+          r2.id ? (r2.demo_review_comment || '-') : '-'
+        ];
+
+        rowData.forEach((val, idx) => {
+          const cell = sheet.getCell(rowNumber, idx + 1);
+          cell.value = val;
+          
+          cell.font = { name: 'Segoe UI', size: 9.5 };
+          cell.alignment = { vertical: 'middle', horizontal: (typeof val === 'number') ? 'center' : 'left' };
+          cell.border = {
+            top: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+            bottom: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+            left: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+            right: { style: 'thin', color: { argb: 'FFE0E0E0' } }
+          };
+
+          const valStr = String(val || '').trim().toLowerCase();
+          if (['yes', 'promoted', 'approved', 'strong', 'hired', 't1+', 't1'].includes(valStr)) {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE2F0D9' } };
+            cell.font = { name: 'Segoe UI', size: 9.5, color: { argb: 'FF385723' }, bold: true };
+          } else if (['maybe', 'good', 't2+', 't2'].includes(valStr)) {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF3CD' } };
+            cell.font = { name: 'Segoe UI', size: 9.5, color: { argb: 'FF856404' }, bold: true };
+          } else if (['no', 'reject', 'declined', 'invalid', 't3', 't4', 'duplicate'].includes(valStr)) {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8D7DA' } };
+            cell.font = { name: 'Segoe UI', size: 9.5, color: { argb: 'FF721C24' }, bold: true };
+          }
         });
 
-      formatSheet(sheet);
+        sheet.getRow(rowNumber).height = 20;
+      });
+
+      // Set exact column widths matching typical content
+      const widths = [
+        6, 25, 10, 8, 12, 10, 8, 8, 8, 8, 8, 8, 8, 8, 20, 15, 20, 30, 30, 25,
+        18, 10, 10, 10, 10, 18, 10, 15, 15, 30, 25, 25, 25, 35, 35, 30, 18, 18,
+        12, 18, 25, 18, 25, 15, 20, 12, 10, 35
+      ];
+      widths.forEach((w, idx) => {
+        sheet.getColumn(idx + 1).width = w;
+      });
     };
 
     let filename = '';
