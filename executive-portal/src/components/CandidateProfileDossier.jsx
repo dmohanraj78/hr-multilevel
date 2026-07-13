@@ -255,7 +255,22 @@ export default function CandidateProfileDossier({ candidate, round, onSave, onCa
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <CardTitle className="text-2xl font-extrabold font-heading tracking-tight">{getBio('full_name')}</CardTitle>
-                  <p className="text-sm text-muted-foreground mt-1">{getBio('applied_role') || 'ML Engineer Intern'}</p>
+                  <div className="flex flex-wrap items-center gap-3 mt-1">
+                    <span className="text-sm text-muted-foreground">{getBio('applied_role') || 'ML Engineer Intern'}</span>
+                    <span className="text-muted-foreground text-xs">•</span>
+                    <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+                      TR Verdict:
+                      <Badge className={`border-transparent rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                        r2.moved_to_round_3 === 'Yes' 
+                          ? 'bg-green-600 text-white' 
+                          : r2.moved_to_round_3 === 'Maybe' 
+                            ? 'bg-amber-500 text-white' 
+                            : 'bg-muted text-muted-foreground'
+                      }`}>
+                        {r2.moved_to_round_3 || 'Pending'}
+                      </Badge>
+                    </span>
+                  </div>
                 </div>
                 <div className="flex gap-2 shrink-0">
                   {getBio('resume_drive_url') && (

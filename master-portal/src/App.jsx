@@ -199,6 +199,10 @@ export default function App() {
   const [r1Candidates, setR1Candidates] = useState([]);
   const [r2Candidates, setR2Candidates] = useState([]);
   const [r3Candidates, setR3Candidates] = useState([]);
+  
+  // Executive tab filtering states
+  const [r3ActiveFilter, setR3ActiveFilter] = useState('ALL');
+  const [r3TrFilter, setR3TrFilter] = useState('ALL');
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -885,28 +889,119 @@ export default function App() {
             )}
 
             {/* Round 3 tab content */}
-            {activeTab === 'r3' && (
-              <div className="flex flex-col gap-6 animate-in fade-in duration-300">
-                <div className="flex flex-col gap-1">
-                  <h2 className="text-xl font-extrabold tracking-tight">Round 3 Executive Verdict Worksheet</h2>
-                  <p className="text-xs text-muted-foreground">Decide final internship offers and add onboard guidelines comments.</p>
+            {activeTab === 'r3' && (() => {
+              const getFilteredR3Candidates = () => {
+                return r3Candidates.filter(c => {
+                  // 1. Filter by Executive Verdict (StatsBanner)
+                  if (r3ActiveFilter !== 'ALL') {
+                    const r3 = c.round_3_evaluation?.[0] || c.round_3_evaluation || {};
+                    if (r3.verdict !== r3ActiveFilter) return false;
+                  }
+                  // 2. Filter by Technical Reviewer Decision (TR Verdict: Yes/Maybe)
+                  if (r3TrFilter !== 'ALL') {
+                    const r2 = c.round_2_evaluation?.[0] || c.round_2_evaluation || {};
+                    if (r2.moved_to_round_3 !== r3TrFilter) return false;
+                  }
+                  return true;
+                });
+              };
+
+              const filteredR3Candidates = getFilteredR3Candidates();
+
+              // Calculate TR statistics
+              const totalTR = r3Candidates.length;
+              const yesTR = r3Candidates.filter(c => {
+                const r2 = c.round_2_evaluation?.[0] || c.round_2_evaluation || {};
+                return r2.moved_to_round_3 === 'Yes';
+              }).length;
+              const maybeTR = r3Candidates.filter(c => {
+                const r2 = c.round_2_evaluation?.[0] || c.round_2_evaluation || {};
+                return r2.moved_to_round_3 === 'Maybe';
+              }).length;
+
+              return (
+                <div className="flex flex-col gap-6 animate-in fade-in duration-300">
+                  <div className="flex flex-col gap-1">
+                    <h2 className="text-xl font-extrabold tracking-tight">Round 3 Executive Verdict Worksheet</h2>
+                    <p className="text-xs text-muted-foreground">Decide final internship offers and add onboard guidelines comments.</p>
+                  </div>
+
+                  <StatsBanner 
+                    candidates={r3Candidates} 
+                    round={3} 
+                    activeFilter={r3ActiveFilter}
+                    onFilterChange={setR3ActiveFilter}
+                  />
+
+                  {/* TR Decision Filter Tabs */}
+                  <div className="flex items-center justify-between border-b pb-4 mt-2">
+                    <div className="flex items-center gap-1.5 bg-muted/40 p-1 rounded-xl border">
+                      <button
+                        onClick={() => setR3TrFilter('ALL')}
+                        className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                          r3TrFilter === 'ALL'
+                            ? 'bg-white dark:bg-zinc-800 text-[#800020] shadow-sm'
+                            : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                      >
+                        All TR Decisions ({totalTR})
+                      </button>
+                      <button
+                        onClick={() => setR3TrFilter('Yes')}
+                        className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                          r3TrFilter === 'Yes'
+                            ? 'bg-green-600 text-white shadow-sm font-extrabold'
+                            : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                      >
+                        <span className={`h-1.5 w-1.5 rounded-full ${r3TrFilter === 'Yes' ? 'bg-white' : 'bg-green-500'}`} />
+                        TR Recommended: Yes ({yesTR})
+                      </button>
+                      <button
+                        onClick={() => setR3TrFilter('Maybe')}
+                        className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                          r3TrFilter === 'Maybe'
+                            ? 'bg-amber-500 text-white shadow-sm font-extrabold'
+                            : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                      >
+                        <span className={`h-1.5 w-1.5 rounded-full ${r3TrFilter === 'Maybe' ? 'bg-white' : 'bg-amber-500'}`} />
+                        TR Recommended: Maybe ({maybeTR})
+                      </button>
+                    </div>
+                  </div>
+
+                  {r3ActiveFilter !== 'ALL' && (
+                    <div className="bg-[#800020]/5 border border-[#800020]/20 rounded-xl px-4 py-2.5 flex items-center justify-between text-sm font-semibold text-foreground">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-[#800020] animate-pulse" />
+                        Showing only: <strong className="text-[#800020]">{r3ActiveFilter === 'Yes' ? 'Approved (Yes)' : r3ActiveFilter === 'Maybe' ? 'Maybe' : 'Declined (No)'}</strong> Candidates ({filteredR3Candidates.length})
+                      </div>
+                      <Button 
+                        size="xs" 
+                        variant="outline" 
+                        onClick={() => setR3ActiveFilter('ALL')}
+                        className="h-7 px-2.5 text-xs border-[#800020] text-[#800020] hover:bg-[#800020] hover:text-white rounded-lg shadow-sm font-bold"
+                      >
+                        Clear Filter
+                      </Button>
+                    </div>
+                  )}
+
+                  <CandidateListTable
+                    candidates={filteredR3Candidates}
+                    actionLabel="Review"
+                    onActionClick={(cand) => {
+                      setSelectedRound(3);
+                      setSelectedCandidate(cand);
+                    }}
+                    showTechEvaluatorFilter={true}
+                    round={3}
+                    onUpdateTechEvaluator={handleUpdateTechEvaluator}
+                  />
                 </div>
-
-                <StatsBanner candidates={r3Candidates} round={3} />
-
-                <CandidateListTable
-                  candidates={r3Candidates}
-                  actionLabel="Review"
-                  onActionClick={(cand) => {
-                    setSelectedRound(3);
-                    setSelectedCandidate(cand);
-                  }}
-                  showTechEvaluatorFilter={true}
-                  round={3}
-                  onUpdateTechEvaluator={handleUpdateTechEvaluator}
-                />
-              </div>
-            )}
+              );
+            })()}
 
             {/* University Overview tab content */}
             {activeTab === 'university' && (() => {

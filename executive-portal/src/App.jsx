@@ -94,18 +94,41 @@ export default function App() {
   };
 
   const [activeFilter, setActiveFilter] = useState('ALL');
+  const [trFilter, setTrFilter] = useState('ALL');
   const executiveCandidates = getExecutiveCandidates();
 
   const getFilteredCandidates = () => {
     return executiveCandidates.filter(c => {
-      if (activeFilter === 'ALL') return true;
-      const r3 = c.round_3_evaluation;
-      const r3Parsed = Array.isArray(r3) ? r3[0] : (r3 || {});
-      return r3Parsed.verdict === activeFilter;
+      // 1. Filter by Executive Verdict (StatsBanner)
+      if (activeFilter !== 'ALL') {
+        const r3 = c.round_3_evaluation;
+        const r3Parsed = Array.isArray(r3) ? r3[0] : (r3 || {});
+        if (r3Parsed.verdict !== activeFilter) return false;
+      }
+      // 2. Filter by Technical Reviewer Decision (TR Verdict: Yes/Maybe)
+      if (trFilter !== 'ALL') {
+        const r2 = c.round_2_evaluation;
+        const r2Parsed = Array.isArray(r2) ? r2[0] : (r2 || {});
+        if (r2Parsed.moved_to_round_3 !== trFilter) return false;
+      }
+      return true;
     });
   };
 
   const filteredCandidates = getFilteredCandidates();
+
+  // TR Statistics calculations
+  const totalTR = executiveCandidates.length;
+  const yesTR = executiveCandidates.filter(c => {
+    const r2 = c.round_2_evaluation;
+    const r2Parsed = Array.isArray(r2) ? r2[0] : (r2 || {});
+    return r2Parsed.moved_to_round_3 === 'Yes';
+  }).length;
+  const maybeTR = executiveCandidates.filter(c => {
+    const r2 = c.round_2_evaluation;
+    const r2Parsed = Array.isArray(r2) ? r2[0] : (r2 || {});
+    return r2Parsed.moved_to_round_3 === 'Maybe';
+  }).length;
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans transition-colors duration-200">
@@ -158,6 +181,44 @@ export default function App() {
                 activeFilter={activeFilter}
                 onFilterChange={setActiveFilter}
               />
+            </div>
+
+            {/* TR Decision Filter Tabs */}
+            <div className="flex items-center justify-between border-b pb-4 mt-2">
+              <div className="flex items-center gap-1.5 bg-muted/40 p-1 rounded-xl border">
+                <button
+                  onClick={() => setTrFilter('ALL')}
+                  className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                    trFilter === 'ALL'
+                      ? 'bg-white dark:bg-zinc-800 text-[#800020] shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  All TR Decisions ({totalTR})
+                </button>
+                <button
+                  onClick={() => setTrFilter('Yes')}
+                  className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                    trFilter === 'Yes'
+                      ? 'bg-green-600 text-white shadow-sm font-extrabold'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <span className={`h-1.5 w-1.5 rounded-full ${trFilter === 'Yes' ? 'bg-white' : 'bg-green-500'}`} />
+                  TR Recommended: Yes ({yesTR})
+                </button>
+                <button
+                  onClick={() => setTrFilter('Maybe')}
+                  className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                    trFilter === 'Maybe'
+                      ? 'bg-amber-500 text-white shadow-sm font-extrabold'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <span className={`h-1.5 w-1.5 rounded-full ${trFilter === 'Maybe' ? 'bg-white' : 'bg-amber-500'}`} />
+                  TR Recommended: Maybe ({maybeTR})
+                </button>
+              </div>
             </div>
 
             {activeFilter !== 'ALL' && (

@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Users, Hourglass, CheckCircle2, XCircle, HelpCircle } from 'lucide-react';
 
-export default function StatsBanner({ candidates, round = 1, rawCount = 0 }) {
+export default function StatsBanner({ candidates, round = 1, rawCount = 0, activeFilter, onFilterChange }) {
   const total = candidates.length;
   
   const getR2 = (c) => {
@@ -64,10 +64,10 @@ export default function StatsBanner({ candidates, round = 1, rawCount = 0 }) {
     }).length;
 
     stats = [
-      { title: 'Total Promoted', value: total, icon: Users, color: 'text-blue-500 bg-blue-500/10' },
-      { title: 'Approved (Yes)', value: yesCount, icon: CheckCircle2, color: 'text-green-500 bg-green-500/10' },
-      { title: 'Maybe', value: maybeCount, icon: HelpCircle, color: 'text-amber-500 bg-amber-500/10' },
-      { title: 'Declined (No)', value: noCount, icon: XCircle, color: 'text-red-500 bg-red-500/10' }
+      { key: 'ALL', title: 'Total Promoted', value: total, icon: Users, color: 'text-blue-500 bg-blue-500/10' },
+      { key: 'Yes', title: 'Approved (Yes)', value: yesCount, icon: CheckCircle2, color: 'text-green-500 bg-green-500/10' },
+      { key: 'Maybe', title: 'Maybe', value: maybeCount, icon: HelpCircle, color: 'text-amber-500 bg-amber-500/10' },
+      { key: 'No', title: 'Declined (No)', value: noCount, icon: XCircle, color: 'text-red-500 bg-red-500/10' }
     ];
   } else {
     const pendingScreen = candidates.filter(c => {
@@ -97,8 +97,25 @@ export default function StatsBanner({ candidates, round = 1, rawCount = 0 }) {
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
       {stats.map((stat, i) => {
         const Icon = stat.icon;
+        const isClickable = round === 3 && onFilterChange && stat.key;
+        const isSelected = isClickable && activeFilter === stat.key;
+
         return (
-          <Card key={i} className="hover:shadow-lg transition-all duration-300 border rounded-[1.25rem] overflow-hidden">
+          <Card 
+            key={i} 
+            onClick={() => {
+              if (isClickable) {
+                onFilterChange(stat.key);
+              }
+            }}
+            className={`transition-all duration-300 border rounded-[1.25rem] overflow-hidden ${
+              isClickable ? 'cursor-pointer hover:shadow-md' : 'hover:shadow-lg'
+            } ${
+              isSelected 
+                ? 'ring-2 ring-offset-2 ring-[#800020] border-transparent scale-[1.02] shadow-md' 
+                : 'hover:border-muted-foreground/30'
+            }`}
+          >
             <CardHeader className="flex flex-row items-center justify-between pb-3 space-y-0">
               <span className="text-[10px] font-bold text-muted-foreground font-mono tracking-wider uppercase">{stat.title}</span>
               <div className={`p-1.5 rounded-lg ${stat.color}`}>
