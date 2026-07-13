@@ -650,7 +650,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       ];
 
       evaluatedCandidates
-        .filter(c => getR1(c).app_status)
+        .filter(c => getR1(c).id !== undefined)
         .filter(c => isWithinDateRange(getR1(c).updated_at || c.submission_date))
         .forEach(c => {
           const r1 = getR1(c);
@@ -697,7 +697,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       ];
 
       evaluatedCandidates
-        .filter(c => getR1(c).app_status === 'Yes') // Cleared R1
+        .filter(c => getR2(c).id !== undefined)
         .filter(c => isWithinDateRange(getR2(c).updated_at || c.submission_date))
         .forEach(c => {
           const r1 = getR1(c);
@@ -764,7 +764,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       ];
 
       evaluatedCandidates
-        .filter(c => getR2(c).moved_to_round_3 === 'Yes' || getR2(c).moved_to_round_3 === 'Maybe')
+        .filter(c => getR3(c).id !== undefined)
         .filter(c => isWithinDateRange(getR3(c).updated_at || c.submission_date))
         .forEach(c => {
           const r1 = getR1(c);
@@ -797,7 +797,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       filename = `round_1_screening_report_${dateSuffix}.xlsx`;
     } else if (roundType === 2) {
       addR2Tab();
-      filename = `round_2_tech_vetting_report_${dateSuffix}.xlsx`;
+      filename = `round_2_technical_review_hub_${dateSuffix}.xlsx`;
     } else if (roundType === 3) {
       addR3Tab();
       filename = `round_3_executive_verdicts_${dateSuffix}.xlsx`;
