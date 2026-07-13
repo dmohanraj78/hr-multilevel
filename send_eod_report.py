@@ -87,22 +87,35 @@ def build_excel_report():
     # Sort by total score descending to determine rank
     candidates.sort(key=lambda x: float(x["r1"].get("total") or 0), reverse=True)
 
-    # Initialize Workbook
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "Analysis"
-    ws.views.sheetView[0].showGridLines = True
+    # Initialize Workbook from template if exists
+    template_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Copy of AI_Builder_Intern_v9.xlsx")
+    template_loaded = False
+    
+    if os.path.exists(template_path):
+        print(f"Loading template from {template_path}...")
+        wb = openpyxl.load_workbook(template_path)
+        ws = wb["Analysis"]
+        template_loaded = True
+        # Clear existing candidate rows in Analysis sheet (starting from Row 7 onwards)
+        if ws.max_row >= 7:
+            ws.delete_rows(7, ws.max_row - 6)
+    else:
+        print("Template file not found. Creating blank workbook.")
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Analysis"
+        ws.views.sheetView[0].showGridLines = True
 
-    # Row 1: Title
-    ws.row_dimensions[1].height = 28
-    ws["A1"] = "Scored Candidates — Analysis"
-    ws["A1"].font = Font(name="Segoe UI", size=16, bold=True, color="1F3864")
+        # Row 1: Title
+        ws.row_dimensions[1].height = 28
+        ws["A1"] = "Scored Candidates — Analysis"
+        ws["A1"].font = Font(name="Segoe UI", size=16, bold=True, color="1F3864")
 
-    # Row 2: Subtitle
-    ws.row_dimensions[2].height = 42
-    ws["A2"] = "Demo Review Notes (AG): DARK GREEN = Industry problem + advanced AI + complex + not a student project · LIGHT GREEN = Function problem + advanced AI + complex + not common student project · PINK = unclear/unassessable · RED = everything else.   Demo cell (AE) RED = invalid/missing demo link."
-    ws["A2"].font = Font(name="Segoe UI", size=9.5, italic=True, color="595959")
-    ws["A2"].alignment = Alignment(wrap_text=True, vertical="center")
+        # Row 2: Subtitle
+        ws.row_dimensions[2].height = 42
+        ws["A2"] = "Demo Review Notes (AG): DARK GREEN = Industry problem + advanced AI + complex + not a student project · LIGHT GREEN = Function problem + advanced AI + complex + not common student project · PINK = unclear/unassessable · RED = everything else.   Demo cell (AE) RED = invalid/missing demo link."
+        ws["A2"].font = Font(name="Segoe UI", size=9.5, italic=True, color="595959")
+        ws["A2"].alignment = Alignment(wrap_text=True, vertical="center")
 
     # Statistics Calculation
     total_applicants = len(candidates)
@@ -172,26 +185,65 @@ def build_excel_report():
         cell_lbl.alignment = Alignment(horizontal="center", vertical="center")
         cell_lbl.border = thin_border
 
-    # Row 5: Screening header above Status (AM5)
-    ws.row_dimensions[5].height = 18
-    cell_scr = ws["AM5"]
-    cell_scr.value = "Screening"
-    cell_scr.font = Font(name="Segoe UI", size=10, bold=True, color="1F3864")
-    cell_scr.fill = PatternFill(start_color="8DB3E2", end_color="8DB3E2", fill_type="solid")
-    cell_scr.alignment = Alignment(horizontal="center", vertical="center")
+    # Overwrite Raw Data sheet if it exists
+    if "Raw Data" in wb.sheetnames:
+        ws_raw = wb["Raw Data"]
+        if ws_raw.max_row >= 2:
+            ws_raw.delete_rows(2, ws_raw.max_row - 1)
+        for cand in candidates:
+            c = cand["c"]
+            r1 = cand["r1"]
+            ws_raw.append([
+                c.get("id"),
+                c.get("submission_date"),
+                c.get("full_name"),
+                c.get("email"),
+                c.get("phone"),
+                c.get("linkedin"),
+                c.get("location"),
+                c.get("preferred_start_date"),
+                c.get("education_level"),
+                c.get("ug_university"),
+                c.get("masters_university"),
+                c.get("course_major"),
+                c.get("degree_status"),
+                c.get("completion_year"),
+                c.get("programming_languages"),
+                c.get("aiml_experience") or r1.get("aiml_exp") or '',
+                c.get("claude_ecosystem") or r1.get("claude_lvl") or '',
+                c.get("skill_python"),
+                c.get("skill_deep_learning"),
+                c.get("skill_nlp"),
+                c.get("skill_computer_vision"),
+                c.get("skill_reinforcement_learning"),
+                c.get("skill_multimodal_ai"),
+                c.get("skill_finetuning_lora_peft"),
+                c.get("skill_llm_orchestration"),
+                c.get("skill_agent_fundamentals"),
+                c.get("skill_mcp"),
+                c.get("skill_embeddings_vector_rag"),
+                c.get("skill_reasoning_models"),
+                c.get("skill_evals"),
+                c.get("skill_ai_coding_tools"),
+                c.get("skill_rag"),
+                c.get("demo_explanation") or c.get("current_project") or '',
+                c.get("project_state") or r1.get("deploy_stage") or '',
+                c.get("project_category") or r1.get("domain") or '',
+                c.get("demo_link"),
+                c.get("github_url"),
+                c.get("preferred_industry") or '',
+                c.get("open_to_onsite") or '',
+                c.get("open_to_travel") or '',
+                c.get("anything_else") or '',
+                c.get("applied_role") or '',
+                c.get("job_id") or '',
+                c.get("rubric_id") or '',
+                c.get("screening_type") or '',
+                c.get("resume_drive_url"),
+                c.get("resume_filename") or '',
+                c.get("Analysis_status") or ''
+            ])
 
-    # Row 6: Column Headers
-    headers = [
-        "Rank", "Name", "Gender", "Cat", "Graduation", "Tier", "Total", "Edu", "Exp", "Proj", 
-        "Substance", "Deploy", "Artifact", "Skills", "Domain", "Degree", "Stream", "College", "F_college", "F_University", 
-        "Location", "AI Proj", "FS Proj", "Intern Mo", "Co.Tier", "Deploy Stage", "#Skills", "Claude Lvl", "AI/ML Exp", "Email", 
-        "Résumé", "GitHub", "Demo", "Demo Explanation (their project)", "Demo Review Notes (AI)", "R1 Review", "R1 Interview Priority", "To be screened by", 
-        "Status", "Earliest date they can start the internship", "Any concerns / restrictions (with college commitment, personal, others)", "Technical depth of demo / product", "Tech stack used", "Problem-solution fit", "Areas like latency, cost, security, etc been considered", "Decision", "Tier", "Reason for decision (detailed notes)"
-    ]
-
-    ws.row_dimensions[6].height = 24
-    dark_blue_fill = PatternFill(start_color="1F3864", end_color="1F3864", fill_type="solid")
-    blue_fill = PatternFill(start_color="0070C0", end_color="0070C0", fill_type="solid")
     grid_border = Border(
         left=Side(style='thin', color='E0E0E0'),
         right=Side(style='thin', color='E0E0E0'),
@@ -199,13 +251,35 @@ def build_excel_report():
         bottom=Side(style='thin', color='E0E0E0')
     )
 
-    for idx, h in enumerate(headers):
-        cell = ws.cell(row=6, column=idx + 1)
-        cell.value = h
-        cell.font = Font(name="Segoe UI", size=10, bold=True, color="FFFFFF")
-        cell.fill = blue_fill if idx >= 38 else dark_blue_fill
-        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
-        cell.border = grid_border
+    if not template_loaded:
+        # Row 5: Screening header above Status (AM5)
+        ws.row_dimensions[5].height = 18
+        cell_scr = ws["AM5"]
+        cell_scr.value = "Screening"
+        cell_scr.font = Font(name="Segoe UI", size=10, bold=True, color="1F3864")
+        cell_scr.fill = PatternFill(start_color="8DB3E2", end_color="8DB3E2", fill_type="solid")
+        cell_scr.alignment = Alignment(horizontal="center", vertical="center")
+
+        # Row 6: Column Headers
+        headers = [
+            "Rank", "Name", "Gender", "Cat", "Graduation", "Tier", "Total", "Edu", "Exp", "Proj", 
+            "Substance", "Deploy", "Artifact", "Skills", "Domain", "Degree", "Stream", "College", "F_college", "F_University", 
+            "Location", "AI Proj", "FS Proj", "Intern Mo", "Co.Tier", "Deploy Stage", "#Skills", "Claude Lvl", "AI/ML Exp", "Email", 
+            "Résumé", "GitHub", "Demo", "Demo Explanation (their project)", "Demo Review Notes (AI)", "R1 Review", "R1 Interview Priority", "To be screened by", 
+            "Status", "Earliest date they can start the internship", "Any concerns / restrictions (with college commitment, personal, others)", "Technical depth of demo / product", "Tech stack used", "Problem-solution fit", "Areas like latency, cost, security, etc been considered", "Decision", "Tier", "Reason for decision (detailed notes)"
+        ]
+
+        ws.row_dimensions[6].height = 24
+        dark_blue_fill = PatternFill(start_color="1F3864", end_color="1F3864", fill_type="solid")
+        blue_fill = PatternFill(start_color="0070C0", end_color="0070C0", fill_type="solid")
+
+        for idx, h in enumerate(headers):
+            cell = ws.cell(row=6, column=idx + 1)
+            cell.value = h
+            cell.font = Font(name="Segoe UI", size=10, bold=True, color="FFFFFF")
+            cell.fill = blue_fill if idx >= 38 else dark_blue_fill
+            cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+            cell.border = grid_border
 
     # Fills for row data highlighting
     green_fill = PatternFill(start_color="E2F0D9", end_color="E2F0D9", fill_type="solid")
@@ -327,17 +401,18 @@ def build_excel_report():
                 cell.fill = red_fill
                 cell.font = red_font
 
-    # Set Column Widths
-    widths = [
-        6, 25, 10, 8, 12, 10, 8, 8, 8, 8, 8, 8, 8, 8, 20, 15, 20, 30, 30, 25,
-        18, 10, 10, 10, 10, 18, 10, 15, 15, 30, 25, 25, 25, 35, 35, 30, 18, 18,
-        12, 18, 25, 18, 25, 15, 20, 12, 10, 35
-    ]
-    for idx, w in enumerate(widths):
-        ws.column_dimensions[get_column_letter(idx + 1)].width = w
+    # Set Column Widths only if template not loaded
+    if not template_loaded:
+        widths = [
+            6, 25, 10, 8, 12, 10, 8, 8, 8, 8, 8, 8, 8, 8, 20, 15, 20, 30, 30, 25,
+            18, 10, 10, 10, 10, 18, 10, 15, 15, 30, 25, 25, 25, 35, 35, 30, 18, 18,
+            12, 18, 25, 18, 25, 15, 20, 12, 10, 35
+        ]
+        for idx, w in enumerate(widths):
+            ws.column_dimensions[get_column_letter(idx + 1)].width = w
 
     date_str = datetime.now().strftime("%Y-%m-%d")
-    output_filename = f"r1_r2_combined_report_{date_str}.xlsx"
+    output_filename = f"r1_r2_side_by_side_report_{date_str}.xlsx"
     wb.save(output_filename)
     print(f"Report saved successfully as {output_filename}")
     return output_filename

@@ -489,7 +489,21 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
   };
 
   const downloadExcelReport = async (roundType = 'combined') => {
-    const workbook = new ExcelJS.Workbook();
+    let workbook = new ExcelJS.Workbook();
+    
+    if (roundType === 'side-by-side') {
+      try {
+        const response = await fetch('/template.xlsx');
+        if (response.ok) {
+          const arrayBuffer = await response.arrayBuffer();
+          await workbook.xlsx.load(arrayBuffer);
+        } else {
+          console.warn('Failed to fetch /template.xlsx. Creating blank workbook.');
+        }
+      } catch (err) {
+        console.error('Failed to load template.xlsx, falling back:', err);
+      }
+    }
     
     // Helper to filter candidates by date range
     const isWithinDateRange = (dateStr) => {
@@ -791,7 +805,15 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
 
     // --- Tab: R1 & R2 Side-by-Side ---
     const addSideBySideTab = () => {
-      const sheet = workbook.addWorksheet("Analysis");
+      let sheet = workbook.getWorksheet("Analysis");
+      if (!sheet) {
+        sheet = workbook.addWorksheet("Analysis");
+      } else {
+        // Clear all rows starting from row 7 to end
+        while (sheet.rowCount >= 7) {
+          sheet.removeRow(7);
+        }
+      }
       sheet.views = [{ showGridLines: true }];
 
       // Set up title lines
@@ -810,6 +832,68 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       const candidatesToExport = evaluatedCandidates
         .filter(c => getR1(c).id !== undefined)
         .filter(c => isWithinDateRange(getR2(c).updated_at || getR1(c).updated_at || c.submission_date));
+
+      // Overwrite Raw Data tab if it exists
+      let rawSheet = workbook.getWorksheet("Raw Data");
+      if (rawSheet) {
+        while (rawSheet.rowCount >= 2) {
+          rawSheet.removeRow(2);
+        }
+        candidatesToExport.forEach(cand => {
+          const c = cand;
+          const r1 = getR1(c);
+          rawSheet.addRow([
+            c.id,
+            c.submission_date,
+            c.full_name,
+            c.email,
+            c.phone,
+            c.linkedin,
+            c.location,
+            c.preferred_start_date,
+            c.education_level,
+            c.ug_university,
+            c.masters_university,
+            c.course_major,
+            c.degree_status,
+            c.completion_year,
+            c.programming_languages,
+            c.aiml_experience || r1.aiml_exp || '',
+            c.claude_ecosystem || r1.claude_lvl || '',
+            c.skill_python,
+            c.skill_deep_learning,
+            c.skill_nlp,
+            c.skill_computer_vision,
+            c.skill_reinforcement_learning,
+            c.skill_multimodal_ai,
+            c.skill_finetuning_lora_peft,
+            c.skill_llm_orchestration,
+            c.skill_agent_fundamentals,
+            c.skill_mcp,
+            c.skill_embeddings_vector_rag,
+            c.skill_reasoning_models,
+            c.skill_evals,
+            c.skill_ai_coding_tools,
+            c.skill_rag,
+            c.demo_explanation || c.current_project || '',
+            c.project_state || r1.deploy_stage || '',
+            c.project_category || r1.domain || '',
+            c.demo_link,
+            c.github_url,
+            c.preferred_industry || '',
+            c.open_to_onsite || '',
+            c.open_to_travel || '',
+            c.anything_else || '',
+            c.applied_role || '',
+            c.job_id || '',
+            c.rubric_id || '',
+            c.screening_type || '',
+            c.resume_drive_url,
+            c.resume_filename || '',
+            c.Analysis_status || ''
+          ]);
+        });
+      }
 
       // Calculate stats
       const totalApplicants = candidatesToExport.length;
