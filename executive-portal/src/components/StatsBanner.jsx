@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Users, CheckCircle2, HelpCircle, XCircle } from 'lucide-react';
 
-export default function StatsBanner({ candidates }) {
+export default function StatsBanner({ candidates, activeFilter, onFilterChange }) {
   const getR3 = (c) => {
     if (!c) return {};
     const val = c.round_3_evaluation;
@@ -27,18 +27,27 @@ export default function StatsBanner({ candidates }) {
   }).length;
 
   const stats = [
-    { title: 'Total Candidates', value: total, icon: Users, color: 'text-blue-500 bg-blue-500/10' },
-    { title: 'Approved (Yes)', value: yesCount, icon: CheckCircle2, color: 'text-green-500 bg-green-500/10' },
-    { title: 'Maybe', value: maybeCount, icon: HelpCircle, color: 'text-amber-500 bg-amber-500/10' },
-    { title: 'Declined (No)', value: noCount, icon: XCircle, color: 'text-red-500 bg-red-500/10' }
+    { key: 'ALL', title: 'Total Candidates', value: total, icon: Users, color: 'text-blue-500 bg-blue-500/10', borderColor: 'border-blue-500/30' },
+    { key: 'Yes', title: 'Approved (Yes)', value: yesCount, icon: CheckCircle2, color: 'text-green-500 bg-green-500/10', borderColor: 'border-green-500/30' },
+    { key: 'Maybe', title: 'Maybe', value: maybeCount, icon: HelpCircle, color: 'text-amber-500 bg-amber-500/10', borderColor: 'border-amber-500/30' },
+    { key: 'No', title: 'Declined (No)', value: noCount, icon: XCircle, color: 'text-red-500 bg-red-500/10', borderColor: 'border-red-500/30' }
   ];
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-      {stats.map((stat, i) => {
+      {stats.map((stat) => {
         const Icon = stat.icon;
+        const isSelected = activeFilter === stat.key;
         return (
-          <Card key={i} className="hover:shadow-lg transition-all duration-300 border rounded-[1.25rem] overflow-hidden">
+          <Card 
+            key={stat.key} 
+            onClick={() => onFilterChange(stat.key)}
+            className={`cursor-pointer transition-all duration-300 border rounded-[1.25rem] overflow-hidden select-none hover:shadow-md ${
+              isSelected 
+                ? `ring-2 ring-offset-2 ring-primary border-transparent shadow-md scale-[1.02]` 
+                : 'hover:border-muted-foreground/30'
+            }`}
+          >
             <CardHeader className="flex flex-row items-center justify-between pb-3 space-y-0">
               <span className="text-[10px] font-bold text-muted-foreground font-mono tracking-wider uppercase">{stat.title}</span>
               <div className={`p-1.5 rounded-lg ${stat.color}`}>

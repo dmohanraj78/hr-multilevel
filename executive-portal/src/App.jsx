@@ -93,7 +93,19 @@ export default function App() {
     });
   };
 
+  const [activeFilter, setActiveFilter] = useState('ALL');
   const executiveCandidates = getExecutiveCandidates();
+
+  const getFilteredCandidates = () => {
+    return executiveCandidates.filter(c => {
+      if (activeFilter === 'ALL') return true;
+      const r3 = c.round_3_evaluation;
+      const r3Parsed = Array.isArray(r3) ? r3[0] : (r3 || {});
+      return r3Parsed.verdict === activeFilter;
+    });
+  };
+
+  const filteredCandidates = getFilteredCandidates();
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans transition-colors duration-200">
@@ -109,7 +121,7 @@ export default function App() {
             <ShieldAlert className="h-5 w-5 shrink-0 text-red-500 mt-0.5" />
             <div>
               <strong className="font-bold block text-foreground mb-1">Live Database Connection Required</strong>
-              Database connection failed: {error}. Since local storage is isolated by port, please click the Settings gear icon in the top right to configure your Supabase URL & Anon Key for port 5175.
+              Database connection failed: {error}. Since local storage is isolated by port, please click the Settings gear icon in the right top to configure your Supabase URL & Anon Key for port 5175.
             </div>
           </div>
         )}
@@ -141,12 +153,33 @@ export default function App() {
             </div>
 
             <div className="mt-2">
-              <StatsBanner candidates={executiveCandidates} />
+              <StatsBanner 
+                candidates={executiveCandidates} 
+                activeFilter={activeFilter}
+                onFilterChange={setActiveFilter}
+              />
             </div>
+
+            {activeFilter !== 'ALL' && (
+              <div className="bg-[#800020]/5 border border-[#800020]/20 rounded-xl px-4 py-2.5 flex items-center justify-between text-sm font-semibold text-foreground">
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-[#800020] animate-pulse" />
+                  Showing only: <strong className="text-[#800020]">{activeFilter === 'Yes' ? 'Approved (Yes)' : activeFilter === 'Maybe' ? 'Maybe' : 'Declined (No)'}</strong> Candidates ({filteredCandidates.length})
+                </div>
+                <Button 
+                  size="xs" 
+                  variant="outline" 
+                  onClick={() => setActiveFilter('ALL')}
+                  className="h-7 px-2.5 text-xs border-[#800020] text-[#800020] hover:bg-[#800020] hover:text-white rounded-lg shadow-sm font-bold"
+                >
+                  Clear Filter
+                </Button>
+              </div>
+            )}
 
             <div className="mt-2">
               <CandidateListTable
-                candidates={candidates}
+                candidates={filteredCandidates}
                 actionLabel="Review"
                 onActionClick={(cand) => setSelectedCandidate(cand)}
                 showTechEvaluatorFilter={true}
