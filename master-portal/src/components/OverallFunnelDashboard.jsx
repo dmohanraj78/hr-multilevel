@@ -1034,9 +1034,18 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       const getSortGroup = (cand) => {
         const r1Status = (getR1(cand).app_status || '').trim().toLowerCase();
         const r2Decision = (getR2(cand).moved_to_round_3 || '').trim().toLowerCase();
-        if (r1Status === 'yes' || ['yes', 'promoted', 'yes_draft'].includes(r2Decision)) return 0;
-        if (r1Status === 'maybe' || ['maybe', 'maybe_draft'].includes(r2Decision)) return 1;
-        if (['no', 'rejected', 'invalid'].includes(r1Status) || ['no', 'no_draft'].includes(r2Decision)) return 3;
+
+        // 1. If R2 Decision exists (is not empty/pending)
+        if (['yes', 'promoted', 'yes_draft'].includes(r2Decision)) return 0; // Yes
+        if (['maybe', 'maybe_draft'].includes(r2Decision)) return 1; // Maybe
+        if (['no', 'no_draft'].includes(r2Decision)) return 3; // Rejected
+
+        // 2. If R2 is pending/empty, fallback to R1 Status
+        if (r1Status === 'yes') return 0; // Yes
+        if (r1Status === 'maybe') return 1; // Maybe
+        if (['no', 'rejected', 'invalid', 'reject'].includes(r1Status)) return 3; // Rejected
+
+        // 3. Otherwise it's Pending
         return 2; // Pending Decisions
       };
       const sortedCandidates = [...candidatesToExport].sort((a, b) => {
@@ -1136,6 +1145,9 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
             } else if (['no', 'rejected', 'invalid', 'reject'].includes(valStr)) {
               cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8D7DA' } };
               cell.font = { name: 'Segoe UI', size: 9.5, color: { argb: 'FF721C24' }, bold: true };
+            } else {
+              cell.fill = { type: 'pattern', pattern: 'none' };
+              cell.font = { name: 'Segoe UI', size: 9.5, color: { argb: 'FF000000' } };
             }
           }
         });

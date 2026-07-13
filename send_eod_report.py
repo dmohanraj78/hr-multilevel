@@ -92,15 +92,25 @@ def build_excel_report():
         score = float(cand["r1"].get("total") or 0)
 
         # Determine primary group order
-        # Group 0 = Yes (R1 yes, or R2 yes/promoted)
+        # Group 0 = Yes
         # Group 1 = Maybe
         # Group 2 = Pending (no R1 or R2 decision yet)
         # Group 3 = Rejected / No
-        if r1_status in ["yes"] or r2_decision in ["yes", "promoted", "yes_draft"]:
+
+        # 1. If R2 Decision exists
+        r2_decision_clean = r2_decision.replace("_draft", "")
+        if r2_decision_clean in ["yes", "promoted"]:
             group = 0
-        elif r1_status in ["maybe"] or r2_decision in ["maybe", "maybe_draft"]:
+        elif r2_decision_clean in ["maybe"]:
             group = 1
-        elif r1_status in ["no", "rejected", "invalid"] or r2_decision in ["no", "no_draft"]:
+        elif r2_decision_clean in ["no"]:
+            group = 3
+        # 2. If R2 Decision is empty/pending, fallback to R1 Status
+        elif r1_status in ["yes"]:
+            group = 0
+        elif r1_status in ["maybe"]:
+            group = 1
+        elif r1_status in ["no", "rejected", "invalid", "reject"]:
             group = 3
         else:
             group = 2  # Pending Decisions (no decision yet)
@@ -449,6 +459,9 @@ def build_excel_report():
                 elif val_str in ["no", "rejected", "invalid", "reject"]:
                     cell.fill = red_fill
                     cell.font = red_font
+                else:
+                    cell.fill = PatternFill(fill_type=None)
+                    cell.font = Font(name="Segoe UI", size=9.5, color="000000")
 
     # Set Column Widths only if template not loaded
     if not template_loaded:
