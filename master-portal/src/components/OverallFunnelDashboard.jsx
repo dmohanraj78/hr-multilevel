@@ -837,14 +837,11 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       // Overwrite Raw Data tab if it exists
       let rawSheet = workbook.getWorksheet("Raw Data");
       if (rawSheet) {
-        const rrc = rawSheet.rowCount;
-        if (rrc >= 2) {
-          rawSheet.spliceRows(2, rrc - 1);
-        }
+        let rawRowIdx = 2;
         candidatesToExport.forEach(cand => {
           const c = cand;
           const r1 = getR1(c);
-          rawSheet.addRow([
+          const rowData = [
             c.id,
             c.submission_date,
             c.full_name,
@@ -893,8 +890,17 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
             c.resume_drive_url,
             c.resume_filename || '',
             c.Analysis_status || ''
-          ]);
+          ];
+          rowData.forEach((val, colIdx) => {
+            rawSheet.getCell(rawRowIdx, colIdx + 1).value = val;
+          });
+          rawRowIdx++;
         });
+        // Clear any trailing/leftover rows from template
+        const rrc = rawSheet.rowCount;
+        if (rrc >= rawRowIdx) {
+          rawSheet.spliceRows(rawRowIdx, rrc - rawRowIdx + 1);
+        }
       }
 
       // Calculate stats

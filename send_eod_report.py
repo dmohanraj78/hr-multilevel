@@ -188,12 +188,11 @@ def build_excel_report():
     # Overwrite Raw Data sheet if it exists
     if "Raw Data" in wb.sheetnames:
         ws_raw = wb["Raw Data"]
-        if ws_raw.max_row >= 2:
-            ws_raw.delete_rows(2, ws_raw.max_row - 1)
+        raw_row_idx = 2
         for cand in candidates:
             c = cand["c"]
             r1 = cand["r1"]
-            ws_raw.append([
+            row_data = [
                 c.get("id"),
                 c.get("submission_date"),
                 c.get("full_name"),
@@ -242,7 +241,14 @@ def build_excel_report():
                 c.get("resume_drive_url"),
                 c.get("resume_filename") or '',
                 c.get("Analysis_status") or ''
-            ])
+            ]
+            for col_idx, val in enumerate(row_data):
+                ws_raw.cell(row=raw_row_idx, column=col_idx + 1).value = val
+            raw_row_idx += 1
+            
+        # Delete any trailing/leftover rows from template
+        if ws_raw.max_row >= raw_row_idx:
+            ws_raw.delete_rows(raw_row_idx, ws_raw.max_row - raw_row_idx + 1)
 
     grid_border = Border(
         left=Side(style='thin', color='E0E0E0'),
