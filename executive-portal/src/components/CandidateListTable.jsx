@@ -238,7 +238,8 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
     status: (c) => getStatusInfo(c).text,
     clan: (c) => getEval1(c, 'eval_group') || 'None',
     trDecision: (c) => getR2(c).moved_to_round_3 || 'Pending',
-    duration: (c) => getR2(c).duration_months || '-'
+    duration: (c) => getR2(c).duration_months || '-',
+    trFeedback: (c) => getR2(c).demo_review_comment || '-'
   };
 
   // Helper to extract unique values for dropdowns
@@ -259,6 +260,7 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
   const uniqueClans = useMemo(() => getUniqueValues('clan', getCandValue.clan), [candidates]);
   const uniqueTrDecisions = useMemo(() => getUniqueValues('trDecision', getCandValue.trDecision), [candidates]);
   const uniqueDurations = useMemo(() => getUniqueValues('duration', getCandValue.duration), [candidates]);
+  const uniqueTrFeedbacks = useMemo(() => getUniqueValues('trFeedback', getCandValue.trFeedback), [candidates]);
 
   // Apply filters
   const handleApplyFilter = (columnKey, selectedValues) => {
@@ -300,6 +302,7 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
       if (activeFilters.clan && !activeFilters.clan.includes(getEval1(cand, 'eval_group') || 'None')) return false;
       if (activeFilters.trDecision && !activeFilters.trDecision.includes(getR2(cand).moved_to_round_3 || 'Pending')) return false;
       if (activeFilters.duration && !activeFilters.duration.includes(getR2(cand).duration_months || '-')) return false;
+      if (activeFilters.trFeedback && !activeFilters.trFeedback.includes(getR2(cand).demo_review_comment || '-')) return false;
 
       return true;
     });
@@ -523,7 +526,19 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
                   onSort={handleSort}
                 />
               </TableHead>
-              <TableHead className="w-[110px] overflow-visible">
+              <TableHead className="w-[200px] overflow-visible">
+                <HeaderFilter
+                  label={<span>Tech Reviewer Feedback</span>}
+                  columnKey="trFeedback"
+                  uniqueValues={uniqueTrFeedbacks}
+                  activeFilters={activeFilters}
+                  onApplyFilter={handleApplyFilter}
+                  sortConfig={sortConfig}
+                  onSort={handleSort}
+                />
+              </TableHead>
+              <TableHead className="w-[90px] font-semibold">Actions</TableHead>
+              <TableHead className="w-[130px] overflow-visible text-right pr-6">
                 <HeaderFilter
                   label={<span>Final<br />Status</span>}
                   columnKey="status"
@@ -534,13 +549,12 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
                   onSort={handleSort}
                 />
               </TableHead>
-              <TableHead className="w-[85px] text-right font-semibold pr-6">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {sortedAndFiltered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-10 text-muted-foreground font-mono text-sm">
+                <TableCell colSpan={10} className="text-center py-10 text-muted-foreground font-mono text-sm">
                   No applicants matching active selection filters.
                 </TableCell>
               </TableRow>
@@ -583,12 +597,15 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
                     </TableCell>
                     <TableCell>{trBadge}</TableCell>
                     <TableCell className="font-medium text-muted-foreground">{duration}</TableCell>
-                    <TableCell>{statusBadge}</TableCell>
-                    <TableCell className="text-right pr-6">
+                    <TableCell className="max-w-[200px] text-xs text-muted-foreground whitespace-pre-wrap">
+                      {getR2(cand).demo_review_comment || '-'}
+                    </TableCell>
+                    <TableCell>
                       <Button size="sm" variant="outline" onClick={() => onActionClick(cand)} className="rounded-md font-semibold text-xs border-[#800020] text-[#800020] hover:bg-[#800020] hover:text-white transition-colors duration-300">
                         {actionLabel}
                       </Button>
                     </TableCell>
+                    <TableCell className="text-right pr-6">{statusBadge}</TableCell>
                   </TableRow>
                 );
               })
