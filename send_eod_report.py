@@ -84,38 +84,40 @@ def build_excel_report():
             "r2": r2_map.get(r1["id"], {})
         })
 
-    # Sort order: Yes first → Maybe → Pending (no R2 decision) → Rejected
-    # Within each group, sort by total score descending
+    # Sort order (primary = R1 Status so reviewed people stay together):
+    #   1. R1 Yes (reviewed & moved to Round 2) — within this block the
+    #      R2-vetted candidates come first (R2 Yes -> Maybe -> No -> vetting
+    #      started without decision), untouched/null R2 rows sink to its end
+    #   2. R1 Maybe
+    #   3. R1 Rejected
+    #   4. Pending / everything else last (the mostly-empty rows)
     def sort_key(cand):
         r1_status = str(cand["r1"].get("app_status") or "").strip().lower()
-        r2_decision = str(cand["r2"].get("moved_to_round_3") or "").strip().lower()
+        r2 = cand["r2"]
+        r2_decision = str(r2.get("moved_to_round_3") or "").replace("_draft", "").strip().lower()
         score = float(cand["r1"].get("total") or 0)
 
-        # Determine primary group order
-        # Group 0 = Yes
-        # Group 1 = Maybe
-        # Group 2 = Pending (no R1 or R2 decision yet)
-        # Group 3 = Rejected / No
-
-        # 1. If R2 Decision exists
-        r2_decision_clean = r2_decision.replace("_draft", "")
-        if r2_decision_clean in ["yes", "promoted"]:
+        if r1_status == "yes":
             group = 0
-        elif r2_decision_clean in ["maybe"]:
-            group = 1
-        elif r2_decision_clean in ["no"]:
-            group = 3
-        # 2. If R2 Decision is empty/pending, fallback to R1 Status
-        elif r1_status in ["yes"]:
-            group = 0
-        elif r1_status in ["maybe"]:
+        elif r1_status == "maybe":
             group = 1
         elif r1_status in ["no", "rejected", "invalid", "reject"]:
-            group = 3
+            group = 2
         else:
-            group = 2  # Pending Decisions (no decision yet)
+            group = 3  # Pending & rest
 
-        return (group, -score)  # sort by group asc, then score desc within group
+        if r2_decision in ["yes", "promoted"]:
+            sub = 0
+        elif r2_decision == "maybe":
+            sub = 1
+        elif r2_decision == "no":
+            sub = 2
+        elif r2.get("id") is not None:
+            sub = 3  # vetting started, no decision yet
+        else:
+            sub = 4  # no R2 record at all
+
+        return (group, sub, -score)
 
     candidates.sort(key=sort_key)
 
@@ -299,19 +301,21 @@ def build_excel_report():
             except Exception:
                 pass
 
-    ws.merge_cells('A5:AM5')
-    cell_r1 = ws['A5']
-    cell_r1.value = "Round 1 Inputs"
-    cell_r1.font = Font(name="Segoe UI", size=10, bold=True, color="FFFFFF")
-    cell_r1.fill = PatternFill(start_color="1F3864", end_color="1F3864", fill_type="solid")
-    cell_r1.alignment = Alignment(horizontal="center", vertical="center")
-
-    ws.merge_cells('AN5:AV5')
-    cell_r2 = ws['AN5']
-    cell_r2.value = "Round 2 Inputs"
-    cell_r2.font = Font(name="Segoe UI", size=10, bold=True, color="FFFFFF")
-    cell_r2.fill = PatternFill(start_color="0070C0", end_color="0070C0", fill_type="solid")
-    cell_r2.alignment = Alignment(horizontal="center", vertical="center")
+    # Three labelled sections: candidate profile (A-AI), the columns the R1
+    # reviewer fills (AJ-AM, ending at Status), and the R2 inputs (AN-AV) —
+    # so each label sits directly above its own columns.
+    row5_sections = [
+        ('A5:AI5', 'A5', 'Candidate Analysed Details', '1F3864'),
+        ('AJ5:AM5', 'AJ5', 'Round 1 Inputs', '2F5597'),
+        ('AN5:AV5', 'AN5', 'Round 2 Inputs', '0070C0'),
+    ]
+    for rng, anchor, label, color in row5_sections:
+        ws.merge_cells(rng)
+        cell = ws[anchor]
+        cell.value = label
+        cell.font = Font(name="Segoe UI", size=10, bold=True, color="FFFFFF")
+        cell.fill = PatternFill(start_color=color, end_color=color, fill_type="solid")
+        cell.alignment = Alignment(horizontal="center", vertical="center")
 
     if not template_loaded:
         # Row 6: Column Headers
@@ -325,13 +329,15 @@ def build_excel_report():
 
         ws.row_dimensions[6].height = 24
         dark_blue_fill = PatternFill(start_color="1F3864", end_color="1F3864", fill_type="solid")
+        mid_blue_fill = PatternFill(start_color="2F5597", end_color="2F5597", fill_type="solid")
         blue_fill = PatternFill(start_color="0070C0", end_color="0070C0", fill_type="solid")
 
         for idx, h in enumerate(headers):
             cell = ws.cell(row=6, column=idx + 1)
             cell.value = h
             cell.font = Font(name="Segoe UI", size=10, bold=True, color="FFFFFF")
-            cell.fill = blue_fill if idx >= 38 else dark_blue_fill
+            # Match row-5 sections: profile (0-34), R1 inputs (35-38), R2 inputs (39+)
+            cell.fill = blue_fill if idx >= 39 else (mid_blue_fill if idx >= 35 else dark_blue_fill)
             cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
             cell.border = grid_border
 
@@ -498,7 +504,7 @@ Please find attached the Daily R1 & R2 Combined Report auto-generated on {date_s
 Report includes:
   - Candidate profile & R1 evaluation details
   - R2 screening inputs (where available)
-  - Sorted by: Yes → Maybe → Pending Decisions → Rejected
+  - Sorted by: Reviewed / Moved to Round 2 first (R2-vetted on top) → Rejected → Pending Decisions
   - R1 Status and R2 Decision columns are color-coded (Green = Yes, Amber = Maybe, Red = No)
 
 Best Regards,

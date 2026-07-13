@@ -991,23 +991,24 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       try {
         sheet.unMergeCells('A5:AV5');
       } catch (e) {}
-      try {
-        sheet.mergeCells('A5:AM5');
-      } catch (e) {}
-      const cellR1Header = unshareStyle(sheet.getCell('A5'));
-      cellR1Header.value = "Round 1 Inputs";
-      cellR1Header.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
-      cellR1Header.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F3864' } };
-      cellR1Header.alignment = { horizontal: 'center', vertical: 'middle' };
-
-      try {
-        sheet.mergeCells('AN5:AV5');
-      } catch (e) {}
-      const cellR2Header = unshareStyle(sheet.getCell('AN5'));
-      cellR2Header.value = "Round 2 Inputs";
-      cellR2Header.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
-      cellR2Header.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0070C0' } };
-      cellR2Header.alignment = { horizontal: 'center', vertical: 'middle' };
+      // Three labelled sections: the candidate profile (A-AI), the columns the
+      // R1 reviewer fills (AJ-AM, ending at Status), and the R2 inputs (AN-AV) —
+      // so each label sits directly above its own columns.
+      const row5Sections = [
+        { range: 'A5:AI5', anchor: 'A5', label: 'Candidate Analysed Details', color: 'FF1F3864' },
+        { range: 'AJ5:AM5', anchor: 'AJ5', label: 'Round 1 Inputs', color: 'FF2F5597' },
+        { range: 'AN5:AV5', anchor: 'AN5', label: 'Round 2 Inputs', color: 'FF0070C0' }
+      ];
+      row5Sections.forEach(({ range, anchor, label, color }) => {
+        try {
+          sheet.mergeCells(range);
+        } catch (e) {}
+        const cell = unshareStyle(sheet.getCell(anchor));
+        cell.value = label;
+        cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: color } };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      });
 
       // Row 6 Headers
       const headers = [
@@ -1024,11 +1025,13 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
         cell.value = h;
         cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
         
-        const isR2 = idx >= 38;
+        // Match the row-5 sections: profile (0-34), R1 inputs (35-38 up to
+        // Status), R2 inputs (39+)
+        const headerColor = idx >= 39 ? 'FF0070C0' : idx >= 35 ? 'FF2F5597' : 'FF1F3864';
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
-          fgColor: { argb: isR2 ? 'FF0070C0' : 'FF1F3864' }
+          fgColor: { argb: headerColor }
         };
         cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
         cell.border = {
@@ -1039,27 +1042,34 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
         };
       });
 
-      // Sort order: Yes → Maybe → Pending Decisions → Rejected, then by score within each group
+      // Sort order (primary = R1 Status so reviewed people stay together):
+      //   1. R1 Yes (reviewed & moved to Round 2) — within this block the
+      //      R2-vetted candidates come first (R2 Yes → Maybe → No → vetted
+      //      without decision), and untouched/null R2 rows sink to its end
+      //   2. R1 Maybe
+      //   3. R1 Rejected
+      //   4. Pending / everything else last (the mostly-empty rows)
       const getSortGroup = (cand) => {
         const r1Status = (getR1(cand).app_status || '').trim().toLowerCase();
-        const r2Decision = (getR2(cand).moved_to_round_3 || '').trim().toLowerCase();
-
-        // 1. If R2 Decision exists (is not empty/pending)
-        if (['yes', 'promoted', 'yes_draft'].includes(r2Decision)) return 0; // Yes
-        if (['maybe', 'maybe_draft'].includes(r2Decision)) return 1; // Maybe
-        if (['no', 'no_draft'].includes(r2Decision)) return 3; // Rejected
-
-        // 2. If R2 is pending/empty, fallback to R1 Status
-        if (r1Status === 'yes') return 0; // Yes
-        if (r1Status === 'maybe') return 1; // Maybe
-        if (['no', 'rejected', 'invalid', 'reject'].includes(r1Status)) return 3; // Rejected
-
-        // 3. Otherwise it's Pending
-        return 2; // Pending Decisions
+        if (r1Status === 'yes') return 0;
+        if (r1Status === 'maybe') return 1;
+        if (['no', 'rejected', 'invalid', 'reject'].includes(r1Status)) return 2;
+        return 3; // Pending & rest
+      };
+      const getR2SubOrder = (cand) => {
+        const r2 = getR2(cand);
+        const r2Decision = (r2.moved_to_round_3 || '').replace('_draft', '').trim().toLowerCase();
+        if (['yes', 'promoted'].includes(r2Decision)) return 0;
+        if (r2Decision === 'maybe') return 1;
+        if (r2Decision === 'no') return 2;
+        if (r2.id !== undefined && r2.id !== null) return 3; // vetting started, no decision yet
+        return 4; // no R2 record at all
       };
       const sortedCandidates = [...candidatesToExport].sort((a, b) => {
         const groupDiff = getSortGroup(a) - getSortGroup(b);
         if (groupDiff !== 0) return groupDiff;
+        const subDiff = getR2SubOrder(a) - getR2SubOrder(b);
+        if (subDiff !== 0) return subDiff;
         return parseFloat(getR1(b).total || 0) - parseFloat(getR1(a).total || 0);
       });
 
