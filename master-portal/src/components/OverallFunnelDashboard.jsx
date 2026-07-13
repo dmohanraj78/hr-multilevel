@@ -1143,7 +1143,11 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
           r2.id ? (r2.tech_stack || '-') : '-',
           r2.id ? (problemFit || '-') : '-',
           r2.id ? (latency || '-') : '-',
-          r2.id ? (r2.moved_to_round_3 ? r2.moved_to_round_3.replace('_draft', '') : '-') : '-',
+          // Decision column: carry the Round 1 rejection through so it is
+          // explicitly mentioned instead of showing '-'
+          r2.id && r2.moved_to_round_3
+            ? r2.moved_to_round_3.replace('_draft', '')
+            : (['no', 'rejected', 'invalid', 'reject'].includes((r1.app_status || '').trim().toLowerCase()) ? 'Rejected (R1)' : '-'),
           "-", // Tier (R2 tier placeholder)
           r2.id ? (r2.demo_review_comment || '-') : '-'
         ];
@@ -1171,7 +1175,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
             } else if (['maybe'].includes(valStr)) {
               cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF3CD' } };
               cell.font = { name: 'Segoe UI', size: 9.5, color: { argb: 'FF856404' }, bold: true };
-            } else if (['no', 'rejected', 'invalid', 'reject'].includes(valStr)) {
+            } else if (['no', 'invalid'].includes(valStr) || valStr.startsWith('reject')) {
               cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8D7DA' } };
               cell.font = { name: 'Segoe UI', size: 9.5, color: { argb: 'FF721C24' }, bold: true };
             } else {
@@ -1379,7 +1383,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
               <span className="text-3xl font-extrabold font-mono text-red-600 dark:text-red-400">{stats.rejected}</span>
               <XOctagon className="h-5 w-5 text-red-500 stroke-[1.5]" />
             </div>
-            <span className="text-[10px] text-red-600/80">Any funnel stage</span>
+            <span className="text-[10px] text-red-600/80">Rejected in Round 1</span>
           </CardContent>
         </Card>
 

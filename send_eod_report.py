@@ -447,7 +447,10 @@ def build_excel_report():
             r2.get("tech_stack") or "-" if r2.get("id") else "-",
             problem_fit or "-" if r2.get("id") else "-",
             latency or "-" if r2.get("id") else "-",
-            r2.get("moved_to_round_3").replace("_draft", "") or "-" if (r2.get("id") and r2.get("moved_to_round_3")) else "-",
+            # Decision column: carry the Round 1 rejection through so it is
+            # explicitly mentioned instead of showing '-'
+            (r2.get("moved_to_round_3").replace("_draft", "") if (r2.get("id") and r2.get("moved_to_round_3"))
+             else ("Rejected (R1)" if str(r1.get("app_status") or "").strip().lower() in ["no", "rejected", "invalid", "reject"] else "-")),
             "-",  # Tier placeholder
             r2.get("demo_review_comment") or "-" if r2.get("id") else "-"
         ]
@@ -472,7 +475,7 @@ def build_excel_report():
                 elif val_str in ["maybe"]:
                     cell.fill = amber_fill
                     cell.font = amber_font
-                elif val_str in ["no", "rejected", "invalid", "reject"]:
+                elif val_str in ["no", "invalid"] or val_str.startswith("reject"):
                     cell.fill = red_fill
                     cell.font = red_font
                 else:
