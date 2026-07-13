@@ -809,9 +809,10 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       if (!sheet) {
         sheet = workbook.addWorksheet("Analysis");
       } else {
-        // Clear all rows starting from row 7 to end
-        while (sheet.rowCount >= 7) {
-          sheet.removeRow(7);
+        // Clear all rows starting from row 7 to end using spliceRows
+        const rc = sheet.rowCount;
+        if (rc >= 7) {
+          sheet.spliceRows(7, rc - 6);
         }
       }
       sheet.views = [{ showGridLines: true }];
@@ -836,8 +837,9 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       // Overwrite Raw Data tab if it exists
       let rawSheet = workbook.getWorksheet("Raw Data");
       if (rawSheet) {
-        while (rawSheet.rowCount >= 2) {
-          rawSheet.removeRow(2);
+        const rrc = rawSheet.rowCount;
+        if (rrc >= 2) {
+          rawSheet.spliceRows(2, rrc - 1);
         }
         candidatesToExport.forEach(cand => {
           const c = cand;
