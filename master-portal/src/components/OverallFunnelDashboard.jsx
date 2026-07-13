@@ -1197,6 +1197,11 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       widths.forEach((w, idx) => {
         sheet.getColumn(idx + 1).width = w;
       });
+
+      // Unhide all rows to prevent template from hiding data rows
+      sheet.eachRow((row) => {
+        row.hidden = false;
+      });
     };
 
     let filename = '';

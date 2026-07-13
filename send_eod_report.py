@@ -492,6 +492,10 @@ def build_excel_report():
         for idx, w in enumerate(widths):
             ws.column_dimensions[get_column_letter(idx + 1)].width = w
 
+    # Unhide all rows in the sheet to prevent template from hiding data rows
+    for r in range(1, ws.max_row + 1):
+        ws.row_dimensions[r].hidden = False
+
     date_str = datetime.now().strftime("%Y-%m-%d")
     output_filename = f"R1_R2_EOD_REPORT_{date_str}.xlsx"
     wb.save(output_filename)
