@@ -248,17 +248,18 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     let review = 0;
     let pendingScreening = 0;
     let maybeCount = 0;
-    let declinedCount = 0;
 
     evaluatedCandidates.forEach(c => {
-      const stage = getFunnelStage(c);
-      if (stage === 'Hired') hired++;
-      else if (stage === 'Rejected') rejected++;
-      else if (stage === 'Declined') declinedCount++;
-      else if (stage === 'Tech Review') review++;
-      else if (stage === 'Maybe (Reviewed)') maybeCount++;
-      else if (stage === 'Pending Review') pendingScreening++;
+      const r1 = getR1(c);
+      const status = r1.app_status || 'Pending';
+      if (status === 'Yes') review++;
+      else if (status === 'Reject') rejected++;
+      else if (status === 'Maybe') maybeCount++;
+      else pendingScreening++;
     });
+
+    hired = evaluatedCandidates.filter(c => ['Yes', 'Hired'].includes(getR3(c).verdict)).length;
+    const declinedCount = evaluatedCandidates.filter(c => getR2(c).moved_to_round_3 === 'Declined').length;
 
     return { total, hired, rejected, review, pendingScreening, maybeCount, declined: declinedCount };
   }, [evaluatedCandidates, evaluatedCount]);
