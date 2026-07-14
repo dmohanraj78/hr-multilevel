@@ -515,7 +515,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       </div>
 
       {/* Tiles Metrics Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         
         {/* Total Tile */}
         <Card 
@@ -598,24 +598,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
               <span className="text-3xl font-extrabold font-mono text-red-600 dark:text-red-400">{stats.rejected}</span>
               <XOctagon className="h-5 w-5 text-red-500 stroke-[1.5]" />
             </div>
-            <span className="text-[10px] text-red-600/80">Any funnel stage</span>
-          </CardContent>
-        </Card>
-
-        {/* Declined Tile */}
-        <Card 
-          onClick={() => handleTileClick('Declined')}
-          className={`rounded-2xl border border-rose-500/20 bg-rose-500/5 shadow-sm hover:shadow-md transition-all cursor-pointer hover:scale-[1.02] ${
-            currentActiveTile === 'Declined' ? 'ring-2 ring-rose-500 border-transparent' : ''
-          }`}
-        >
-          <CardContent className="pt-4 pb-3 flex flex-col gap-1">
-            <span className="text-xs font-mono text-rose-700 dark:text-rose-400 uppercase tracking-wider block">Declined</span>
-            <div className="flex items-baseline justify-between mt-1">
-              <span className="text-3xl font-extrabold font-mono text-rose-600 dark:text-rose-400">{stats.declined}</span>
-              <XCircle className="h-5 w-5 text-rose-500 stroke-[1.5]" />
-            </div>
-            <span className="text-[10px] text-rose-600/80">Declined by candidate in R2</span>
+            <span className="text-[10px] text-red-600/80">No and declined in round 1</span>
           </CardContent>
         </Card>
 

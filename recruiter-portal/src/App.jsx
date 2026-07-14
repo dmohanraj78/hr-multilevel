@@ -482,15 +482,16 @@ export default function App() {
                       <TabsTrigger value="good" className="font-mono text-xs px-3 py-1.5 data-[state=active]:bg-[#800020] data-[state=active]:text-white">Good ({categories.good.length})</TabsTrigger>
                       <TabsTrigger value="clarity" className="font-mono text-xs px-3 py-1.5 data-[state=active]:bg-[#800020] data-[state=active]:text-white">Need Clarity ({categories.clarity.length})</TabsTrigger>
                       <TabsTrigger value="invalid" className="font-mono text-xs px-3 py-1.5 data-[state=active]:bg-[#800020] data-[state=active]:text-white">Invalid ({categories.invalid.length})</TabsTrigger>
+                      <TabsTrigger value="declined" className="font-mono text-xs px-3 py-1.5 data-[state=active]:bg-[#800020] data-[state=active]:text-white">Declined ({categories.declined.length})</TabsTrigger>
                     </TabsList>
                   </div>
 
-                  {['hired', 'review', 'declined', 'unscreened'].includes(activeWorksheetTab) && (
+                  {['hired', 'review', 'unscreened'].includes(activeWorksheetTab) && (
                     <div className="bg-[#800020]/5 border border-[#800020]/20 rounded-xl px-4 py-2.5 flex items-center justify-between text-sm font-semibold text-foreground mb-6">
                       <div className="flex items-center gap-2">
                         <span className="h-2 w-2 rounded-full bg-[#800020] animate-pulse" />
                         Showing only status: <strong className="text-[#800020]">
-                          {activeWorksheetTab === 'hired' ? 'Hired' : activeWorksheetTab === 'review' ? 'In Review' : activeWorksheetTab === 'declined' ? 'Rejected' : 'Unscreened'}
+                          {activeWorksheetTab === 'hired' ? 'Hired' : activeWorksheetTab === 'review' ? 'In Review' : 'Unscreened'}
                         </strong> Candidates
                       </div>
                       <Button 
