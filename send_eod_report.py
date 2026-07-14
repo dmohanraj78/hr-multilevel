@@ -566,7 +566,115 @@ def build_excel_report():
     print(f"Report saved successfully as {output_filename}")
     return output_filename
 
-def send_email(filename):
+def _fetch_all_rows(table, select):
+    req_headers = {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+    }
+    rows, offset = [], 0
+    while True:
+        r = requests.get(
+            f"{SUPABASE_URL}/rest/v1/{table}?select={select}&limit=1000&offset={offset}",
+            headers=req_headers,
+        )
+        r.raise_for_status()
+        page = r.json()
+        rows += page
+        if len(page) < 1000:
+            return rows
+        offset += 1000
+
+
+def build_funnel_summary():
+    """Compute the funnel narrative from live Supabase data at send time."""
+    raw = _fetch_all_rows("raw_submissions", "id,Analysis_status")
+    r1 = _fetch_all_rows("round_1_evaluation", "id,tier,app_status,review_comments,eval_group")
+    r2 = _fetch_all_rows("round_2_evaluation", "id,moved_to_round_3")
+    r3 = _fetch_all_rows("round_3_evaluation", "id,verdict")
+
+    r1_ids = {x["id"] for x in r1}
+    no_r1 = [x for x in raw if x["id"] not in r1_ids]
+    duplicates = sum(1 for x in no_r1 if (x.get("Analysis_status") or "") == "Completed")
+    pending_analysis = len(no_r1) - duplicates
+    received = len(raw)
+    unique = received - duplicates
+    reviewed = len(r1)
+
+    def status(x):
+        return (x.get("app_status") or "Pending").strip()
+
+    def touched(x):
+        return status(x) != "Pending" or bool((x.get("review_comments") or "").strip())
+
+    def tier_of(x):
+        return (x.get("tier") or "").strip()
+
+    TOP = {"Tier 1", "Tier 1+", "Tier 2", "Tier 2+"}
+    LOW = {"Tier 3", "Tier 4"}
+    top = [x for x in r1 if tier_of(x) in TOP]
+    low = [x for x in r1 if tier_of(x) in LOW]
+
+    top_touched = [x for x in top if touched(x)]
+    top_yes = sum(1 for x in top_touched if status(x) == "Yes")
+    top_no = sum(1 for x in top_touched if status(x) in ("Reject", "No", "Rejected", "Invalid"))
+    top_pend = len(top_touched) - top_yes - top_no
+
+    low_touched = [x for x in low if touched(x)]
+    low_yes = sum(1 for x in low_touched if status(x) == "Yes")
+    low_pend = len(low) - len(low_touched)
+
+    r1_yes = sum(1 for x in r1 if status(x) == "Yes")
+    yes_rows = [x for x in r1 if status(x) == "Yes"]
+    assigned = sum(1 for x in yes_rows if (x.get("eval_group") or "").strip() not in ("", "None", "Unassigned"))
+    unassigned = r1_yes - assigned
+
+    def decision(x):
+        d = (x.get("moved_to_round_3") or "").strip()
+        return "" if d.endswith("_draft") else d  # drafts are not decisions
+
+    r2_yes = sum(1 for x in r2 if decision(x) == "Yes")
+    r2_maybe = sum(1 for x in r2 if decision(x) == "Maybe")
+    r2_no = sum(1 for x in r2 if decision(x) == "No")
+    finalized = r2_yes + r2_maybe + r2_no
+    in_progress = len(r2) - finalized
+    promoted = r2_yes + r2_maybe
+
+    hired = sum(1 for x in r3 if (x.get("verdict") or "") == "Yes")
+    rejected_r3 = sum(1 for x in r3 if (x.get("verdict") or "") == "No")
+    r3_pending = promoted - hired - rejected_r3
+
+    progress_note = (
+        f"{finalized} reviews are finalized and {in_progress} still in draft (review in progress)"
+        if in_progress
+        else f"all {finalized} reviews are finalized"
+    )
+
+    return f"""We received {received} applications. {duplicates} were duplicates.
+From a total of {unique} unique applications, {reviewed} were reviewed and {pending_analysis} are pending review.
+
+Round 1:
+
+Out of the {reviewed} reviewed, {len(top)} applicants qualified to Tier 1, Tier 1+, Tier 2 and Tier 2+. {len(top_touched)} applications have been manually reviewed and comments have been marked in Round 1.
+Out of that {len(top_touched)} applications, {top_yes} got yes, {top_no} got no and {top_pend} are pending review.
+Out of the {reviewed} reviewed, {len(low)} applicants qualified to Tier 3 and Tier 4. {len(low_touched)} were reviewed - out of that {low_yes} are shortlisted and {low_pend} are pending manual review.
+
+Total of {r1_yes} out of {reviewed} applicants moved from Round 1 to Round 2.
+
+Round 2:
+
+Out of {r1_yes} candidates, {assigned} candidates were assigned to technical reviewers and {unassigned} applicants are yet to be assigned.
+Out of the {assigned} assigned candidates, {progress_note}.
+Out of the {finalized} finalized reviews, technical reviewers said yes for {r2_yes} candidates, maybe for {r2_maybe} and no for {r2_no}.
+
+Total of {promoted} candidates moved from Round 2 to Round 3.
+
+Round 3:
+
+{r3_pending} candidates pending for review. {hired} candidates hired.
+{rejected_r3} candidates rejected."""
+
+
+def send_email(filename, summary=""):
     if not SMTP_USER or not SMTP_PASSWORD or not EMAIL_TO:
         print("Error: SMTP details or recipient address not configured in .env. Skipping email.")
         return False
@@ -581,6 +689,8 @@ def send_email(filename):
     body = f"""Hello Mayank,
 
 Aviators R1 and R2 EOD report of {date_str} is attached.
+
+{summary}
 
 Best Regards,
 Aviators Recruitment Bot"""
@@ -612,7 +722,14 @@ Aviators Recruitment Bot"""
 
 if __name__ == "__main__":
     report_file = build_excel_report()
-    sent = send_email(report_file)
+    try:
+        funnel_summary = build_funnel_summary()
+        print("--- Funnel summary ---")
+        print(funnel_summary)
+    except Exception as e:
+        print(f"Failed to build funnel summary (sending without it): {e}")
+        funnel_summary = ""
+    sent = send_email(report_file, funnel_summary)
     # Fail the scheduled run visibly (e.g. GitHub Actions red X) if the email
     # could not be delivered, instead of silently succeeding.
     if not sent and os.getenv("GITHUB_ACTIONS"):
