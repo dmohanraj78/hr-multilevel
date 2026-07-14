@@ -225,7 +225,8 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
       const decision = r2Parsed?.moved_to_round_3;
       if (decision === 'Yes') return { text: 'Yes', color: 'bg-green-600 hover:bg-green-700 text-white border-transparent' };
       if (decision === 'Maybe') return { text: 'Maybe', color: 'bg-amber-500 hover:bg-amber-600 text-white border-transparent' };
-      if (decision === 'No' || decision === 'Declined') return { text: 'No', color: 'bg-red-600 hover:bg-red-700 text-white border-transparent' };
+      if (decision === 'No') return { text: 'No', color: 'bg-red-600 hover:bg-red-700 text-white border-transparent' };
+      if (decision === 'Declined') return { text: 'Declined', color: 'bg-red-600 hover:bg-red-700 text-white border-transparent' };
       return { text: 'Pending Review', color: 'bg-gray-400 hover:bg-gray-500 text-white border-transparent' };
     }
 
@@ -234,6 +235,7 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
     if (status === 'Reject') return { text: 'Reject', color: 'bg-red-600 hover:bg-red-700 text-white border-transparent' };
     if (status === 'Maybe') return { text: 'Maybe', color: 'bg-amber-500 hover:bg-amber-600 text-white border-transparent' };
     if (status === 'Duplicate') return { text: 'Duplicate', color: 'border-gray-500 text-gray-500 bg-transparent' };
+    if (status === 'Access requested') return { text: 'Access requested', color: 'bg-blue-600 hover:bg-blue-700 text-white border-transparent' };
     return { text: 'Pending', color: 'bg-gray-200 text-gray-800 dark:bg-gray-800 dark:text-gray-200' };
   };
 

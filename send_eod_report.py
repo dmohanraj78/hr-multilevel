@@ -635,7 +635,8 @@ def build_funnel_summary():
     r2_yes = sum(1 for x in r2 if decision(x) == "Yes")
     r2_maybe = sum(1 for x in r2 if decision(x) == "Maybe")
     r2_no = sum(1 for x in r2 if decision(x) == "No")
-    finalized = r2_yes + r2_maybe + r2_no
+    r2_declined = sum(1 for x in r2 if decision(x) == "Declined")
+    finalized = r2_yes + r2_maybe + r2_no + r2_declined
     in_progress = len(r2) - finalized
     promoted = r2_yes + r2_maybe
 
@@ -643,9 +644,12 @@ def build_funnel_summary():
     rejected_r3 = sum(1 for x in r3 if (x.get("verdict") or "") == "No")
     r3_pending = promoted - hired - rejected_r3
 
+    # reviews still open = assigned candidates without a finalized decision
+    # (covers both saved drafts and reviews not yet started)
+    open_reviews = max(assigned - finalized, 0)
     progress_note = (
-        f"{finalized} reviews are finalized and {in_progress} still in draft (review in progress)"
-        if in_progress
+        f"{finalized} reviews are finalized and {open_reviews} are pending (in progress or not started)"
+        if open_reviews
         else f"all {finalized} reviews are finalized"
     )
 
@@ -664,7 +668,7 @@ Round 2:
 
 Out of {r1_yes} candidates, {assigned} candidates were assigned to technical reviewers and {unassigned} applicants are yet to be assigned.
 Out of the {assigned} assigned candidates, {progress_note}.
-Out of the {finalized} finalized reviews, technical reviewers said yes for {r2_yes} candidates, maybe for {r2_maybe} and no for {r2_no}.
+Out of the {finalized} finalized reviews, technical reviewers said yes for {r2_yes} candidates, maybe for {r2_maybe}, no for {r2_no}{f" and declined for {r2_declined}" if r2_declined else ""}.
 
 Total of {promoted} candidates moved from Round 2 to Round 3.
 

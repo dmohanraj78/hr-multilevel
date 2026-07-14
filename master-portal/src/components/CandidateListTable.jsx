@@ -226,7 +226,8 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
       const decision = r2Parsed?.moved_to_round_3;
       if (decision === 'Yes') return { text: 'Yes', color: 'bg-green-600 hover:bg-green-700 text-white border-transparent' };
       if (decision === 'Maybe') return { text: 'Maybe', color: 'bg-amber-500 hover:bg-amber-600 text-white border-transparent' };
-      if (decision === 'No' || decision === 'Declined') return { text: 'No', color: 'bg-red-600 hover:bg-red-700 text-white border-transparent' };
+      if (decision === 'No') return { text: 'No', color: 'bg-red-600 hover:bg-red-700 text-white border-transparent' };
+      if (decision === 'Declined') return { text: 'Declined', color: 'bg-red-600 hover:bg-red-700 text-white border-transparent' };
       return { text: 'Pending Review', color: 'bg-gray-400 hover:bg-gray-500 text-white border-transparent' };
     }
 
@@ -235,6 +236,7 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
     if (status === 'Reject') return { text: 'Reject', color: 'bg-red-600 hover:bg-red-700 text-white border-transparent' };
     if (status === 'Maybe') return { text: 'Maybe', color: 'bg-amber-500 hover:bg-amber-600 text-white border-transparent' };
     if (status === 'Duplicate') return { text: 'Duplicate', color: 'border-gray-500 text-gray-500 bg-transparent' };
+    if (status === 'Access requested') return { text: 'Access requested', color: 'bg-blue-600 hover:bg-blue-700 text-white border-transparent' };
     return { text: 'Pending', color: 'bg-gray-200 text-gray-800 dark:bg-gray-800 dark:text-gray-200' };
   };
 
@@ -534,17 +536,19 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
                   isNumeric={true}
                 />
               </TableHead>
-              <TableHead className="w-[155px] overflow-visible">
-                <HeaderFilter
-                  label="Demo-AI Review"
-                  columnKey="review_cat"
-                  uniqueValues={uniqueReviewCats}
-                  activeFilters={activeFilters}
-                  onApplyFilter={handleApplyFilter}
-                  sortConfig={sortConfig}
-                  onSort={handleSort}
-                />
-              </TableHead>
+              {round !== 3 && (
+                <TableHead className="w-[155px] overflow-visible">
+                  <HeaderFilter
+                    label="Demo-AI Review"
+                    columnKey="review_cat"
+                    uniqueValues={uniqueReviewCats}
+                    activeFilters={activeFilters}
+                    onApplyFilter={handleApplyFilter}
+                    sortConfig={sortConfig}
+                    onSort={handleSort}
+                  />
+                </TableHead>
+              )}
               {round !== 3 && (
                 <TableHead className="w-[155px] overflow-visible">
                   <HeaderFilter
@@ -593,7 +597,7 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
           <TableBody>
             {sortedAndFiltered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={(showTechEvaluatorFilter ? 9 : 8) + (round === 3 ? 1 : 0)} className="text-center py-10 text-muted-foreground font-mono text-sm">
+                <TableCell colSpan={round === 3 ? 8 : (showTechEvaluatorFilter ? 9 : 8)} className="text-center py-10 text-muted-foreground font-mono text-sm">
                   No applicants matching active selection filters.
                 </TableCell>
               </TableRow>
@@ -628,7 +632,7 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
                     <TableCell className="font-mono font-extrabold text-sm text-[#800020]">
                       {getEval1(cand, 'total') || 0}
                     </TableCell>
-                    <TableCell>{catBadge}</TableCell>
+                    {round !== 3 && <TableCell>{catBadge}</TableCell>}
                     {round !== 3 && <TableCell>{statusBadge}</TableCell>}
                     {showTechEvaluatorFilter && (
                       <TableCell className="py-2">

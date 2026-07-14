@@ -38,7 +38,7 @@ export default function StatsBanner({ candidates, round = 1, rawCount = 0 }) {
 
     const declined = candidates.filter(c => {
       const r2 = getR2(c);
-      return r2.moved_to_round_3 === 'No';
+      return r2.moved_to_round_3 === 'No' || r2.moved_to_round_3 === 'Declined';
     }).length;
 
     stats = [
