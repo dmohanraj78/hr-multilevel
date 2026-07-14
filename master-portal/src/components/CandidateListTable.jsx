@@ -213,7 +213,7 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
     if (round === 3) {
       const r3 = cand.round_3_evaluation;
       const r3Parsed = Array.isArray(r3) ? r3[0] : r3;
-      const verdict = r3Parsed?.final_status || r3Parsed?.verdict;
+      const verdict = r3Parsed?.final_status;
       if (verdict === 'Yes' || verdict === 'Hired') return { text: 'Hired', color: 'bg-green-600 hover:bg-green-700 text-white border-transparent' };
       if (verdict === 'No' || verdict === 'Rejected') return { text: 'Rejected', color: 'bg-red-600 hover:bg-red-700 text-white border-transparent' };
       if (verdict === 'Maybe') return { text: 'Maybe', color: 'bg-amber-500 hover:bg-amber-600 text-white border-transparent' };
@@ -332,8 +332,8 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
         return [...filtered].sort((a, b) => {
           const r3A = getR3(a);
           const r3B = getR3(b);
-          const hasVerdictA = !!r3A.verdict;
-          const hasVerdictB = !!r3B.verdict;
+          const hasVerdictA = !!r3A.final_status;
+          const hasVerdictB = !!r3B.final_status;
 
           // 1. Sort by R3 Verdict completed status (Pending first, Completed last)
           if (hasVerdictA !== hasVerdictB) {

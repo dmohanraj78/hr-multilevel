@@ -309,8 +309,8 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
       return [...filtered].sort((a, b) => {
         const r3A = getR3(a);
         const r3B = getR3(b);
-        const hasVerdictA = !!r3A.verdict;
-        const hasVerdictB = !!r3B.verdict;
+        const hasVerdictA = !!r3A.final_status;
+        const hasVerdictB = !!r3B.final_status;
 
         // 1. Sort by R3 Verdict completed status (Pending first, Completed last)
         if (hasVerdictA !== hasVerdictB) {
