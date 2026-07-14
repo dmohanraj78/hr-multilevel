@@ -545,17 +545,19 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
                   onSort={handleSort}
                 />
               </TableHead>
-              <TableHead className="w-[155px] overflow-visible">
-                <HeaderFilter
-                  label="Status"
-                  columnKey="status"
-                  uniqueValues={uniqueStatuses}
-                  activeFilters={activeFilters}
-                  onApplyFilter={handleApplyFilter}
-                  sortConfig={sortConfig}
-                  onSort={handleSort}
-                />
-              </TableHead>
+              {round !== 3 && (
+                <TableHead className="w-[155px] overflow-visible">
+                  <HeaderFilter
+                    label="Status"
+                    columnKey="status"
+                    uniqueValues={uniqueStatuses}
+                    activeFilters={activeFilters}
+                    onApplyFilter={handleApplyFilter}
+                    sortConfig={sortConfig}
+                    onSort={handleSort}
+                  />
+                </TableHead>
+              )}
               {showTechEvaluatorFilter && (
                 <TableHead className="w-[180px] overflow-visible">
                   <HeaderFilter
@@ -573,6 +575,19 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
                 <TableHead className="min-w-[240px] font-semibold">TR Comments</TableHead>
               )}
               <TableHead className="w-[150px] text-right font-semibold pr-6">Actions</TableHead>
+              {round === 3 && (
+                <TableHead className="w-[155px] overflow-visible">
+                  <HeaderFilter
+                    label="Status"
+                    columnKey="status"
+                    uniqueValues={uniqueStatuses}
+                    activeFilters={activeFilters}
+                    onApplyFilter={handleApplyFilter}
+                    sortConfig={sortConfig}
+                    onSort={handleSort}
+                  />
+                </TableHead>
+              )}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -614,7 +629,7 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
                       {getEval1(cand, 'total') || 0}
                     </TableCell>
                     <TableCell>{catBadge}</TableCell>
-                    <TableCell>{statusBadge}</TableCell>
+                    {round !== 3 && <TableCell>{statusBadge}</TableCell>}
                     {showTechEvaluatorFilter && (
                       <TableCell className="py-2">
                         {round === 1 ? (
@@ -669,6 +684,7 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
                         {actionLabel}
                       </Button>
                     </TableCell>
+                    {round === 3 && <TableCell>{statusBadge}</TableCell>}
                   </TableRow>
                 );
               })
