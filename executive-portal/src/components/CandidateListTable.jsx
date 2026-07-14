@@ -223,7 +223,7 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
   // Safe helper to extract status based on the current round 3
   const getStatusInfo = (cand) => {
     const verdict = getR3(cand).verdict;
-    if (verdict === 'Yes') return { text: 'Approved', color: 'bg-green-600 hover:bg-green-700 text-white border-transparent' };
+    if (verdict === 'Yes') return { text: 'Yes', color: 'bg-green-600 hover:bg-green-700 text-white border-transparent' };
     if (verdict === 'No') return { text: 'Decline', color: 'bg-red-600 hover:bg-red-700 text-white border-transparent' };
     if (verdict === 'Maybe') return { text: 'Maybe', color: 'bg-amber-500 hover:bg-amber-600 text-white border-transparent' };
     return { text: 'Pending Review', color: 'bg-slate-500 hover:bg-slate-600 text-white border-transparent' };

@@ -647,7 +647,6 @@ export default function CandidateProfileDossier({ candidate, round, onSave, onCa
                         <SelectItem value="Yes">Yes</SelectItem>
                         <SelectItem value="Maybe">Maybe</SelectItem>
                         <SelectItem value="No">No</SelectItem>
-                        <SelectItem value="Declined">Declined</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

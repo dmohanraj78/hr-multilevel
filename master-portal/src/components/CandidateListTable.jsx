@@ -214,8 +214,8 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
       const r3 = cand.round_3_evaluation;
       const r3Parsed = Array.isArray(r3) ? r3[0] : r3;
       const verdict = r3Parsed?.verdict;
-      if (verdict === 'Yes') return { text: 'Approved', color: 'bg-green-600 hover:bg-green-700 text-white border-transparent' };
-      if (verdict === 'No') return { text: 'Declined', color: 'bg-red-600 hover:bg-red-700 text-white border-transparent' };
+      if (verdict === 'Yes') return { text: 'Yes', color: 'bg-green-600 hover:bg-green-700 text-white border-transparent' };
+      if (verdict === 'No') return { text: 'No', color: 'bg-red-600 hover:bg-red-700 text-white border-transparent' };
       if (verdict === 'Maybe') return { text: 'Maybe', color: 'bg-amber-500 hover:bg-amber-600 text-white border-transparent' };
       return { text: 'Pending Decisions', color: 'bg-slate-500 hover:bg-slate-600 text-white border-transparent' };
     }
@@ -224,9 +224,9 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
       const r2 = cand.round_2_evaluation;
       const r2Parsed = Array.isArray(r2) ? r2[0] : r2;
       const decision = r2Parsed?.moved_to_round_3;
-      if (decision === 'Yes') return { text: 'Promoted', color: 'bg-green-600 hover:bg-green-700 text-white border-transparent' };
+      if (decision === 'Yes') return { text: 'Yes', color: 'bg-green-600 hover:bg-green-700 text-white border-transparent' };
       if (decision === 'Maybe') return { text: 'Maybe', color: 'bg-amber-500 hover:bg-amber-600 text-white border-transparent' };
-      if (decision === 'No') return { text: 'Declined', color: 'bg-red-600 hover:bg-red-700 text-white border-transparent' };
+      if (decision === 'No' || decision === 'Declined') return { text: 'No', color: 'bg-red-600 hover:bg-red-700 text-white border-transparent' };
       return { text: 'Pending Review', color: 'bg-gray-400 hover:bg-gray-500 text-white border-transparent' };
     }
 
