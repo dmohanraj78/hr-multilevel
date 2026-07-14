@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Download, Search, LayoutGrid, Users, CheckCircle, Flame, XOctagon, HelpCircle, BarChart3, TrendingUp, Filter, ArrowUp, ArrowDown } from 'lucide-react';
+import { Download, Search, LayoutGrid, Users, CheckCircle, Flame, XOctagon, XCircle, HelpCircle, BarChart3, TrendingUp, Filter, ArrowUp, ArrowDown } from 'lucide-react';
 
 function HeaderFilter({
   label,
