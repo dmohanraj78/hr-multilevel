@@ -54,7 +54,7 @@ export default function App() {
       setSelectedCandidate(null);
       await loadData();
     } catch (e) {
-      alert('Failed to save final verdict: ' + e.message);
+      alert('Failed to save final final_status: ' + e.message);
     }
   };
 

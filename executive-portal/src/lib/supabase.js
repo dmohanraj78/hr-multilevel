@@ -166,7 +166,7 @@ export const upsertRound3 = async (id, r3Data) => {
     .upsert({
       id: id,
       review_comments: r3Data.review_comments,
-      verdict: r3Data.verdict
+      final_status: r3Data.final_status
     });
   if (error) throw error;
   return data;

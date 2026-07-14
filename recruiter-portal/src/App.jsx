@@ -295,8 +295,8 @@ export default function App() {
       const r2 = cand.round_2_evaluation?.[0] || cand.round_2_evaluation || {};
       const r3 = cand.round_3_evaluation?.[0] || cand.round_3_evaluation || {};
       
-      const isHired = r3.verdict === 'Yes' || r3.verdict === 'Hired';
-      const isDeclined = r1.app_status === 'Reject' || ['No', 'Declined'].includes(r2.moved_to_round_3) || ['No', 'Rejected'].includes(r3.verdict);
+      const isHired = r3.final_status === 'Yes' || r3.final_status === 'Hired';
+      const isDeclined = r1.app_status === 'Reject' || ['No', 'Declined'].includes(r2.moved_to_round_3) || ['No', 'Rejected'].includes(r3.final_status);
       const isReview = r1.app_status === 'Yes' && !isHired && !isDeclined;
       const isUnscreened = !r1.app_status || r1.app_status === 'Pending';
 

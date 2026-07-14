@@ -116,7 +116,7 @@ export default function CandidateProfileDossier({ candidate, round, onSave, onCa
 
   const [saving, setSaving] = useState(false);
 
-  const handleSave = async (forceVerdict, isFinish = false) => {
+  const handleSave = async (forceFinalStatus, isFinish = false) => {
     const activeEvaluator = r1Group || r1.eval_group;
 
     if (round === 2 && isFinish) {
@@ -199,7 +199,7 @@ export default function CandidateProfileDossier({ candidate, round, onSave, onCa
           round_3_evaluation: {
             ...r3,
             review_comments: r3Comments,
-            verdict: forceVerdict
+            final_status: forceFinalStatus
           }
         });
       }
@@ -647,7 +647,7 @@ export default function CandidateProfileDossier({ candidate, round, onSave, onCa
                         <SelectItem value="Yes">Yes</SelectItem>
                         <SelectItem value="Maybe">Maybe</SelectItem>
                         <SelectItem value="No">No (not Promoted)</SelectItem>
-                        <SelectItem value="Declined">Declined</SelectItem>
+                        
                       </SelectContent>
                     </Select>
                   </div>

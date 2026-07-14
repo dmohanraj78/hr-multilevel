@@ -98,7 +98,7 @@ const MOCK_CANDIDATES = [
     },
     round_3_evaluation: {
       review_comments: "Excellent cultural fit and raw problem-solving capability. Strong design patterns knowledge.",
-      verdict: "Yes"
+      final_status: "Yes"
     }
   },
   {
@@ -196,7 +196,7 @@ const MOCK_CANDIDATES = [
     },
     round_3_evaluation: {
       review_comments: "Recruiter to review start dates alignment. Standard competency is high.",
-      verdict: ""
+      final_status: ""
     }
   },
   {
@@ -380,7 +380,7 @@ const MOCK_CANDIDATES = [
     },
     round_3_evaluation: {
       review_comments: "Outstanding final interview loop. Strongly recommend hire.",
-      verdict: "Yes"
+      final_status: "Yes"
     }
   },
   {
@@ -478,7 +478,7 @@ const MOCK_CANDIDATES = [
     },
     round_3_evaluation: {
       review_comments: "Communication was excellent. Ready to issue offer.",
-      verdict: "Yes"
+      final_status: "Yes"
     }
   },
   {

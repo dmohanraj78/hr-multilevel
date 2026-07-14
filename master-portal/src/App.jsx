@@ -220,8 +220,8 @@ export default function App() {
     const r2 = cand.round_2_evaluation?.[0] || cand.round_2_evaluation || {};
     const r3 = cand.round_3_evaluation?.[0] || cand.round_3_evaluation || {};
 
-    const isHired = r3.verdict === 'Yes' || r3.verdict === 'Hired';
-    const isDeclined = r1.app_status === 'Reject' || ['No', 'Declined'].includes(r2.moved_to_round_3) || ['No', 'Rejected'].includes(r3.verdict);
+    const isHired = r3.final_status === 'Yes' || r3.final_status === 'Hired';
+    const isDeclined = r1.app_status === 'Reject' || ['No', 'Declined'].includes(r2.moved_to_round_3) || ['No', 'Rejected'].includes(r3.final_status);
     const isReview = r1.app_status === 'Yes' && !isHired && !isDeclined;
     
     let baseUrl = 'https://recruiter-portal-one.vercel.app';
@@ -363,7 +363,7 @@ export default function App() {
       const r3 = getR3(c);
       const m = r2.moved_to_round_3;
       const isFinished = m && !m.endsWith('_draft');
-      return isFinished && (m === 'Yes' || m === 'Maybe') && !r3.verdict;
+      return isFinished && (m === 'Yes' || m === 'Maybe') && !r3.final_status;
     }).length,
   };
 
@@ -896,7 +896,7 @@ export default function App() {
                   // 1. Filter by Executive Verdict (StatsBanner)
                   if (r3ActiveFilter !== 'ALL') {
                     const r3 = c.round_3_evaluation?.[0] || c.round_3_evaluation || {};
-                    const v = r3.verdict;
+                    const v = r3.final_status;
                     if (r3ActiveFilter === 'Hired' && !['Yes', 'Hired'].includes(v)) return false;
                     if (r3ActiveFilter === 'Rejected' && !['No', 'Rejected'].includes(v)) return false;
                     if (r3ActiveFilter === 'Maybe' && v !== 'Maybe') return false;

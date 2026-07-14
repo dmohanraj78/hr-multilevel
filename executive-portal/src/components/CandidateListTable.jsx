@@ -442,81 +442,37 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
           <TableHeader className="bg-muted/40 border-b">
             <TableRow>
               <TableHead className="w-[70px] font-mono text-xs py-3 overflow-visible">
-                <HeaderFilter
-                  label="ID"
-                  columnKey="id"
-                  uniqueValues={uniqueIds}
-                  activeFilters={activeFilters}
-                  onApplyFilter={handleApplyFilter}
-                  sortConfig={sortConfig}
-                  onSort={handleSort}
-                  isNumeric={true}
-                />
+                <HeaderFilter label="ID" columnKey="id" uniqueValues={uniqueIds} activeFilters={activeFilters} onApplyFilter={handleApplyFilter} sortConfig={sortConfig} onSort={handleSort} isNumeric={true} />
               </TableHead>
-              <TableHead className="overflow-visible min-w-[140px]">
-                <HeaderFilter
-                  label="Candidate Name"
-                  columnKey="candidate"
-                  uniqueValues={uniqueCandidates}
-                  activeFilters={activeFilters}
-                  onApplyFilter={handleApplyFilter}
-                  sortConfig={sortConfig}
-                  onSort={handleSort}
-                />
+              <TableHead className="overflow-visible min-w-[180px]">
+                <HeaderFilter label="Candidate" columnKey="candidate" uniqueValues={uniqueCandidates} activeFilters={activeFilters} onApplyFilter={handleApplyFilter} sortConfig={sortConfig} onSort={handleSort} />
               </TableHead>
-              <TableHead className="w-[75px] overflow-visible">
-                <HeaderFilter
-                  label="Tier"
-                  columnKey="tier"
-                  uniqueValues={uniqueTiers}
-                  activeFilters={activeFilters}
-                  onApplyFilter={handleApplyFilter}
-                  sortConfig={sortConfig}
-                  onSort={handleSort}
-                />
+              <TableHead className="w-[110px] overflow-visible">
+                <HeaderFilter label="Tier" columnKey="tier" uniqueValues={uniqueTiers} activeFilters={activeFilters} onApplyFilter={handleApplyFilter} sortConfig={sortConfig} onSort={handleSort} />
               </TableHead>
-              <TableHead className="w-[80px] overflow-visible">
-                <HeaderFilter
-                  label="Score"
-                  columnKey="score"
-                  uniqueValues={uniqueScores}
-                  activeFilters={activeFilters}
-                  onApplyFilter={handleApplyFilter}
-                  sortConfig={sortConfig}
-                  onSort={handleSort}
-                  isNumeric={true}
-                />
+              <TableHead className="w-[110px] overflow-visible">
+                <HeaderFilter label="Score" columnKey="score" uniqueValues={uniqueScores} activeFilters={activeFilters} onApplyFilter={handleApplyFilter} sortConfig={sortConfig} onSort={handleSort} isNumeric={true} />
               </TableHead>
-              <TableHead className="w-[140px] overflow-visible">
-                <HeaderFilter
-                  label={<span>Technical Reviewer</span>}
-                  columnKey="clan"
-                  uniqueValues={uniqueClans}
-                  activeFilters={activeFilters}
-                  onApplyFilter={handleApplyFilter}
-                  sortConfig={sortConfig}
-                  onSort={handleSort}
-                />
+
+              {/* Round 3 specific */}
+              <TableHead className="w-[160px] overflow-visible">
+                <HeaderFilter label="TR Name" columnKey="clan" uniqueValues={uniqueClans} activeFilters={activeFilters} onApplyFilter={handleApplyFilter} sortConfig={sortConfig} onSort={handleSort} />
               </TableHead>
               <TableHead className="min-w-[240px] font-semibold">TR Comments</TableHead>
-              <TableHead className="w-[90px] font-semibold">Actions</TableHead>
-              <TableHead className="w-[130px] overflow-visible text-right pr-6">
-                <HeaderFilter
-                  label={<span>Final<br />Status</span>}
-                  columnKey="status"
-                  uniqueValues={uniqueStatuses}
-                  activeFilters={activeFilters}
-                  onApplyFilter={handleApplyFilter}
-                  sortConfig={sortConfig}
-                  onSort={handleSort}
-                />
+              <TableHead className="w-[120px] font-semibold">TR Decision</TableHead>
+              <TableHead className="w-[160px] font-semibold">Intern Duration</TableHead>
+              
+              <TableHead className="w-[120px] text-right font-semibold pr-6">Review</TableHead>
+              
+              <TableHead className="w-[155px] overflow-visible">
+                <HeaderFilter label="Final Status" columnKey="status" uniqueValues={uniqueStatuses} activeFilters={activeFilters} onApplyFilter={handleApplyFilter} sortConfig={sortConfig} onSort={handleSort} />
               </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {sortedAndFiltered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-10 text-muted-foreground font-mono text-sm">
+                <TableCell colSpan={10} className="text-center py-10 text-muted-foreground font-mono text-sm">
                   No applicants matching active selection filters.
                 </TableCell>
               </TableRow>
@@ -538,7 +494,7 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
                   <TableRow key={cand.id} className="hover:bg-muted/20 border-b transition-colors duration-200">
                     <TableCell className="font-mono text-xs font-bold py-4">{cand.id}</TableCell>
                     <TableCell>
-                      <div className="font-semibold text-foreground">{getBio(cand, 'full_name')}</div>
+                      <div className="font-semibold text-foreground truncate">{getBio(cand, 'full_name')}</div>
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className="font-mono text-[10px] px-1.5 py-0.5 border-primary/20">{getEval1(cand, 'tier') || 'N/A'}</Badge>
@@ -546,26 +502,46 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
                     <TableCell className="font-mono font-extrabold text-sm text-[#800020]">
                       {getEval1(cand, 'total') || 0}
                     </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="font-semibold text-[11px] border-primary/20 text-[#800020] bg-primary/5 rounded-full px-2">
-                        {getEval1(cand, 'eval_group') || 'None'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="max-w-[280px]">
-                      <span
-                        title={trComment}
-                        className="text-xs text-muted-foreground line-clamp-2 whitespace-normal block"
-                      >
-                        {trComment || '—'}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <Button size="sm" variant="outline" onClick={() => onActionClick(cand)} className="rounded-md font-semibold text-xs border-[#800020] text-[#800020] hover:bg-[#800020] hover:text-white transition-colors duration-300">
-                        {actionLabel}
+
+                    {/* Round 3 Specific Fields */}
+                    {(() => {
+                      const r2val = cand.round_2_evaluation;
+                      const r2 = Array.isArray(r2val) ? (r2val[0] || {}) : (r2val || {});
+                      const trComment = r2.demo_review_comment || '';
+                      const trDecision = r2.moved_to_round_3 || '';
+                      const duration = r2.when_can_they_start || '';
+                      return (
+                        <>
+                          <TableCell>
+                            <Badge variant="outline" className="font-semibold text-[11px] border-primary/20 text-[#800020] bg-primary/5 rounded-full px-2">
+                              {getEval1(cand, 'eval_group') || 'None'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="max-w-[280px]">
+                            <span title={trComment} className="text-xs text-muted-foreground line-clamp-2 whitespace-normal block">
+                              {trComment || 'No comments left.'}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-xs font-semibold">{trDecision}</span>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-xs">{duration}</span>
+                          </TableCell>
+                        </>
+                      );
+                    })()}
+
+                    {/* Actions (Review Worksheet) */}
+                    <TableCell className="text-right pr-6">
+                      <Button variant="outline" size="sm" onClick={() => onSelectCandidate(cand)} className="h-8 shadow-sm font-semibold rounded-lg text-primary border-primary/20 hover:bg-primary hover:text-primary-foreground transition-all">
+                        Final Verdict
                       </Button>
                     </TableCell>
-                    <TableCell className="text-right pr-6">{statusBadge}</TableCell>
-                  </TableRow>
+
+                    {/* Round 3 Final Status */}
+                    <TableCell>{statusBadge}</TableCell>
+    </TableRow>
                 );
               })
             )}

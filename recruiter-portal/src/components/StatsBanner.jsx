@@ -56,17 +56,17 @@ export default function StatsBanner({ candidates, round = 1, rawCount = 0 }) {
   } else if (round === 3) {
     const pendingVerdict = candidates.filter(c => {
       const r3 = getR3(c);
-      return !r3.verdict;
+      return !r3.final_status;
     }).length;
 
     const hired = candidates.filter(c => {
       const r3 = getR3(c);
-      return r3.verdict === 'Yes' || r3.verdict === 'Hired';
+      return r3.final_status === 'Yes' || r3.final_status === 'Hired';
     }).length;
 
     const declined = candidates.filter(c => {
       const r3 = getR3(c);
-      return r3.verdict === 'No' || r3.verdict === 'Rejected';
+      return r3.final_status === 'No' || r3.final_status === 'Rejected';
     }).length;
 
     stats = [
@@ -76,11 +76,9 @@ export default function StatsBanner({ candidates, round = 1, rawCount = 0 }) {
       { title: 'Declined', value: declined, icon: XCircle, color: 'text-red-500 bg-red-500/10' }
     ];
   } else {
-    const pendingScreen = candidates.filter(c => {
-      const status = getEvalField(c, 'app_status');
-      return !status || status === 'Pending';
-    }).length;
-    
+    const TOP_TIERS = ['Tier 1', 'Tier 1-', 'Tier 2', 'Tier 2-'];
+    const LOW_TIERS = ['Tier 3', 'Tier 4'];
+
     const approvedR1 = candidates.filter(c => {
       const status = getEvalField(c, 'app_status');
       return status === 'Yes';
@@ -88,14 +86,29 @@ export default function StatsBanner({ candidates, round = 1, rawCount = 0 }) {
 
     const rejected = candidates.filter(c => {
       const status = getEvalField(c, 'app_status');
-      return status === 'Reject';
+      return status === 'No' || status === 'Reject';
+    }).length;
+
+    const pendingTop = candidates.filter(c => {
+      const status = getEvalField(c, 'app_status');
+      const tier = getEvalField(c, 'tier');
+      const isPending = (!status || status === 'Pending');
+      return isPending && TOP_TIERS.includes(tier);
+    }).length;
+
+    const pendingLow = candidates.filter(c => {
+      const status = getEvalField(c, 'app_status');
+      const tier = getEvalField(c, 'tier');
+      const isPending = (!status || status === 'Pending');
+      return isPending && LOW_TIERS.includes(tier);
     }).length;
 
     stats = [
-      { title: 'Applications Evaluated', value: total, icon: Users, color: 'text-blue-500 bg-blue-500/10', subtitle: 'in round_1_evaluation table' },
+      { title: 'Applications Reviewed', value: total, icon: Users, color: 'text-blue-500 bg-blue-500/10' },
       { title: 'HR Round Cleared', value: approvedR1, icon: CheckCircle2, color: 'text-green-500 bg-green-500/10' },
-      { title: 'Pending for manual review', value: pendingScreen, icon: Hourglass, color: 'text-amber-500 bg-amber-500/10' },
-      { title: 'Rejected Submissions', value: rejected, icon: XCircle, color: 'text-red-500 bg-red-500/10' }
+      { title: 'Pending for manual review from Tier 1, Tier 1-, Tier 2 and Tier 2-', value: pendingTop, icon: Hourglass, color: 'text-amber-500 bg-amber-500/10' },
+      { title: 'Rejected', value: rejected, icon: XCircle, color: 'text-red-500 bg-red-500/10' },
+      { title: 'Pending Applications from Tier 3 and Tier 4', value: pendingLow, icon: Hourglass, color: 'text-amber-500 bg-amber-500/10' }
     ];
   }
 

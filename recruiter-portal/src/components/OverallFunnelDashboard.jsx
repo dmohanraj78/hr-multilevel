@@ -218,8 +218,8 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     const r2 = getR2(c);
     const r3 = getR3(c);
 
-    if (['Yes', 'Hired'].includes(r3.verdict)) return 'Hired';
-    if (['No', 'Rejected'].includes(r3.verdict)) return 'Rejected';
+    if (['Yes', 'Hired'].includes(r3.final_status)) return 'Hired';
+    if (['No', 'Rejected'].includes(r3.final_status)) return 'Rejected';
     
     if (r2.moved_to_round_3 === 'Declined') return 'Declined';
     if (r2.moved_to_round_3 === 'No') return 'Rejected';
@@ -267,7 +267,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
   // 2. Chart Calculations — use evaluatedCandidates so Technical Reviewer counts reflect actual eval records
   const chartData = useMemo(() => {
     const clans = { Tejaswini: 0, Sohan: 0, Basvaraj: 0, Pushkaraj: 0, Akash: 0, Anmol: 0, Sachin: 0, 'Akhil L': 0, Vedant: 0, 'Akhil M': 0, Samit: 0, Snehanshu: 0, Ankita: 0, Kaushik: 0, Aman: 0, Unassigned: 0 };
-    const tiers = { 'Tier 1+': 0, 'Tier 1': 0, 'Tier 2+': 0, 'Tier 2': 0, 'Tier 3': 0, 'Tier 4': 0 };
+    const tiers = { 'Tier 1': 0, 'Tier 1-': 0, 'Tier 2': 0, 'Tier 2-': 0, 'Tier 3': 0, 'Tier 4': 0 };
     const scores = { '0-5': 0, '6-10': 0, '11-15': 0, '16-20': 0, '21-25': 0, '26-30': 0 };
 
     evaluatedCandidates.forEach(c => {
@@ -279,7 +279,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
 
       let tier = (r1.tier || 'N/A').trim();
       // normalize any legacy short-form values to the full form
-      const TIER_FULL = { 'T1+': 'Tier 1+', 'T1': 'Tier 1', 'T2+': 'Tier 2+', 'T2': 'Tier 2', 'T3': 'Tier 3', 'T4': 'Tier 4' };
+      const TIER_FULL = { 'T1': 'Tier 1', 'T1-': 'Tier 1-', 'T2': 'Tier 2', 'T2-': 'Tier 2-', 'T3': 'Tier 3', 'T4': 'Tier 4' };
       tier = TIER_FULL[tier] || tier;
 
       if (tiers[tier] !== undefined) tiers[tier]++;
@@ -482,7 +482,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
         r2.tech_stack || '',
         r2.moved_to_round_3 || '',
         String(r2.demo_review_comment || '').replace(/"/g, '""'),
-        r3.verdict || 'Pending',
+        r3.final_status || 'Pending',
         String(r3.review_comments || '').replace(/"/g, '""')
       ];
     });
@@ -509,7 +509,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
             AI Builder Intern — Applicant Funnel
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            <strong className="text-[#800020]">{rawTotal} applications</strong> processed · {duplicatesRemoved} duplicates removed · v2 rubric (max score 30)
+            <strong className="text-[#800020]">{rawTotal} applications</strong> processed · {duplicatesRemoved} duplicates removed · {awaitingEvaluation} Application Pending review rubric
           </p>
         </div>
       </div>
@@ -559,12 +559,12 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
           }`}
         >
           <CardContent className="pt-4 pb-3 flex flex-col gap-1">
-            <span className="text-xs font-mono text-blue-700 dark:text-blue-400 uppercase tracking-wider block">Review</span>
+            <span className="text-xs font-mono text-blue-700 dark:text-blue-400 uppercase tracking-wider block">HR Approved</span>
             <div className="flex items-baseline justify-between mt-1">
               <span className="text-3xl font-extrabold font-mono text-blue-600 dark:text-blue-400">{stats.review}</span>
               <Flame className="h-5 w-5 text-blue-500 stroke-[1.5]" />
             </div>
-            <span className="text-[10px] text-blue-600/80">HR Round Cleared</span>
+            <span className="text-[10px] text-blue-600/80">Moved to round 2</span>
           </CardContent>
         </Card>
 

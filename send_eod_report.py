@@ -600,7 +600,7 @@ def build_pivot_data_sheet(wb):
     raw = _fetch_all_rows("raw_submissions", "id,full_name,email,ug_university,Analysis_status")
     r1 = _fetch_all_rows("round_1_evaluation", "id,tier,total,app_status,review_comments,eval_group")
     r2 = _fetch_all_rows("round_2_evaluation", "id,moved_to_round_3")
-    r3 = _fetch_all_rows("round_3_evaluation", "id,verdict")
+    r3 = _fetch_all_rows("round_3_evaluation", "id,final_status")
     r1_map = {x["id"]: x for x in r1}
     r2_map = {x["id"]: x for x in r2}
     r3_map = {x["id"]: x for x in r3}
@@ -687,7 +687,7 @@ def build_pivot_data_sheet(wb):
 
         r3_verdict = ""
         if moved_r3 == "Yes":
-            v = (r3r.get("verdict") or "").strip() if r3r else ""
+            v = (r3r.get("final_status") or "").strip() if r3r else ""
             if v in ("Yes", "Hired"):
                 r3_verdict = "Hired"
             elif v in ("No", "Rejected"):
@@ -729,7 +729,7 @@ def build_funnel_summary():
     raw = _fetch_all_rows("raw_submissions", "id,Analysis_status")
     r1 = _fetch_all_rows("round_1_evaluation", "id,tier,app_status,review_comments,eval_group")
     r2 = _fetch_all_rows("round_2_evaluation", "id,moved_to_round_3")
-    r3 = _fetch_all_rows("round_3_evaluation", "id,verdict")
+    r3 = _fetch_all_rows("round_3_evaluation", "id,final_status")
 
     r1_ids = {x["id"] for x in r1}
     no_r1 = [x for x in raw if x["id"] not in r1_ids]
@@ -779,8 +779,8 @@ def build_funnel_summary():
     in_progress = len(r2) - finalized
     promoted = r2_yes + r2_maybe
 
-    hired = sum(1 for x in r3 if (x.get("verdict") or "") in ("Yes", "Hired"))
-    rejected_r3 = sum(1 for x in r3 if (x.get("verdict") or "") in ("No", "Rejected"))
+    hired = sum(1 for x in r3 if (x.get("final_status") or "") in ("Yes", "Hired"))
+    rejected_r3 = sum(1 for x in r3 if (x.get("final_status") or "") in ("No", "Rejected"))
     r3_pending = promoted - hired - rejected_r3
 
     # reviews still open = assigned candidates without a finalized decision

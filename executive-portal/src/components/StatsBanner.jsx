@@ -13,17 +13,17 @@ export default function StatsBanner({ candidates, activeFilter, onFilterChange }
   
   const yesCount = candidates.filter(c => {
     const r3 = getR3(c);
-    return r3.verdict === 'Yes' || r3.verdict === 'Hired';
+    return r3.final_status === 'Yes' || r3.final_status === 'Hired';
   }).length;
 
   const maybeCount = candidates.filter(c => {
     const r3 = getR3(c);
-    return r3.verdict === 'Maybe';
+    return r3.final_status === 'Maybe';
   }).length;
 
   const noCount = candidates.filter(c => {
     const r3 = getR3(c);
-    return r3.verdict === 'No' || r3.verdict === 'Rejected';
+    return r3.final_status === 'No' || r3.final_status === 'Rejected';
   }).length;
 
   const stats = [
