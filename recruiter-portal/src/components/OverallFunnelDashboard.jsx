@@ -217,8 +217,8 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     const r1 = getR1(c);
     const r3 = getR3(c);
 
-    if (r3.verdict === 'Yes') return 'Hired';
-    if (r3.verdict === 'No') return 'Declined (Offer)';
+    if (['Yes', 'Hired'].includes(r3.verdict)) return 'Hired';
+    if (['No', 'Rejected'].includes(r3.verdict)) return 'Rejected';
     
     if (r1.app_status === 'Reject') return 'Declined (Review)';
     if (r1.app_status === 'Yes') return 'Tech Review';
@@ -255,7 +255,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     });
 
     // Hired count is candidates in round_3_evaluation with verdict === 'Yes'
-    hired = evaluatedCandidates.filter(c => getR3(c).verdict === 'Yes').length;
+    hired = evaluatedCandidates.filter(c => ['Yes', 'Hired'].includes(getR3(c).verdict)).length;
 
     return { total, hired, rejected, review, pendingScreening, maybeCount };
   }, [evaluatedCandidates, evaluatedCount]);
@@ -565,7 +565,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
           }`}
         >
           <CardContent className="pt-4 pb-3 flex flex-col gap-1">
-            <span className="text-xs font-mono text-red-700 dark:text-red-400 uppercase tracking-wider block">Declined</span>
+            <span className="text-xs font-mono text-red-700 dark:text-red-400 uppercase tracking-wider block">Rejected</span>
             <div className="flex items-baseline justify-between mt-1">
               <span className="text-3xl font-extrabold font-mono text-red-600 dark:text-red-400">{stats.rejected}</span>
               <XOctagon className="h-5 w-5 text-red-500 stroke-[1.5]" />
@@ -613,7 +613,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
                 const m = getR2(c).moved_to_round_3;
                 return m && typeof m === 'string' && !m.endsWith('_draft') && (m === 'Yes' || m === 'Maybe');
               }).length;
-              const hiredCount = filteredApplicants.filter(c => getR3(c).verdict === 'Yes').length;
+              const hiredCount = filteredApplicants.filter(c => ['Yes', 'Hired'].includes(getR3(c).verdict)).length;
 
               return [
                 { label: '1. Applied', count: applicationsCount, percent: 100, color: 'bg-slate-400' },

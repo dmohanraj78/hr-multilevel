@@ -50,7 +50,7 @@ export default function StatsBanner({ candidates, round = 1, rawCount = 0, activ
   } else if (round === 3) {
     const yesCount = candidates.filter(c => {
       const r3 = getR3(c);
-      return r3.verdict === 'Yes';
+      return r3.verdict === 'Yes' || r3.verdict === 'Hired';
     }).length;
 
     const maybeCount = candidates.filter(c => {
@@ -60,14 +60,14 @@ export default function StatsBanner({ candidates, round = 1, rawCount = 0, activ
 
     const noCount = candidates.filter(c => {
       const r3 = getR3(c);
-      return r3.verdict === 'No';
+      return r3.verdict === 'No' || r3.verdict === 'Rejected';
     }).length;
 
     stats = [
       { key: 'ALL', title: 'Total Promoted', value: total, icon: Users, color: 'text-blue-500 bg-blue-500/10' },
-      { key: 'Yes', title: 'Approved (Yes)', value: yesCount, icon: CheckCircle2, color: 'text-green-500 bg-green-500/10' },
+      { key: 'Hired', title: 'Hired', value: yesCount, icon: CheckCircle2, color: 'text-green-500 bg-green-500/10' },
       { key: 'Maybe', title: 'Maybe', value: maybeCount, icon: HelpCircle, color: 'text-amber-500 bg-amber-500/10' },
-      { key: 'No', title: 'Declined (No)', value: noCount, icon: XCircle, color: 'text-red-500 bg-red-500/10' }
+      { key: 'Rejected', title: 'Rejected', value: noCount, icon: XCircle, color: 'text-red-500 bg-red-500/10' }
     ];
   } else {
     const pendingScreen = candidates.filter(c => {

@@ -220,8 +220,8 @@ export default function App() {
     const r2 = cand.round_2_evaluation?.[0] || cand.round_2_evaluation || {};
     const r3 = cand.round_3_evaluation?.[0] || cand.round_3_evaluation || {};
 
-    const isHired = r3.verdict === 'Yes';
-    const isDeclined = r1.app_status === 'Reject' || r2.moved_to_round_3 === 'No' || r3.verdict === 'No';
+    const isHired = r3.verdict === 'Yes' || r3.verdict === 'Hired';
+    const isDeclined = r1.app_status === 'Reject' || ['No', 'Declined'].includes(r2.moved_to_round_3) || ['No', 'Rejected'].includes(r3.verdict);
     const isReview = r1.app_status === 'Yes' && !isHired && !isDeclined;
     
     let baseUrl = 'https://recruiter-portal-one.vercel.app';
@@ -356,8 +356,8 @@ export default function App() {
 
   const r3Stats = {
     total: r2Stats.promoted,
-    hired: globalData.filter(c => getR3(c).verdict === 'Yes').length,
-    declined: globalData.filter(c => getR3(c).verdict === 'No').length,
+    hired: globalData.filter(c => ['Yes', 'Hired'].includes(getR3(c).verdict)).length,
+    declined: globalData.filter(c => ['No', 'Rejected'].includes(getR3(c).verdict)).length,
     pending: globalData.filter(c => {
       const r2 = getR2(c);
       const r3 = getR3(c);
@@ -895,7 +895,10 @@ export default function App() {
                   // 1. Filter by Executive Verdict (StatsBanner)
                   if (r3ActiveFilter !== 'ALL') {
                     const r3 = c.round_3_evaluation?.[0] || c.round_3_evaluation || {};
-                    if (r3.verdict !== r3ActiveFilter) return false;
+                    const v = r3.verdict;
+                    if (r3ActiveFilter === 'Hired' && !['Yes', 'Hired'].includes(v)) return false;
+                    if (r3ActiveFilter === 'Rejected' && !['No', 'Rejected'].includes(v)) return false;
+                    if (r3ActiveFilter === 'Maybe' && v !== 'Maybe') return false;
                   }
                   // 2. Filter by Technical Reviewer Decision (TR Verdict: Yes/Maybe)
                   if (r3TrFilter !== 'ALL') {
@@ -975,7 +978,7 @@ export default function App() {
                     <div className="bg-[#800020]/5 border border-[#800020]/20 rounded-xl px-4 py-2.5 flex items-center justify-between text-sm font-semibold text-foreground">
                       <div className="flex items-center gap-2">
                         <span className="h-2 w-2 rounded-full bg-[#800020] animate-pulse" />
-                        Showing only: <strong className="text-[#800020]">{r3ActiveFilter === 'Yes' ? 'Approved (Yes)' : r3ActiveFilter === 'Maybe' ? 'Maybe' : 'Declined (No)'}</strong> Candidates ({filteredR3Candidates.length})
+                        Showing only: <strong className="text-[#800020]">{r3ActiveFilter === 'Hired' ? 'Hired' : r3ActiveFilter === 'Maybe' ? 'Maybe' : 'Rejected'}</strong> Candidates ({filteredR3Candidates.length})
                       </div>
                       <Button 
                         size="xs" 

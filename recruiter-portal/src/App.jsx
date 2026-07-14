@@ -295,8 +295,8 @@ export default function App() {
       const r2 = cand.round_2_evaluation?.[0] || cand.round_2_evaluation || {};
       const r3 = cand.round_3_evaluation?.[0] || cand.round_3_evaluation || {};
       
-      const isHired = r3.verdict === 'Yes';
-      const isDeclined = r1.app_status === 'Reject' || r2.moved_to_round_3 === 'No' || r3.verdict === 'No';
+      const isHired = r3.verdict === 'Yes' || r3.verdict === 'Hired';
+      const isDeclined = r1.app_status === 'Reject' || ['No', 'Declined'].includes(r2.moved_to_round_3) || ['No', 'Rejected'].includes(r3.verdict);
       const isReview = r1.app_status === 'Yes' && !isHired && !isDeclined;
       const isUnscreened = !r1.app_status || r1.app_status === 'Pending';
 
@@ -482,12 +482,27 @@ export default function App() {
                       <TabsTrigger value="good" className="font-mono text-xs px-3 py-1.5 data-[state=active]:bg-[#800020] data-[state=active]:text-white">Good ({categories.good.length})</TabsTrigger>
                       <TabsTrigger value="clarity" className="font-mono text-xs px-3 py-1.5 data-[state=active]:bg-[#800020] data-[state=active]:text-white">Need Clarity ({categories.clarity.length})</TabsTrigger>
                       <TabsTrigger value="invalid" className="font-mono text-xs px-3 py-1.5 data-[state=active]:bg-[#800020] data-[state=active]:text-white">Invalid ({categories.invalid.length})</TabsTrigger>
-                      <TabsTrigger value="hired" className="font-mono text-xs px-3 py-1.5 data-[state=active]:bg-green-600 data-[state=active]:text-white">Hired ({categories.hired.length})</TabsTrigger>
-                      <TabsTrigger value="review" className="font-mono text-xs px-3 py-1.5 data-[state=active]:bg-blue-600 data-[state=active]:text-white">In Review ({categories.review.length})</TabsTrigger>
-                      <TabsTrigger value="declined" className="font-mono text-xs px-3 py-1.5 data-[state=active]:bg-red-600 data-[state=active]:text-white">Declined ({categories.declined.length})</TabsTrigger>
-                      <TabsTrigger value="unscreened" className="font-mono text-xs px-3 py-1.5 data-[state=active]:bg-amber-600 data-[state=active]:text-white">Unscreened ({categories.unscreened.length})</TabsTrigger>
                     </TabsList>
                   </div>
+
+                  {['hired', 'review', 'declined', 'unscreened'].includes(activeWorksheetTab) && (
+                    <div className="bg-[#800020]/5 border border-[#800020]/20 rounded-xl px-4 py-2.5 flex items-center justify-between text-sm font-semibold text-foreground mb-6">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-[#800020] animate-pulse" />
+                        Showing only status: <strong className="text-[#800020]">
+                          {activeWorksheetTab === 'hired' ? 'Hired' : activeWorksheetTab === 'review' ? 'In Review' : activeWorksheetTab === 'declined' ? 'Rejected' : 'Unscreened'}
+                        </strong> Candidates
+                      </div>
+                      <Button 
+                        size="xs" 
+                        variant="outline" 
+                        onClick={() => setActiveWorksheetTab('all')}
+                        className="h-7 px-2.5 text-xs border-[#800020] text-[#800020] hover:bg-[#800020] hover:text-white rounded-lg shadow-sm font-bold"
+                      >
+                        Reset Filter
+                      </Button>
+                    </div>
+                  )}
 
                   <TabsContent value="all" className="mt-0">
                     <CandidateListTable

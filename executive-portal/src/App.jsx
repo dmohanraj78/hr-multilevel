@@ -103,7 +103,10 @@ export default function App() {
       if (activeFilter !== 'ALL') {
         const r3 = c.round_3_evaluation;
         const r3Parsed = Array.isArray(r3) ? r3[0] : (r3 || {});
-        if (r3Parsed.verdict !== activeFilter) return false;
+        const v = r3Parsed.verdict;
+        if (activeFilter === 'Hired' && !['Yes', 'Hired'].includes(v)) return false;
+        if (activeFilter === 'Rejected' && !['No', 'Rejected'].includes(v)) return false;
+        if (activeFilter === 'Maybe' && v !== 'Maybe') return false;
       }
       // 2. Filter by Technical Reviewer Decision (TR Verdict: Yes/Maybe)
       if (trFilter !== 'ALL') {
@@ -225,7 +228,7 @@ export default function App() {
               <div className="bg-[#800020]/5 border border-[#800020]/20 rounded-xl px-4 py-2.5 flex items-center justify-between text-sm font-semibold text-foreground">
                 <div className="flex items-center gap-2">
                   <span className="h-2 w-2 rounded-full bg-[#800020] animate-pulse" />
-                  Showing only: <strong className="text-[#800020]">{activeFilter === 'Yes' ? 'Approved (Yes)' : activeFilter === 'Maybe' ? 'Maybe' : 'Declined (No)'}</strong> Candidates ({filteredCandidates.length})
+                  Showing only: <strong className="text-[#800020]">{activeFilter === 'Hired' ? 'Hired' : activeFilter === 'Maybe' ? 'Maybe' : 'Rejected'}</strong> Candidates ({filteredCandidates.length})
                 </div>
                 <Button 
                   size="xs" 

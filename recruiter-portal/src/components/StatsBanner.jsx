@@ -55,12 +55,12 @@ export default function StatsBanner({ candidates, round = 1, rawCount = 0 }) {
 
     const hired = candidates.filter(c => {
       const r3 = getR3(c);
-      return r3.verdict === 'Yes';
+      return r3.verdict === 'Yes' || r3.verdict === 'Hired';
     }).length;
 
     const declined = candidates.filter(c => {
       const r3 = getR3(c);
-      return r3.verdict === 'No';
+      return r3.verdict === 'No' || r3.verdict === 'Rejected';
     }).length;
 
     stats = [

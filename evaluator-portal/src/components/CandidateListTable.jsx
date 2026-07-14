@@ -214,8 +214,8 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
       const r3 = cand.round_3_evaluation;
       const r3Parsed = Array.isArray(r3) ? r3[0] : r3;
       const verdict = r3Parsed?.verdict;
-      if (verdict === 'Yes') return { text: 'Yes', color: 'bg-green-600 hover:bg-green-700 text-white border-transparent' };
-      if (verdict === 'No') return { text: 'No', color: 'bg-red-600 hover:bg-red-700 text-white border-transparent' };
+      if (verdict === 'Yes' || verdict === 'Hired') return { text: 'Hired', color: 'bg-green-600 hover:bg-green-700 text-white border-transparent' };
+      if (verdict === 'No' || verdict === 'Rejected') return { text: 'Rejected', color: 'bg-red-600 hover:bg-red-700 text-white border-transparent' };
       return { text: 'Pending Decisions', color: 'bg-amber-500 hover:bg-amber-600 text-white border-transparent' };
     }
     
