@@ -1091,7 +1091,9 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       };
       const getR2SubOrder = (cand) => {
         const r2 = getR2(cand);
-        const r2Decision = (r2.moved_to_round_3 || '').replace('_draft', '').trim().toLowerCase();
+        // _draft decisions are unfinished reviews — treat as no decision yet
+        const r2Raw = (r2.moved_to_round_3 || '').trim();
+        const r2Decision = r2Raw.endsWith('_draft') ? '' : r2Raw.toLowerCase();
         if (['yes', 'promoted'].includes(r2Decision)) return 0;
         if (r2Decision === 'maybe') return 1;
         if (r2Decision === 'no' || r2Decision === 'declined') return 2;
@@ -1167,7 +1169,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
           r2.id ? (problemFit || 'NA') : '-',
           r2.id ? (latency || 'NA') : '-',
           r2.id
-            ? ((r2.moved_to_round_3 || 'Pending').replace('_draft', '') || 'Pending')
+            ? (((r2.moved_to_round_3 || '').trim().endsWith('_draft') ? 'Pending' : r2.moved_to_round_3) || 'Pending')
             : (['no', 'rejected', 'invalid', 'reject'].includes((r1.app_status || '').trim().toLowerCase()) ? 'Rejected (R1)' : 'Pending'),
           r2.id ? (r2.demo_review_comment || 'NA') : '-'
         ];

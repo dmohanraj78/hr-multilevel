@@ -115,7 +115,10 @@ def build_excel_report():
     def sort_key(cand):
         r1_status = str(cand["r1"].get("app_status") or "").strip().lower()
         r2 = cand["r2"]
-        r2_decision = str(r2.get("moved_to_round_3") or "").replace("_draft", "").strip().lower()
+        # _draft decisions are unfinished reviews — treat as no decision yet
+        # (matches the dashboard, which only counts finalized decisions)
+        r2_decision_raw = str(r2.get("moved_to_round_3") or "").strip()
+        r2_decision = "" if r2_decision_raw.endswith("_draft") else r2_decision_raw.lower()
         score = float(cand["r1"].get("total") or 0)
 
         if r1_status == "yes":
@@ -454,7 +457,10 @@ def build_excel_report():
 
         # R2 Decision logic
         if r2_has_id:
-            r2_decision_val = (r2.get("moved_to_round_3") or "Pending").replace("_draft", "")
+            r2_decision_val = r2.get("moved_to_round_3") or "Pending"
+            # _draft = reviewer saved but did not finish — not a decision yet
+            if str(r2_decision_val).strip().endswith("_draft"):
+                r2_decision_val = "Pending"
             if not r2_decision_val or str(r2_decision_val).strip() in ["", "-", "None"]:
                 r2_decision_val = "Pending"
         elif str(r1.get("app_status") or "").strip().lower() in ["no", "rejected", "invalid", "reject"]:
