@@ -95,9 +95,9 @@ def build_excel_report():
         raw = r1.get("raw_submissions")
         if not raw:
             continue
-        # Filter out unprocessed template records (where evaluation has not occurred yet)
-        if r1.get("total") is None and r1.get("tier") is None and r1.get("review_cat") is None:
-            continue
+        # Every round_1_evaluation row counts as an applicant — rows the import
+        # pipeline created that are not yet AI-scored surface as Pending, so the
+        # report total always equals count(round_1_evaluation).
         raw_parsed = raw[0] if isinstance(raw, list) else raw
         candidates.append({
             "c": raw_parsed,
@@ -198,8 +198,10 @@ def build_excel_report():
         elif tier in ["T4", "TIER 4"]:
             t4 += 1
 
-        score_val = float(r1.get("total") or 0)
-        scores.append(score_val)
+        # Only scored rows feed the average/median — unprocessed Pending rows
+        # have no total yet and would drag the stats down as zeros
+        if r1.get("total") is not None:
+            scores.append(float(r1.get("total") or 0))
 
     avg_score = sum(scores) / len(scores) if scores else 0
     top_score = max(scores) if scores else 0

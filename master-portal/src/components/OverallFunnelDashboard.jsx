@@ -231,16 +231,12 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
   };
 
   // Base list containing only evaluated candidates (those with a round_1_evaluation record)
+  // Every row in round_1_evaluation counts as an applicant — including rows the
+  // import pipeline created that are not yet AI-scored (they surface as Pending).
+  // This keeps this overview, the R1 worksheet tile, and the reports on the
+  // exact same number: count(round_1_evaluation).
   const evaluatedCandidates = useMemo(() => {
-    return globalData.filter(c => {
-      const r1 = c.round_1_evaluation;
-      if (!r1) return false;
-      // Filter out unprocessed template records (where evaluation has not occurred yet)
-      if (r1.total === null && r1.tier === null && r1.review_cat === null) {
-        return false;
-      }
-      return true;
-    });
+    return globalData.filter(c => c.round_1_evaluation !== null);
   }, [globalData]);
 
   const evaluatedCount = evaluatedCandidates.length;
@@ -942,8 +938,11 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
         else if (['T3', 'TIER 3'].includes(tier)) t3++;
         else if (['T4', 'TIER 4'].includes(tier)) t4++;
 
-        const scoreVal = parseFloat(r1.total || 0);
-        scores.push(scoreVal);
+        // Only scored rows feed the average/median — unprocessed Pending rows
+        // have no total yet and would drag the stats down as zeros
+        if (r1.total !== null && r1.total !== undefined) {
+          scores.push(parseFloat(r1.total) || 0);
+        }
       });
 
       scores.sort((a, b) => a - b);
