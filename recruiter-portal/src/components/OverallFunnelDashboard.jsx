@@ -224,7 +224,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     if (r2.moved_to_round_3 === 'Declined') return 'Declined';
     if (r2.moved_to_round_3 === 'No') return 'Rejected';
     
-    if (r1.app_(status === 'Reject' || status === 'No')) return 'Rejected';
+    if ((r1.app_status === 'Reject' || r1.app_status === 'No')) return 'Rejected';
     if (r1.app_status === 'Yes') return 'Tech Review';
     if (r1.app_status === 'Maybe') return 'Maybe (Reviewed)';
     if (r1.app_status === 'Duplicate') return 'Duplicate';
