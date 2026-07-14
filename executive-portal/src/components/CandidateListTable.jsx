@@ -236,10 +236,7 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
     tier: (c) => getEval1(c, 'tier') || 'N/A',
     score: (c) => parseFloat(getEval1(c, 'total') || 0),
     status: (c) => getStatusInfo(c).text,
-    clan: (c) => getEval1(c, 'eval_group') || 'None',
-    trDecision: (c) => getR2(c).moved_to_round_3 || 'Pending',
-    duration: (c) => getR2(c).duration_months || '-',
-    trFeedback: (c) => getR2(c).demo_review_comment || '-'
+    clan: (c) => getEval1(c, 'eval_group') || 'None'
   };
 
   // Helper to extract unique values for dropdowns
@@ -258,9 +255,6 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
   const uniqueScores = useMemo(() => getUniqueValues('score', getCandValue.score), [candidates]);
   const uniqueStatuses = useMemo(() => getUniqueValues('status', getCandValue.status), [candidates]);
   const uniqueClans = useMemo(() => getUniqueValues('clan', getCandValue.clan), [candidates]);
-  const uniqueTrDecisions = useMemo(() => getUniqueValues('trDecision', getCandValue.trDecision), [candidates]);
-  const uniqueDurations = useMemo(() => getUniqueValues('duration', getCandValue.duration), [candidates]);
-  const uniqueTrFeedbacks = useMemo(() => getUniqueValues('trFeedback', getCandValue.trFeedback), [candidates]);
 
   // Apply filters
   const handleApplyFilter = (columnKey, selectedValues) => {
@@ -504,39 +498,7 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
                   onSort={handleSort}
                 />
               </TableHead>
-              <TableHead className="w-[100px] overflow-visible">
-                <HeaderFilter
-                  label={<span>TR<br />Decision</span>}
-                  columnKey="trDecision"
-                  uniqueValues={uniqueTrDecisions}
-                  activeFilters={activeFilters}
-                  onApplyFilter={handleApplyFilter}
-                  sortConfig={sortConfig}
-                  onSort={handleSort}
-                />
-              </TableHead>
-              <TableHead className="w-[130px] overflow-visible">
-                <HeaderFilter
-                  label={<span>How long they<br />can intern</span>}
-                  columnKey="duration"
-                  uniqueValues={uniqueDurations}
-                  activeFilters={activeFilters}
-                  onApplyFilter={handleApplyFilter}
-                  sortConfig={sortConfig}
-                  onSort={handleSort}
-                />
-              </TableHead>
-              <TableHead className="w-[200px] overflow-visible">
-                <HeaderFilter
-                  label={<span>Tech Reviewer Feedback</span>}
-                  columnKey="trFeedback"
-                  uniqueValues={uniqueTrFeedbacks}
-                  activeFilters={activeFilters}
-                  onApplyFilter={handleApplyFilter}
-                  sortConfig={sortConfig}
-                  onSort={handleSort}
-                />
-              </TableHead>
+              <TableHead className="min-w-[240px] font-semibold">TR Comments</TableHead>
               <TableHead className="w-[90px] font-semibold">Actions</TableHead>
               <TableHead className="w-[130px] overflow-visible text-right pr-6">
                 <HeaderFilter
@@ -554,7 +516,7 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
           <TableBody>
             {sortedAndFiltered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={10} className="text-center py-10 text-muted-foreground font-mono text-sm">
+                <TableCell colSpan={8} className="text-center py-10 text-muted-foreground font-mono text-sm">
                   No applicants matching active selection filters.
                 </TableCell>
               </TableRow>
@@ -568,21 +530,15 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
                   </Badge>
                 );
 
-                const trDecision = getR2(cand).moved_to_round_3 || 'Pending';
-                let trBadge = <Badge variant="secondary" className="rounded-full px-2 py-0.5">{trDecision}</Badge>;
-                if (trDecision === 'Yes') trBadge = <Badge className="bg-green-600 text-white border-transparent rounded-full px-2 py-0.5">Yes</Badge>;
-                else if (trDecision === 'Maybe') trBadge = <Badge className="bg-amber-500 text-white border-transparent rounded-full px-2 py-0.5">Maybe</Badge>;
-                else if (trDecision === 'No') trBadge = <Badge variant="destructive" className="rounded-full px-2 py-0.5">No</Badge>;
-                else if (trDecision === 'Declined') trBadge = <Badge variant="destructive" className="rounded-full px-2 py-0.5">Declined</Badge>;
-
-                const duration = getR2(cand).duration_months || '-';
+                const r2val = cand.round_2_evaluation;
+                const r2 = Array.isArray(r2val) ? (r2val[0] || {}) : (r2val || {});
+                const trComment = r2.demo_review_comment || '';
 
                 return (
                   <TableRow key={cand.id} className="hover:bg-muted/20 border-b transition-colors duration-200">
                     <TableCell className="font-mono text-xs font-bold py-4">{cand.id}</TableCell>
                     <TableCell>
                       <div className="font-semibold text-foreground">{getBio(cand, 'full_name')}</div>
-                      
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className="font-mono text-[10px] px-1.5 py-0.5 border-primary/20">{getEval1(cand, 'tier') || 'N/A'}</Badge>
@@ -595,10 +551,13 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
                         {getEval1(cand, 'eval_group') || 'None'}
                       </Badge>
                     </TableCell>
-                    <TableCell>{trBadge}</TableCell>
-                    <TableCell className="font-medium text-muted-foreground">{duration}</TableCell>
-                    <TableCell className="max-w-[200px] text-xs text-muted-foreground whitespace-pre-wrap">
-                      {getR2(cand).demo_review_comment || '-'}
+                    <TableCell className="max-w-[280px]">
+                      <span
+                        title={trComment}
+                        className="text-xs text-muted-foreground line-clamp-2 whitespace-normal block"
+                      >
+                        {trComment || '—'}
+                      </span>
                     </TableCell>
                     <TableCell>
                       <Button size="sm" variant="outline" onClick={() => onActionClick(cand)} className="rounded-md font-semibold text-xs border-[#800020] text-[#800020] hover:bg-[#800020] hover:text-white transition-colors duration-300">
