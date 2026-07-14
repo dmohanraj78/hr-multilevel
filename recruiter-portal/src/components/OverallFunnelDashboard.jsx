@@ -224,7 +224,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     if (r2.moved_to_round_3 === 'Declined') return 'Declined';
     if (r2.moved_to_round_3 === 'No') return 'Rejected';
     
-    if (r1.app_status === 'Reject') return 'Rejected';
+    if (r1.app_(status === 'Reject' || status === 'No')) return 'Rejected';
     if (r1.app_status === 'Yes') return 'Tech Review';
     if (r1.app_status === 'Maybe') return 'Maybe (Reviewed)';
     if (r1.app_status === 'Duplicate') return 'Duplicate';
@@ -253,7 +253,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       const r1 = getR1(c);
       const status = r1.app_status || 'Pending';
       if (status === 'Yes') review++;
-      else if (status === 'Reject') rejected++;
+      else if ((status === 'Reject' || status === 'No')) rejected++;
       else if (status === 'Maybe') maybeCount++;
       else pendingScreening++;
     });
