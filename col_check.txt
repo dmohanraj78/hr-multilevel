@@ -1,0 +1,61 @@
+﻿All columns:
+  0: Rank
+  1: Name
+  2: Gender
+  3: Cat
+  4: Graduation
+  5: Tier
+  6: Total
+  7: Edu
+  8: Exp
+  9: Proj
+  10: Substance
+  11: Deploy
+  12: Artifact
+  13: Skills
+  14: Domain
+  15: Degree
+  16: Stream
+  17: College
+  18: F_college
+  19: F_University
+  20: Location
+  21: AI Proj
+  22: FS Proj
+  23: Intern Mo
+  24: Co.Tier
+  25: Deploy Stage
+  26: #Skills
+  27: Claude Lvl
+  28: AI/ML Exp
+  29: Email
+  30: R├⌐sum├⌐
+  31: GitHub
+  32: Demo
+  33: Demo Explanation (their project)
+  34: Demo Review Notes (AI)
+  35: R1 Review
+  36: R1 Interview Priority
+  37: To be screened by
+  38: Status
+  39: Earliest date they can start the internship
+  40: Any concerns / restrictions (with college commitment, personal, others)
+  41: Technical depth of demo / product
+  42: Tech stack used
+  43: Problem-solution fit
+  44: Areas like latency, cost, security, etc been considered
+  45: Decision
+  46: Tier
+  47: Reason for decision (detailed notes)
+
+Row 7 R2 columns (col 38+):
+  col 38 [Status]: None
+  col 39 [Earliest date they can start the internship]: None
+  col 40 [Any concerns / restrictions (with college commitment, personal, others)]: None
+  col 41 [Technical depth of demo / product]: None
+  col 42 [Tech stack used]: None
+  col 43 [Problem-solution fit]: None
+  col 44 [Areas like latency, cost, security, etc been considered]: None
+  col 45 [Decision]: None
+  col 46 [Tier]: None
+  col 47 [Reason for decision (detailed notes)]: None

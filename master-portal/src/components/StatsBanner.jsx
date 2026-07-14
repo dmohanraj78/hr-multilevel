@@ -120,28 +120,28 @@ export default function StatsBanner({ candidates, round = 1, rawCount = 0, activ
         const isSelected = isClickable && activeFilter === stat.key;
 
         return (
-          <Card 
-            key={i} 
+          <Card
+            key={i}
             onClick={() => {
               if (isClickable) {
                 onFilterChange(stat.key);
               }
             }}
-            className={`transition-all duration-300 border rounded-[1.25rem] overflow-hidden ${
+            className={`h-full flex flex-col transition-all duration-300 border rounded-[1.25rem] overflow-hidden ${
               isClickable ? 'cursor-pointer hover:shadow-md' : 'hover:shadow-lg'
             } ${
-              isSelected 
-                ? 'ring-2 ring-offset-2 ring-[#800020] border-transparent scale-[1.02] shadow-md' 
+              isSelected
+                ? 'ring-2 ring-offset-2 ring-[#800020] border-transparent scale-[1.02] shadow-md'
                 : 'hover:border-muted-foreground/30'
             }`}
           >
-            <CardHeader className="flex flex-row items-center justify-between pb-3 space-y-0">
-              <span className="text-[10px] font-bold text-muted-foreground font-mono tracking-wider uppercase">{stat.title}</span>
-              <div className={`p-1.5 rounded-lg ${stat.color}`}>
+            <CardHeader className="flex flex-row items-start justify-between gap-2 pb-2 space-y-0">
+              <span className="text-[10px] font-bold text-muted-foreground font-mono tracking-wider uppercase leading-snug min-h-[2.5rem]">{stat.title}</span>
+              <div className={`p-1.5 rounded-lg shrink-0 ${stat.color}`}>
                 <Icon className="h-4 w-4 stroke-[1.5]" />
               </div>
             </CardHeader>
-            <CardContent className="pb-4">
+            <CardContent className="pb-4 mt-auto">
               <div className="text-3xl font-extrabold font-mono tracking-tight">{stat.value}</div>
               {stat.subtitle && (
                 <div className="text-[10px] text-muted-foreground mt-1 font-medium font-sans">

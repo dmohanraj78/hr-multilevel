@@ -221,7 +221,7 @@ export default function App() {
     const r3 = cand.round_3_evaluation?.[0] || cand.round_3_evaluation || {};
 
     const isHired = r3.final_status === 'Yes' || r3.final_status === 'Hired';
-    const isDeclined = r1.app_status === 'Reject' || ['No', 'Declined'].includes(r2.moved_to_round_3) || ['No', 'Rejected'].includes(r3.final_status);
+    const isDeclined = ['Reject', 'No'].includes(r1.app_status) || ['No', 'Declined'].includes(r2.moved_to_round_3) || ['No', 'Rejected'].includes(r3.final_status);
     const isReview = r1.app_status === 'Yes' && !isHired && !isDeclined;
     
     let baseUrl = 'https://recruiter-portal-one.vercel.app';
@@ -332,7 +332,7 @@ export default function App() {
       return !r.app_status || r.app_status === 'Pending';
     }).length,
     passed: globalData.filter(c => getR1(c).app_status === 'Yes').length,
-    rejected: globalData.filter(c => getR1(c).app_status === 'Reject').length,
+    rejected: globalData.filter(c => ['Reject','No'].includes(getR1(c).app_status)).length,
   };
 
   const r2Stats = {
@@ -356,8 +356,8 @@ export default function App() {
 
   const r3Stats = {
     total: r2Stats.promoted,
-    hired: globalData.filter(c => ['Yes', 'Hired'].includes(getR3(c).verdict)).length,
-    declined: globalData.filter(c => ['No', 'Rejected'].includes(getR3(c).verdict)).length,
+    hired: globalData.filter(c => ['Yes', 'Hired'].includes(getR3(c).final_status)).length,
+    declined: globalData.filter(c => ['No', 'Rejected'].includes(getR3(c).final_status)).length,
     pending: globalData.filter(c => {
       const r2 = getR2(c);
       const r3 = getR3(c);

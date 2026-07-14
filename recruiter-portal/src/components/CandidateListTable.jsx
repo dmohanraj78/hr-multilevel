@@ -232,7 +232,7 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
 
     const status = getEval1(cand, 'app_status') || 'Pending';
     if (status === 'Yes') return { text: 'Yes', color: 'bg-green-600 hover:bg-green-700 text-white border-transparent' };
-    if (status === 'Reject') return { text: 'Reject', color: 'bg-red-600 hover:bg-red-700 text-white border-transparent' };
+    if (status === 'No' || status === 'Reject') return { text: 'No', color: 'bg-red-600 hover:bg-red-700 text-white border-transparent' };
     if (status === 'Maybe') return { text: 'Maybe', color: 'bg-amber-500 hover:bg-amber-600 text-white border-transparent' };
     if (status === 'Duplicate') return { text: 'Duplicate', color: 'border-gray-500 text-gray-500 bg-transparent' };
     if (status === 'Access requested') return { text: 'Access requested', color: 'bg-blue-600 hover:bg-blue-700 text-white border-transparent' };

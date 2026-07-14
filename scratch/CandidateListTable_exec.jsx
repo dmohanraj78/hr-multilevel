@@ -3,7 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Search, Download, Filter, ArrowUp, ArrowDown, Check } from 'lucide-react';
+import { Search, Download, Filter, ArrowUp, ArrowDown } from 'lucide-react';
 
 function HeaderFilter({
   label,
@@ -188,7 +188,7 @@ function HeaderFilter({
   );
 }
 
-export default function CandidateListTable({ candidates, actionLabel, onActionClick, showTechEvaluatorFilter = false, round = 1, onUpdateTechEvaluator }) {
+export default function CandidateListTable({ candidates, actionLabel, onActionClick, showTechEvaluatorFilter = false, round = 3, onUpdateTechEvaluator }) {
   const [search, setSearch] = useState('');
   const [activeFilters, setActiveFilters] = useState({});
   const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
@@ -208,36 +208,25 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
     return c[field] !== undefined ? c[field] : (r1Parsed?.[field] || '');
   };
 
-  // Safe helper to extract status based on the current round
-  const getStatusInfo = (cand) => {
-    if (round === 3) {
-      const r3 = cand.round_3_evaluation;
-      const r3Parsed = Array.isArray(r3) ? r3[0] : r3;
-      const verdict = r3Parsed?.final_status;
-      if (verdict === 'Yes' || verdict === 'Hired') return { text: 'Hired', color: 'bg-green-600 hover:bg-green-700 text-white border-transparent' };
-      if (verdict === 'No' || verdict === 'Rejected') return { text: 'Rejected', color: 'bg-red-600 hover:bg-red-700 text-white border-transparent' };
-      if (verdict === 'Maybe') return { text: 'Maybe', color: 'bg-amber-500 hover:bg-amber-600 text-white border-transparent' };
-      return { text: 'Pending Decisions', color: 'bg-slate-500 hover:bg-slate-600 text-white border-transparent' };
-    }
-    
-    if (round === 2) {
-      const r2 = cand.round_2_evaluation;
-      const r2Parsed = Array.isArray(r2) ? r2[0] : r2;
-      const decision = r2Parsed?.moved_to_round_3;
-      if (decision === 'Yes') return { text: 'Yes', color: 'bg-green-600 hover:bg-green-700 text-white border-transparent' };
-      if (decision === 'Maybe') return { text: 'Maybe', color: 'bg-amber-500 hover:bg-amber-600 text-white border-transparent' };
-      if (decision === 'No') return { text: 'No', color: 'bg-red-600 hover:bg-red-700 text-white border-transparent' };
-      if (decision === 'Declined') return { text: 'Declined', color: 'bg-red-600 hover:bg-red-700 text-white border-transparent' };
-      return { text: 'Pending Review', color: 'bg-gray-400 hover:bg-gray-500 text-white border-transparent' };
-    }
+  const getR2 = (c) => {
+    if (!c) return {};
+    const val = c.round_2_evaluation;
+    return Array.isArray(val) ? val[0] || {} : val || {};
+  };
 
-    const status = getEval1(cand, 'app_status') || 'Pending';
-    if (status === 'Yes') return { text: 'Yes', color: 'bg-green-600 hover:bg-green-700 text-white border-transparent' };
-    if (status === 'No' || status === 'Reject') return { text: 'No', color: 'bg-red-600 hover:bg-red-700 text-white border-transparent' };
-    if (status === 'Maybe') return { text: 'Maybe', color: 'bg-amber-500 hover:bg-amber-600 text-white border-transparent' };
-    if (status === 'Duplicate') return { text: 'Duplicate', color: 'border-gray-500 text-gray-500 bg-transparent' };
-    if (status === 'Access requested') return { text: 'Access requested', color: 'bg-blue-600 hover:bg-blue-700 text-white border-transparent' };
-    return { text: 'Pending', color: 'bg-gray-200 text-gray-800 dark:bg-gray-800 dark:text-gray-200' };
+  const getR3 = (c) => {
+    if (!c) return {};
+    const val = c.round_3_evaluation;
+    return Array.isArray(val) ? val[0] || {} : val || {};
+  };
+
+  // Safe helper to extract status based on the current round 3
+  const getStatusInfo = (cand) => {
+    const verdict = getR3(cand).verdict;
+    if (verdict === 'Yes' || verdict === 'Hired') return { text: 'Hired', color: 'bg-green-600 hover:bg-green-700 text-white border-transparent' };
+    if (verdict === 'No' || verdict === 'Rejected') return { text: 'Rejected', color: 'bg-red-600 hover:bg-red-700 text-white border-transparent' };
+    if (verdict === 'Maybe') return { text: 'Maybe', color: 'bg-amber-500 hover:bg-amber-600 text-white border-transparent' };
+    return { text: 'Pending Review', color: 'bg-slate-500 hover:bg-slate-600 text-white border-transparent' };
   };
 
   // Extraction maps for headers
@@ -246,7 +235,6 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
     candidate: (c) => getBio(c, 'full_name'),
     tier: (c) => getEval1(c, 'tier') || 'N/A',
     score: (c) => parseFloat(getEval1(c, 'total') || 0),
-    review_cat: (c) => getEval1(c, 'review_cat') || 'N/A',
     status: (c) => getStatusInfo(c).text,
     clan: (c) => getEval1(c, 'eval_group') || 'None'
   };
@@ -265,7 +253,6 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
   const uniqueCandidates = useMemo(() => getUniqueValues('candidate', getCandValue.candidate), [candidates]);
   const uniqueTiers = useMemo(() => getUniqueValues('tier', getCandValue.tier), [candidates]);
   const uniqueScores = useMemo(() => getUniqueValues('score', getCandValue.score), [candidates]);
-  const uniqueReviewCats = useMemo(() => getUniqueValues('review_cat', getCandValue.review_cat), [candidates]);
   const uniqueStatuses = useMemo(() => getUniqueValues('status', getCandValue.status), [candidates]);
   const uniqueClans = useMemo(() => getUniqueValues('clan', getCandValue.clan), [candidates]);
 
@@ -305,57 +292,45 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
       if (activeFilters.candidate && !activeFilters.candidate.includes(getBio(cand, 'full_name'))) return false;
       if (activeFilters.tier && !activeFilters.tier.includes(getEval1(cand, 'tier') || 'N/A')) return false;
       if (activeFilters.score && !activeFilters.score.includes(parseFloat(getEval1(cand, 'total') || 0))) return false;
-      if (activeFilters.review_cat && !activeFilters.review_cat.includes(getEval1(cand, 'review_cat') || 'N/A')) return false;
       if (activeFilters.status && !activeFilters.status.includes(getStatusInfo(cand).text)) return false;
-      if (showTechEvaluatorFilter && activeFilters.clan && !activeFilters.clan.includes(getEval1(cand, 'eval_group') || 'None')) return false;
+      if (activeFilters.clan && !activeFilters.clan.includes(getEval1(cand, 'eval_group') || 'None')) return false;
+      if (activeFilters.trDecision && !activeFilters.trDecision.includes(getR2(cand).moved_to_round_3 || 'Pending')) return false;
+      if (activeFilters.duration && !activeFilters.duration.includes(getR2(cand).duration_months || '-')) return false;
+      if (activeFilters.trFeedback && !activeFilters.trFeedback.includes(getR2(cand).demo_review_comment || '-')) return false;
 
       return true;
     });
-  }, [candidates, search, activeFilters, showTechEvaluatorFilter]);
+  }, [candidates, search, activeFilters]);
 
   // Sorting logic
   const sortedAndFiltered = useMemo(() => {
     if (!sortConfig.key) {
-      if (round === 3) {
-        // Default Executive R3 sequence: Pending first, TR Decision 'Yes' > 'Maybe', Completed verdict at bottom
-        const getR2 = (c) => {
-          if (!c) return {};
-          const val = c.round_2_evaluation;
-          return Array.isArray(val) ? val[0] || {} : val || {};
-        };
-        const getR3 = (c) => {
-          if (!c) return {};
-          const val = c.round_3_evaluation;
-          return Array.isArray(val) ? val[0] || {} : val || {};
-        };
+      // Default Executive R3 sequence: Pending first, TR Decision 'Yes' > 'Maybe', Completed verdict at bottom
+      return [...filtered].sort((a, b) => {
+        const r3A = getR3(a);
+        const r3B = getR3(b);
+        const hasVerdictA = !!r3A.verdict;
+        const hasVerdictB = !!r3B.verdict;
 
-        return [...filtered].sort((a, b) => {
-          const r3A = getR3(a);
-          const r3B = getR3(b);
-          const hasVerdictA = !!r3A.final_status;
-          const hasVerdictB = !!r3B.final_status;
+        // 1. Sort by R3 Verdict completed status (Pending first, Completed last)
+        if (hasVerdictA !== hasVerdictB) {
+          return hasVerdictA ? 1 : -1;
+        }
 
-          // 1. Sort by R3 Verdict completed status (Pending first, Completed last)
-          if (hasVerdictA !== hasVerdictB) {
-            return hasVerdictA ? 1 : -1;
-          }
+        // 2. Sort by TR Decision (Yes first, Maybe second)
+        const trA = getR2(a).moved_to_round_3 || '';
+        const trB = getR2(b).moved_to_round_3 || '';
+        
+        if (trA !== trB) {
+          if (trA === 'Yes') return -1;
+          if (trB === 'Yes') return 1;
+          if (trA === 'Maybe') return -1;
+          if (trB === 'Maybe') return 1;
+        }
 
-          // 2. Sort by TR Decision (Yes first, Maybe second)
-          const trA = getR2(a).moved_to_round_3 || '';
-          const trB = getR2(b).moved_to_round_3 || '';
-          
-          if (trA !== trB) {
-            if (trA === 'Yes') return -1;
-            if (trB === 'Yes') return 1;
-            if (trA === 'Maybe') return -1;
-            if (trB === 'Maybe') return 1;
-          }
-
-          // 3. Fallback to ID
-          return parseInt(a.id) - parseInt(b.id);
-        });
-      }
-      return filtered;
+        // 3. Fallback to ID
+        return parseInt(a.id) - parseInt(b.id);
+      });
     }
 
     return [...filtered].sort((a, b) => {
@@ -373,7 +348,7 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
         ? String(valA).localeCompare(String(valB))
         : String(valB).localeCompare(String(valA));
     });
-  }, [filtered, sortConfig, round]);
+  }, [filtered, sortConfig]);
 
   const handleExportCSV = () => {
     const headers = [
@@ -383,34 +358,17 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
       'Role',
       'Tier',
       'Review Score',
-      'Demo-AI Review',
-      'Review Status',
-      'Technical Evaluator Assigned',
-      'Start Date',
-      'Duration (Months)',
-      'College Commitment / Concerns',
-      'Contact Status',
-      'Problem Fit',
-      'Technical Depth',
-      'Latency/Security/Cost',
-      'Tech Stack',
+      'Final Status',
+      'Tech Reviewer Name',
       'TR Decision',
-      'TR Comments'
+      'Duration (Months)',
+      'Start Date',
+      'College Commitment'
     ];
 
     const rows = sortedAndFiltered.map(c => {
-      const r1 = c.round_1_evaluation?.[0] || c.round_1_evaluation || c || {};
-      const r2 = c.round_2_evaluation?.[0] || c.round_2_evaluation || {};
-      const r3 = c.round_3_evaluation?.[0] || c.round_3_evaluation || {};
-
-      // Parse combined columns or use new separate fields
-      const rawSolves = r2.solves_business_problem || '';
-      const r2Solves = r2.contact_status || (rawSolves.includes('Contact: ') ? rawSolves.split('Contact: ')[1].split(' | ')[0] : (['Yet to Speak', 'Spoke', 'Scheduled', 'No response'].includes(rawSolves) ? rawSolves : ''));
-      const r2ProblemFit = r2.problem_fit || (rawSolves.includes('Fit: ') ? rawSolves.split('Fit: ')[1] : (['Yes', 'Maybe', 'No'].includes(rawSolves) ? rawSolves : ''));
-
-      const rawDepth = r2.product_depth || '';
-      const r2ProductDepth = r2.tech_depth || (rawDepth.includes('Depth: ') ? rawDepth.split('Depth: ')[1].split(' | ')[0] : (['High', 'Medium', 'Low', 'None'].includes(rawDepth) ? rawDepth : ''));
-      const r2Latency = r2.latency_considerations || (rawDepth.includes('Latency: ') ? rawDepth.split('Latency: ')[1] : (!['High', 'Medium', 'Low', 'None'].includes(rawDepth) ? rawDepth : ''));
+      const r2 = getR2(c);
+      const r3 = getR3(c);
 
       return [
         c.id || '',
@@ -419,19 +377,12 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
         getBio(c, 'applied_role'),
         getEval1(c, 'tier'),
         getEval1(c, 'total'),
-        getEval1(c, 'review_cat'),
         getStatusInfo(c).text,
         getEval1(c, 'eval_group') || 'None',
-        r2.when_can_they_start || '',
-        r2.duration_months || '',
-        r2.complexity || '',
-        r2Solves || '',
-        r2ProblemFit || '',
-        r2ProductDepth || '',
-        r2Latency || '',
-        r2.tech_stack || '',
         r2.moved_to_round_3 || 'Pending',
-        r2.demo_review_comment || ''
+        r2.duration_months || '',
+        r2.when_can_they_start || '',
+        r2.complexity || ''
       ];
     });
 
@@ -444,7 +395,7 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `candidates_export_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `executive_candidates_export_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -490,65 +441,38 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
         <Table className="relative z-10">
           <TableHeader className="bg-muted/40 border-b">
             <TableRow>
-              {/* Common Columns */}
-              <TableHead className="w-[85px] font-mono text-xs py-3 overflow-visible">
+              <TableHead className="w-[70px] font-mono text-xs py-3 overflow-visible">
                 <HeaderFilter label="ID" columnKey="id" uniqueValues={uniqueIds} activeFilters={activeFilters} onApplyFilter={handleApplyFilter} sortConfig={sortConfig} onSort={handleSort} isNumeric={true} />
               </TableHead>
-              <TableHead className={`overflow-visible ${round === 3 ? 'w-[160px]' : 'min-w-[180px]'}`}>
+              <TableHead className="overflow-visible min-w-[180px]">
                 <HeaderFilter label="Candidate" columnKey="candidate" uniqueValues={uniqueCandidates} activeFilters={activeFilters} onApplyFilter={handleApplyFilter} sortConfig={sortConfig} onSort={handleSort} />
               </TableHead>
-              <TableHead className="w-[125px] overflow-visible">
+              <TableHead className="w-[110px] overflow-visible">
                 <HeaderFilter label="Tier" columnKey="tier" uniqueValues={uniqueTiers} activeFilters={activeFilters} onApplyFilter={handleApplyFilter} sortConfig={sortConfig} onSort={handleSort} />
               </TableHead>
               <TableHead className="w-[110px] overflow-visible">
                 <HeaderFilter label="Score" columnKey="score" uniqueValues={uniqueScores} activeFilters={activeFilters} onApplyFilter={handleApplyFilter} sortConfig={sortConfig} onSort={handleSort} isNumeric={true} />
               </TableHead>
 
-              {/* Round 1 & 2 */}
-              {round !== 3 && (
-                <TableHead className="w-[155px] overflow-visible">
-                  <HeaderFilter label="Demo-AI Review" columnKey="review_cat" uniqueValues={uniqueReviewCats} activeFilters={activeFilters} onApplyFilter={handleApplyFilter} sortConfig={sortConfig} onSort={handleSort} />
-                </TableHead>
-              )}
-              {showTechEvaluatorFilter && round !== 3 && (
-                <TableHead className="w-[180px] overflow-visible">
-                  <HeaderFilter label="Technical Reviewer" columnKey="clan" uniqueValues={uniqueClans} activeFilters={activeFilters} onApplyFilter={handleApplyFilter} sortConfig={sortConfig} onSort={handleSort} />
-                </TableHead>
-              )}
-              {round === 2 && (
-                <TableHead className="w-[150px] overflow-visible">Contact Status</TableHead>
-              )}
-              {round !== 3 && (
-                <TableHead className="w-[155px] overflow-visible">
-                  <HeaderFilter label={round === 2 ? "Decision" : "Status"} columnKey="status" uniqueValues={uniqueStatuses} activeFilters={activeFilters} onApplyFilter={handleApplyFilter} sortConfig={sortConfig} onSort={handleSort} />
-                </TableHead>
-              )}
-
               {/* Round 3 specific */}
-              {round === 3 && (
-                <>
-                  <TableHead className="w-[180px] overflow-visible">
-                    <HeaderFilter label="TR Name" columnKey="clan" uniqueValues={uniqueClans} activeFilters={activeFilters} onApplyFilter={handleApplyFilter} sortConfig={sortConfig} onSort={handleSort} />
-                  </TableHead>
-                  <TableHead className="min-w-[240px] font-semibold">TR Comments</TableHead>
-                  <TableHead className="w-[120px] font-semibold">TR Decision</TableHead>
-                  <TableHead className="w-[160px] font-semibold">How long they can intern</TableHead>
-                </>
-              )}
+              <TableHead className="w-[160px] overflow-visible">
+                <HeaderFilter label="TR Name" columnKey="clan" uniqueValues={uniqueClans} activeFilters={activeFilters} onApplyFilter={handleApplyFilter} sortConfig={sortConfig} onSort={handleSort} />
+              </TableHead>
+              <TableHead className="min-w-[240px] font-semibold">TR Comments</TableHead>
+              <TableHead className="w-[120px] font-semibold">TR Decision</TableHead>
+              <TableHead className="w-[160px] font-semibold">Intern Duration</TableHead>
               
-              <TableHead className="w-[150px] text-right font-semibold pr-6">Review</TableHead>
+              <TableHead className="w-[120px] text-right font-semibold pr-6">Review</TableHead>
               
-              {round === 3 && (
-                <TableHead className="w-[155px] overflow-visible">
-                  <HeaderFilter label="Final Status" columnKey="status" uniqueValues={uniqueStatuses} activeFilters={activeFilters} onApplyFilter={handleApplyFilter} sortConfig={sortConfig} onSort={handleSort} />
-                </TableHead>
-              )}
+              <TableHead className="w-[155px] overflow-visible">
+                <HeaderFilter label="Final Status" columnKey="status" uniqueValues={uniqueStatuses} activeFilters={activeFilters} onApplyFilter={handleApplyFilter} sortConfig={sortConfig} onSort={handleSort} />
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {sortedAndFiltered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={round === 3 ? 10 : (round === 2 ? (showTechEvaluatorFilter ? 9 : 8) : (showTechEvaluatorFilter ? 8 : 7))} className="text-center py-10 text-muted-foreground font-mono text-sm">
+                <TableCell colSpan={10} className="text-center py-10 text-muted-foreground font-mono text-sm">
                   No applicants matching active selection filters.
                 </TableCell>
               </TableRow>
@@ -562,13 +486,9 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
                   </Badge>
                 );
 
-                // Review Cat formatting
-                const cat = getEval1(cand, 'review_cat') || 'N/A';
-                let catBadge = <Badge variant="secondary" className="rounded-full px-2 py-0.5">{cat}</Badge>;
-                if (cat === 'Strong') catBadge = <Badge className="bg-emerald-600 text-white border-transparent rounded-full px-2 py-0.5">Strong</Badge>;
-                else if (cat === 'Good') catBadge = <Badge className="bg-blue-600 text-white border-transparent rounded-full px-2 py-0.5">Good</Badge>;
-                else if (cat === 'Need Clarity') catBadge = <Badge className="bg-orange-500 text-white border-transparent rounded-full px-2 py-0.5">Need Clarity</Badge>;
-                else if (cat === 'Invalid') catBadge = <Badge variant="destructive" className="rounded-full px-2 py-0.5">Invalid</Badge>;
+                const r2val = cand.round_2_evaluation;
+                const r2 = Array.isArray(r2val) ? (r2val[0] || {}) : (r2val || {});
+                const trComment = r2.demo_review_comment || '';
 
                 return (
                   <TableRow key={cand.id} className="hover:bg-muted/20 border-b transition-colors duration-200">
@@ -583,57 +503,13 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
                       {getEval1(cand, 'total') || 0}
                     </TableCell>
 
-                    {/* Round 1 & 2 Specific */}
-                    {round !== 3 && <TableCell>{catBadge}</TableCell>}
-                    {showTechEvaluatorFilter && round !== 3 && (
-                      <TableCell className="py-2">
-                        {round === 1 ? (
-                          <select
-                            value={getEval1(cand, 'eval_group') || 'None'}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              onUpdateTechEvaluator?.(cand.id, val === 'None' ? null : val);
-                            }}
-                            className="h-8 w-24 text-xs bg-card border rounded-md px-1 focus:outline-none focus:ring-1 focus:ring-[#800020] font-semibold text-[#800020] border-[#800020]/20"
-                          >
-                            <option value="None">None</option>
-                            <option value="Tejaswini">Tejaswini</option>
-                            <option value="Sohan">Sohan</option>
-                            <option value="Basvaraj">Basvaraj</option>
-                            <option value="Pushkaraj">Pushkaraj</option>
-                            <option value="Akash">Akash</option>
-                            <option value="Anmol">Anmol</option>
-                            <option value="Sachin">Sachin</option>
-                            <option value="Akhil L">Akhil L</option>
-                            <option value="Vedant">Vedant</option>
-                            <option value="Akhil M">Akhil M</option>
-                            <option value="Samit">Samit</option>
-                            <option value="Snehanshu">Snehanshu</option>
-                            <option value="Ankita">Ankita</option>
-                            <option value="Kaushik">Kaushik</option>
-                            <option value="Aman">Aman</option>
-                          </select>
-                        ) : (
-                          <Badge variant="outline" className="font-semibold text-[11px] border-primary/20 text-[#800020] bg-primary/5 rounded-full px-2">
-                            {getEval1(cand, 'eval_group') || 'None'}
-                          </Badge>
-                        )}
-                      </TableCell>
-                    )}
-                    {round === 2 && (
-                      <TableCell>
-                        {cand.round_2_evaluation?.[0]?.contact_status || cand.round_2_evaluation?.contact_status || 'Pending'}
-                      </TableCell>
-                    )}
-                    {round !== 3 && <TableCell>{statusBadge}</TableCell>}
-
-                    {/* Round 3 Specific */}
-                    {round === 3 && (() => {
+                    {/* Round 3 Specific Fields */}
+                    {(() => {
                       const r2val = cand.round_2_evaluation;
                       const r2 = Array.isArray(r2val) ? (r2val[0] || {}) : (r2val || {});
                       const trComment = r2.demo_review_comment || '';
                       const trDecision = r2.moved_to_round_3 || '';
-                      const duration = r2.duration_months || '';
+                      const duration = r2.when_can_they_start || '';
                       return (
                         <>
                           <TableCell>
@@ -658,13 +534,13 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
 
                     {/* Actions (Review Worksheet) */}
                     <TableCell className="text-right pr-6">
-                      <Button variant="outline" size="sm" onClick={() => onSelectCandidate(cand)} className="h-8 shadow-sm font-semibold rounded-lg text-[#800020] border-[#800020]/20 hover:bg-[#800020] hover:text-white transition-all">
-                        {round === 1 ? 'Evaluate' : round === 2 ? 'Review' : 'Final Verdict'}
+                      <Button variant="outline" size="sm" onClick={() => onSelectCandidate(cand)} className="h-8 shadow-sm font-semibold rounded-lg text-primary border-primary/20 hover:bg-primary hover:text-primary-foreground transition-all">
+                        Final Verdict
                       </Button>
                     </TableCell>
 
                     {/* Round 3 Final Status */}
-                    {round === 3 && <TableCell>{statusBadge}</TableCell>}
+                    <TableCell>{statusBadge}</TableCell>
     </TableRow>
                 );
               })

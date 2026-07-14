@@ -485,7 +485,7 @@ export default function CandidateProfileDossier({ candidate, round, onSave, onCa
                       <SelectContent>
                         <SelectGroup>
                           <SelectItem value="Yes">Yes (Round 2)</SelectItem>
-                          <SelectItem value="Reject">Reject</SelectItem>
+                          <SelectItem value="No">No</SelectItem>
                           <SelectItem value="Maybe">Maybe</SelectItem>
                           <SelectItem value="Access requested">Access requested</SelectItem>
                         </SelectGroup>
