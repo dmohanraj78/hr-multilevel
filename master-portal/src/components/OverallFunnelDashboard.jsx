@@ -976,7 +976,9 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
 
       // Write Row 3 (values)
       sheet.getRow(3).height = 20;
-      const statsVals = [totalApplicants, t1, t1Plus, t2, t2Plus, t3, t4, parseFloat(avgScore.toFixed(1)), topScore, medianScore, fMovedToR2, fR2Evaluated, fRejected, fPending];
+      // Generation stamp so a stale download is immediately recognisable
+      const generatedAt = `${new Date().toLocaleDateString('en-CA')} ${new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
+      const statsVals = [totalApplicants, t1, t1Plus, t2, t2Plus, t3, t4, parseFloat(avgScore.toFixed(1)), topScore, medianScore, fMovedToR2, fR2Evaluated, fRejected, fPending, generatedAt];
       statsVals.forEach((val, idx) => {
         const colLetter = String.fromCharCode(65 + idx); // A to J
         const cell = unshareStyle(sheet.getCell(`${colLetter}3`));
@@ -994,7 +996,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
 
       // Write Row 4 (labels)
       sheet.getRow(4).height = 18;
-      const statsLabels = ["Applicants", "Tier 1", "Tier 1+", "Tier 2", "Tier 2+", "Tier 3", "Tier 4", "Avg Total", "Top Score", "Median", "Moved to R2", "R2 Evaluated", "Rejected", "Pending"];
+      const statsLabels = ["Applicants", "Tier 1", "Tier 1+", "Tier 2", "Tier 2+", "Tier 3", "Tier 4", "Avg Total", "Top Score", "Median", "Moved to R2", "R2 Evaluated", "Rejected", "Pending", "Generated"];
       statsLabels.forEach((label, idx) => {
         const colLetter = String.fromCharCode(65 + idx);
         const cell = unshareStyle(sheet.getCell(`${colLetter}4`));
@@ -1088,7 +1090,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
         const r2Decision = (r2.moved_to_round_3 || '').replace('_draft', '').trim().toLowerCase();
         if (['yes', 'promoted'].includes(r2Decision)) return 0;
         if (r2Decision === 'maybe') return 1;
-        if (r2Decision === 'no') return 2;
+        if (r2Decision === 'no' || r2Decision === 'declined') return 2;
         if (r2.id !== undefined && r2.id !== null) return 3; // vetting started, no decision yet
         return 4; // no R2 record at all
       };
@@ -1189,7 +1191,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
             } else if (['maybe'].includes(valStr)) {
               cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF3CD' } };
               cell.font = { name: 'Segoe UI', size: 9.5, color: { argb: 'FF856404' }, bold: true };
-            } else if (['no', 'invalid'].includes(valStr) || valStr.startsWith('reject')) {
+            } else if (['no', 'invalid', 'declined'].includes(valStr) || valStr.startsWith('reject')) {
               cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8D7DA' } };
               cell.font = { name: 'Segoe UI', size: 9.5, color: { argb: 'FF721C24' }, bold: true };
             } else {

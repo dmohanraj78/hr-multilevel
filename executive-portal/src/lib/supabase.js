@@ -25,14 +25,27 @@ export const updateCredentials = (url, key) => {
   window.location.reload();
 };
 
+// PostgREST caps every request at 1000 rows. The funnel tables keep growing,
+// so page through with .range() — otherwise the app silently truncates once a
+// table crosses 1000 rows and the frontend drifts out of sync with Supabase.
+const PAGE_SIZE = 1000;
+const fetchAllRows = async (buildQuery) => {
+  const all = [];
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await buildQuery().range(from, from + PAGE_SIZE - 1);
+    if (error) throw error;
+    all.push(...(data || []));
+    if (!data || data.length < PAGE_SIZE) break;
+  }
+  return all;
+};
+
 // App 1 (Recruiter): Fetch from round_1_evaluation and join raw_submissions
 export const fetchCandidates = async () => {
-  const { data, error } = await supabase
+  return fetchAllRows(() => supabase
     .from('round_1_evaluation')
     .select('*, raw_submissions(*)')
-    .order('id', { ascending: true });
-  if (error) throw error;
-  return data || [];
+    .order('id', { ascending: true }));
 };
 
 // App 1 Update: Update round_1_evaluation row
@@ -52,21 +65,18 @@ export const upsertRound1 = async (id, r1Data) => {
 // App 2 (Evaluator): Fetch round_1_evaluation candidates passed screening, with raw_submissions & round_2_evaluation
 export const fetchRound2Candidates = async () => {
   // 1. Fetch screening passed candidates
-  const { data: r1Data, error: r1Error } = await supabase
+  const r1Data = await fetchAllRows(() => supabase
     .from('round_1_evaluation')
     .select('*, raw_submissions(*)')
     .eq('app_status', 'Yes')
-    .order('id', { ascending: true });
-    
-  if (r1Error) throw r1Error;
+    .order('id', { ascending: true }));
   if (!r1Data || r1Data.length === 0) return [];
 
   // 2. Fetch all tech review records (round_2_evaluation)
-  const { data: r2Data, error: r2Error } = await supabase
+  const r2Data = await fetchAllRows(() => supabase
     .from('round_2_evaluation')
-    .select('*');
-    
-  if (r2Error) throw r2Error;
+    .select('*')
+    .order('id', { ascending: true }));
 
   // 3. Map tech review by ID and merge in JS to bypass relationship restrictions
   const r2Map = {};
@@ -106,25 +116,23 @@ export const upsertRound2 = async (id, r2Data) => {
 // App 3 (Executive): Fetch round_1_evaluation with raw_submissions, round_2_evaluation, round_3_evaluation
 export const fetchRound3Candidates = async () => {
   // 1. Fetch round 1 screening and raw submission details
-  const { data: r1Data, error: r1Error } = await supabase
+  const r1Data = await fetchAllRows(() => supabase
     .from('round_1_evaluation')
     .select('*, raw_submissions(*)')
-    .order('id', { ascending: true });
-    
-  if (r1Error) throw r1Error;
+    .order('id', { ascending: true }));
   if (!r1Data || r1Data.length === 0) return [];
 
   // 2. Fetch round 2 tech review records
-  const { data: r2Data, error: r2Error } = await supabase
+  const r2Data = await fetchAllRows(() => supabase
     .from('round_2_evaluation')
-    .select('*');
-  if (r2Error) throw r2Error;
+    .select('*')
+    .order('id', { ascending: true }));
 
   // 3. Fetch round 3 final verdict records
-  const { data: r3Data, error: r3Error } = await supabase
+  const r3Data = await fetchAllRows(() => supabase
     .from('round_3_evaluation')
-    .select('*');
-  if (r3Error) throw r3Error;
+    .select('*')
+    .order('id', { ascending: true }));
 
   // 4. Map and merge relationally on client-side
   const r2Map = {};

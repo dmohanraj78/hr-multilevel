@@ -131,7 +131,7 @@ def build_excel_report():
             sub = 0
         elif r2_decision == "maybe":
             sub = 1
-        elif r2_decision == "no":
+        elif r2_decision in ["no", "declined"]:
             sub = 2
         elif r2.get("id") is not None:
             sub = 3  # vetting started, no decision yet
@@ -222,8 +222,10 @@ def build_excel_report():
     f_maybe = sum(1 for cand in candidates if _r1_status(cand) == "maybe")
     f_pending = total_applicants - f_moved_to_r2 - f_rejected - f_maybe
 
-    stats_vals = [total_applicants, t1, t1_plus, t2, t2_plus, t3, t4, round(avg_score, 1), top_score, median_score, f_moved_to_r2, f_r2_evaluated, f_rejected, f_pending]
-    stats_labels = ["Applicants", "Tier 1", "Tier 1+", "Tier 2", "Tier 2+", "Tier 3", "Tier 4", "Avg Total", "Top Score", "Median", "Moved to R2", "R2 Evaluated", "Rejected", "Pending"]
+    # Generation stamp so a stale report is immediately recognisable
+    generated_at = datetime.now().strftime("%Y-%m-%d %H:%M")
+    stats_vals = [total_applicants, t1, t1_plus, t2, t2_plus, t3, t4, round(avg_score, 1), top_score, median_score, f_moved_to_r2, f_r2_evaluated, f_rejected, f_pending, generated_at]
+    stats_labels = ["Applicants", "Tier 1", "Tier 1+", "Tier 2", "Tier 2+", "Tier 3", "Tier 4", "Avg Total", "Top Score", "Median", "Moved to R2", "R2 Evaluated", "Rejected", "Pending", "Generated"]
 
     thin_border = Border(
         left=Side(style='thin', color='D9D9D9'),
@@ -529,7 +531,7 @@ def build_excel_report():
                 elif val_str in ["maybe"]:
                     cell.fill = amber_fill
                     cell.font = amber_font
-                elif val_str in ["no", "invalid"] or val_str.startswith("reject"):
+                elif val_str in ["no", "invalid", "declined"] or val_str.startswith("reject"):
                     cell.fill = red_fill
                     cell.font = red_font
                 else:
