@@ -24,6 +24,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests openpyxl
 
+      - name: Data quality guard (dedupe, full-form tiers, Pending defaults)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          python fix_tier_and_dups.py
+
       - name: Generate and Send EOD Report
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}

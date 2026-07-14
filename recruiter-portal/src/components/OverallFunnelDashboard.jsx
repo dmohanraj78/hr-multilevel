@@ -263,7 +263,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
   // 2. Chart Calculations — use evaluatedCandidates so Technical Reviewer counts reflect actual eval records
   const chartData = useMemo(() => {
     const clans = { Tejaswini: 0, Sohan: 0, Basvaraj: 0, Pushkaraj: 0, Akash: 0, Anmol: 0, Sachin: 0, 'Akhil L': 0, Vedant: 0, 'Akhil M': 0, Samit: 0, Snehanshu: 0, Ankita: 0, Kaushik: 0, Unassigned: 0 };
-    const tiers = { 'Tier 1+': 0, 'Tier 1': 0, 'Tier 2+': 0, 'Tier 2': 0, 'Tier 3': 0, 'Tier 4': 0, 'N/A': 0 };
+    const tiers = { 'Tier 1+': 0, 'Tier 1': 0, 'Tier 2+': 0, 'Tier 2': 0, 'Tier 3': 0, 'Tier 4': 0 };
     const scores = { '0-5': 0, '6-10': 0, '11-15': 0, '16-20': 0, '21-25': 0, '26-30': 0 };
 
     evaluatedCandidates.forEach(c => {
@@ -279,7 +279,6 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       tier = TIER_FULL[tier] || tier;
 
       if (tiers[tier] !== undefined) tiers[tier]++;
-      else tiers['N/A']++;
 
       const score = parseFloat(r1.total || 0);
       if (score >= 26) scores['26-30']++;
@@ -502,9 +501,6 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
             <strong className="text-[#800020]">{rawTotal} applications</strong> processed · {duplicatesRemoved} duplicates removed · v2 rubric (max score 30)
           </p>
         </div>
-        <Button onClick={exportToCSV} className="bg-[#800020] hover:bg-[#800020]/90 text-white rounded-xl shadow-md shrink-0">
-          <Download className="mr-2 h-4 w-4 stroke-[1.5]" /> Export Filtered ({deduplicatedFiltered.length}) Records (CSV)
-        </Button>
       </div>
 
       {/* Tiles Metrics Grid */}
