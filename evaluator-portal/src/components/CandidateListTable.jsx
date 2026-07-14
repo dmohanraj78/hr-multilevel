@@ -245,7 +245,8 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
     score: (c) => parseFloat(getEval1(c, 'total') || 0),
     review_cat: (c) => getEval1(c, 'review_cat') || 'N/A',
     status: (c) => getStatusInfo(c).text,
-    clan: (c) => getEval1(c, 'eval_group') || 'None'
+    clan: (c) => getEval1(c, 'eval_group') || 'None',
+    r1Comments: (c) => getEval1(c, 'review_comments') || '-'
   };
 
   // Helper to extract unique values for dropdowns
@@ -265,6 +266,7 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
   const uniqueReviewCats = useMemo(() => getUniqueValues('review_cat', getCandValue.review_cat), [candidates]);
   const uniqueStatuses = useMemo(() => getUniqueValues('status', getCandValue.status), [candidates]);
   const uniqueClans = useMemo(() => getUniqueValues('clan', getCandValue.clan), [candidates]);
+  const uniqueR1Comments = useMemo(() => getUniqueValues('r1Comments', getCandValue.r1Comments), [candidates]);
 
   // Apply filters
   const handleApplyFilter = (columnKey, selectedValues) => {
@@ -305,10 +307,11 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
       if (activeFilters.review_cat && !activeFilters.review_cat.includes(getEval1(cand, 'review_cat') || 'N/A')) return false;
       if (activeFilters.status && !activeFilters.status.includes(getStatusInfo(cand).text)) return false;
       if (showTechEvaluatorFilter && activeFilters.clan && !activeFilters.clan.includes(getEval1(cand, 'eval_group') || 'None')) return false;
+      if (round === 2 && activeFilters.r1Comments && !activeFilters.r1Comments.includes(getEval1(cand, 'review_comments') || '-')) return false;
 
       return true;
     });
-  }, [candidates, search, activeFilters, showTechEvaluatorFilter]);
+  }, [candidates, search, activeFilters, showTechEvaluatorFilter, round]);
 
   // Sorting logic
   const sortedAndFiltered = useMemo(() => {
@@ -527,13 +530,26 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
                   />
                 </TableHead>
               )}
+              {round === 2 && (
+                <TableHead className="w-[220px] overflow-visible">
+                  <HeaderFilter
+                    label="R1 Comments"
+                    columnKey="r1Comments"
+                    uniqueValues={uniqueR1Comments}
+                    activeFilters={activeFilters}
+                    onApplyFilter={handleApplyFilter}
+                    sortConfig={sortConfig}
+                    onSort={handleSort}
+                  />
+                </TableHead>
+              )}
               <TableHead className="w-[150px] text-right font-semibold pr-6">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {sortedAndFiltered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={showTechEvaluatorFilter ? 9 : 8} className="text-center py-10 text-muted-foreground font-mono text-sm">
+                <TableCell colSpan={showTechEvaluatorFilter ? 9 : (round === 2 ? 9 : 8)} className="text-center py-10 text-muted-foreground font-mono text-sm">
                   No applicants matching active selection filters.
                 </TableCell>
               </TableRow>
@@ -602,6 +618,11 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
                             {getEval1(cand, 'eval_group') || 'None'}
                           </Badge>
                         )}
+                      </TableCell>
+                    )}
+                    {round === 2 && (
+                      <TableCell className="max-w-[220px] text-xs text-muted-foreground whitespace-pre-wrap font-medium">
+                        {getEval1(cand, 'review_comments') || '-'}
                       </TableCell>
                     )}
                     <TableCell className="text-right pr-6">
