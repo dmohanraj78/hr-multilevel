@@ -844,14 +844,9 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
         // Delete columns from template to match new structure
         try {
           // Delete "R1 Interview Priority" (Column 37)
-          sheet.deleteColumn(37);
-          // Delete "Tier" under Round 2 Inputs (was Column 40, now Column 39)
-          sheet.deleteColumn(39);
-          
-          // Purge any trailing columns beyond 46 to ensure no leftover template data
-          while (sheet.columnCount > 46) {
-            sheet.deleteColumn(47);
-          }
+          sheet.spliceColumns(37, 1);
+          // Delete "Tier" under Round 2 Inputs (was Column 47, now Column 46 after deleting column 37)
+          sheet.spliceColumns(46, 1);
         } catch (err) {
           console.error("Failed to delete columns from template:", err);
         }
