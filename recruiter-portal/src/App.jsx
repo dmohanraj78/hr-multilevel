@@ -482,7 +482,6 @@ export default function App() {
                       <TabsTrigger value="good" className="font-mono text-xs px-3 py-1.5 data-[state=active]:bg-[#800020] data-[state=active]:text-white">Good ({categories.good.length})</TabsTrigger>
                       <TabsTrigger value="clarity" className="font-mono text-xs px-3 py-1.5 data-[state=active]:bg-[#800020] data-[state=active]:text-white">Need Clarity ({categories.clarity.length})</TabsTrigger>
                       <TabsTrigger value="invalid" className="font-mono text-xs px-3 py-1.5 data-[state=active]:bg-[#800020] data-[state=active]:text-white">Invalid ({categories.invalid.length})</TabsTrigger>
-                      <TabsTrigger value="declined" className="font-mono text-xs px-3 py-1.5 data-[state=active]:bg-[#800020] data-[state=active]:text-white">Declined ({categories.declined.length})</TabsTrigger>
                     </TabsList>
                   </div>
 
@@ -582,16 +581,7 @@ export default function App() {
                     />
                   </TabsContent>
 
-                  <TabsContent value="declined" className="mt-0">
-                    <CandidateListTable
-                      candidates={categories.declined}
-                      actionLabel="Review"
-                      onActionClick={(cand) => setSelectedCandidate(cand)}
-                      showTechEvaluatorFilter={true}
-                      round={1}
-                      onUpdateTechEvaluator={handleUpdateTechEvaluator}
-                    />
-                  </TabsContent>
+
 
                   <TabsContent value="unscreened" className="mt-0">
                     <CandidateListTable
