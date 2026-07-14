@@ -313,7 +313,7 @@ export default function App() {
   }, []);
   const deduplicatedCount = deduplicatedCandidates.length;
 
-  const overallTiers = { 'Tier 1+': 0, 'Tier 1': 0, 'Tier 2+': 0, 'Tier 2': 0, 'Tier 3': 0, 'T4': 0, 'N/A': 0 };
+  const overallTiers = { 'Tier 1+': 0, 'Tier 1': 0, 'Tier 2+': 0, 'Tier 2': 0, 'Tier 3': 0, 'Tier 4': 0, 'N/A': 0 };
   deduplicatedCandidates.forEach(cand => {
     let tier = getR1(cand).tier || 'N/A';
     if (tier === 'T1+') tier = 'Tier 1+';
@@ -321,7 +321,7 @@ export default function App() {
     else if (tier === 'T2+') tier = 'Tier 2+';
     else if (tier === 'T2') tier = 'Tier 2';
     else if (tier === 'T3') tier = 'Tier 3';
-    else if (tier === 'T4') tier = 'T4';
+    else if (tier === 'T4') tier = 'Tier 4';
     overallTiers[tier] = (overallTiers[tier] || 0) + 1;
   });
 
