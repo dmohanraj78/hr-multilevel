@@ -218,12 +218,16 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
   // Funnel Stage Determinator
   const getFunnelStage = (c) => {
     const r1 = getR1(c);
+    const r2 = getR2(c);
     const r3 = getR3(c);
 
     if (['Yes', 'Hired'].includes(r3.verdict)) return 'Hired';
     if (['No', 'Rejected'].includes(r3.verdict)) return 'Rejected';
     
-    if (r1.app_status === 'Reject') return 'Declined (Review)';
+    if (r2.moved_to_round_3 === 'Declined') return 'Declined';
+    if (r2.moved_to_round_3 === 'No') return 'Rejected';
+    
+    if (r1.app_status === 'Reject') return 'Rejected';
     if (r1.app_status === 'Yes') return 'Tech Review';
     if (r1.app_status === 'Maybe') return 'Maybe (Reviewed)';
     if (r1.app_status === 'Duplicate') return 'Duplicate';
@@ -260,20 +264,19 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     let review = 0;
     let pendingScreening = 0;
     let maybeCount = 0;
+    let declinedCount = 0;
 
     evaluatedCandidates.forEach(c => {
-      const r1 = getR1(c);
-      const status = r1.app_status || 'Pending';
-      if (status === 'Yes') review++;
-      else if (status === 'Reject') rejected++;
-      else if (status === 'Maybe') maybeCount++;
-      else pendingScreening++;
+      const stage = getFunnelStage(c);
+      if (stage === 'Hired') hired++;
+      else if (stage === 'Rejected') rejected++;
+      else if (stage === 'Declined') declinedCount++;
+      else if (stage === 'Tech Review') review++;
+      else if (stage === 'Maybe (Reviewed)') maybeCount++;
+      else if (stage === 'Pending Review') pendingScreening++;
     });
 
-    // Hired count is candidates in round_3_evaluation with verdict === 'Yes'
-    hired = evaluatedCandidates.filter(c => ['Yes', 'Hired'].includes(getR3(c).verdict)).length;
-
-    return { total, hired, rejected, review, pendingScreening, maybeCount };
+    return { total, hired, rejected, review, pendingScreening, maybeCount, declined: declinedCount };
   }, [evaluatedCandidates, evaluatedCount]);
 
   // 2. Chart Calculations — use evaluatedCandidates so Technical Reviewer counts reflect actual eval records
@@ -421,14 +424,20 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
         next.funnelStage = ['Hired'];
       } else if (stageType === 'Review') {
         next.funnelStage = ['Tech Review'];
+      } else if (stageType === 'Rejected') {
+        next.funnelStage = ['Rejected'];
       } else if (stageType === 'Declined') {
-        next.funnelStage = ['Declined (Offer)', 'Declined (Review)'];
+        next.funnelStage = ['Declined'];
       } else if (stageType === 'Pending') {
         next.funnelStage = ['Pending Review'];
       }
       return next;
     });
-    onTileClick?.(stageType);
+    if (stageType === 'Rejected') {
+      onTileClick?.('Declined');
+    } else {
+      onTileClick?.(stageType);
+    }
   };
 
   const getActiveTile = () => {
@@ -437,7 +446,8 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     if (fs.includes('Hired') && fs.length === 1) return 'Hired';
     if (fs.includes('Tech Review') && fs.length === 1) return 'Review';
     if (fs.includes('Pending Review') && fs.length === 1) return 'Pending';
-    if (fs.includes('Declined (Offer)')) return 'Declined';
+    if (fs.includes('Rejected') && fs.length === 1) return 'Rejected';
+    if (fs.includes('Declined') && fs.length === 1) return 'Declined';
     return 'CUSTOM';
   };
 
@@ -1322,7 +1332,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       </div>
 
       {/* Tiles Metrics Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         
         {/* Total Tile */}
         <Card 
@@ -1383,7 +1393,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
           }`}
         >
           <CardContent className="pt-4 pb-3 flex flex-col gap-1">
-            <span className="text-xs font-mono text-amber-700 dark:text-amber-400 uppercase tracking-wider block">Pending Review</span>
+            <span className="text-xs font-mono text-amber-700 dark:text-amber-400 uppercase tracking-wider block">Pending for manual review</span>
             <div className="flex items-baseline justify-between mt-1">
               <span className="text-3xl font-extrabold font-mono text-amber-600 dark:text-amber-400">{stats.pendingScreening}</span>
               <HelpCircle className="h-5 w-5 text-amber-500 stroke-[1.5]" />
@@ -1394,9 +1404,9 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
 
         {/* Rejected Tile */}
         <Card 
-          onClick={() => handleTileClick('Declined')}
+          onClick={() => handleTileClick('Rejected')}
           className={`rounded-2xl border border-red-500/20 bg-red-500/5 shadow-sm hover:shadow-md transition-all cursor-pointer hover:scale-[1.02] ${
-            currentActiveTile === 'Declined' ? 'ring-2 ring-red-500 border-transparent' : ''
+            currentActiveTile === 'Rejected' ? 'ring-2 ring-red-500 border-transparent' : ''
           }`}
         >
           <CardContent className="pt-4 pb-3 flex flex-col gap-1">
@@ -1406,6 +1416,23 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
               <XOctagon className="h-5 w-5 text-red-500 stroke-[1.5]" />
             </div>
             <span className="text-[10px] text-red-600/80">No and declined in round 1</span>
+          </CardContent>
+        </Card>
+
+        {/* Declined Tile */}
+        <Card 
+          onClick={() => handleTileClick('Declined')}
+          className={`rounded-2xl border border-rose-500/20 bg-rose-500/5 shadow-sm hover:shadow-md transition-all cursor-pointer hover:scale-[1.02] ${
+            currentActiveTile === 'Declined' ? 'ring-2 ring-rose-500 border-transparent' : ''
+          }`}
+        >
+          <CardContent className="pt-4 pb-3 flex flex-col gap-1">
+            <span className="text-xs font-mono text-rose-700 dark:text-rose-400 uppercase tracking-wider block">Declined</span>
+            <div className="flex items-baseline justify-between mt-1">
+              <span className="text-3xl font-extrabold font-mono text-rose-600 dark:text-rose-400">{stats.declined}</span>
+              <XCircle className="h-5 w-5 text-rose-500 stroke-[1.5]" />
+            </div>
+            <span className="text-[10px] text-rose-600/80">Declined by candidate in R2</span>
           </CardContent>
         </Card>
 

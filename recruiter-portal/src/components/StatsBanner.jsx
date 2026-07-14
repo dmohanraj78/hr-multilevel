@@ -36,15 +36,21 @@ export default function StatsBanner({ candidates, round = 1, rawCount = 0 }) {
       return r2.moved_to_round_3 === 'Yes' || r2.moved_to_round_3 === 'Maybe';
     }).length;
 
+    const rejected = candidates.filter(c => {
+      const r2 = getR2(c);
+      return r2.moved_to_round_3 === 'No';
+    }).length;
+
     const declined = candidates.filter(c => {
       const r2 = getR2(c);
-      return r2.moved_to_round_3 === 'No' || r2.moved_to_round_3 === 'Declined';
+      return r2.moved_to_round_3 === 'Declined';
     }).length;
 
     stats = [
       { title: 'Total in Review', value: total, icon: Users, color: 'text-blue-500 bg-blue-500/10' },
       { title: 'Promoted (R3)', value: promoted, icon: CheckCircle2, color: 'text-green-500 bg-green-500/10' },
       { title: 'Pending Review', value: pendingReview, icon: Hourglass, color: 'text-amber-500 bg-amber-500/10' },
+      { title: 'Review Rejected', value: rejected, icon: XCircle, color: 'text-red-500 bg-red-500/10' },
       { title: 'Review Declined', value: declined, icon: XCircle, color: 'text-red-500 bg-red-500/10' }
     ];
   } else if (round === 3) {
@@ -88,7 +94,7 @@ export default function StatsBanner({ candidates, round = 1, rawCount = 0 }) {
     stats = [
       { title: 'Applications Evaluated', value: total, icon: Users, color: 'text-blue-500 bg-blue-500/10', subtitle: 'in round_1_evaluation table' },
       { title: 'HR Round Cleared', value: approvedR1, icon: CheckCircle2, color: 'text-green-500 bg-green-500/10' },
-      { title: 'Pending Reviews', value: pendingScreen, icon: Hourglass, color: 'text-amber-500 bg-amber-500/10' },
+      { title: 'Pending for manual review', value: pendingScreen, icon: Hourglass, color: 'text-amber-500 bg-amber-500/10' },
       { title: 'Rejected Submissions', value: rejected, icon: XCircle, color: 'text-red-500 bg-red-500/10' }
     ];
   }
