@@ -847,6 +847,11 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
           sheet.deleteColumn(37);
           // Delete "Tier" under Round 2 Inputs (was Column 40, now Column 39)
           sheet.deleteColumn(39);
+          
+          // Purge any trailing columns beyond 46 to ensure no leftover template data
+          while (sheet.columnCount > 46) {
+            sheet.deleteColumn(47);
+          }
         } catch (err) {
           console.error("Failed to delete columns from template:", err);
         }
