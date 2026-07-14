@@ -229,7 +229,7 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
   // Neutral pill for contact-status-style values
   const neutralBadge = (val) => {
     const v = String(val || '').trim() || 'Pending';
-    return <Badge variant="outline" className="rounded-full px-2.5 font-medium border-muted-foreground/30">{v}</Badge>;
+    return <Badge variant="outline" className="rounded-full px-2.5 font-bold border-muted-foreground/30">{v}</Badge>;
   };
 
   // Safe helper to extract status based on the current round
@@ -273,7 +273,8 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
     review_cat: (c) => getEval1(c, 'review_cat') || 'N/A',
     status: (c) => getStatusInfo(c).text,
     clan: (c) => getEval1(c, 'eval_group') || 'None',
-    tr_decision: (c) => getEval2(c, 'moved_to_round_3') || 'Pending'
+    tr_decision: (c) => getEval2(c, 'moved_to_round_3') || 'Pending',
+    contact_status: (c) => getEval2(c, 'contact_status') || 'Pending'
   };
 
   // Helper to extract unique values for dropdowns
@@ -294,6 +295,7 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
   const uniqueStatuses = useMemo(() => getUniqueValues('status', getCandValue.status), [candidates]);
   const uniqueClans = useMemo(() => getUniqueValues('clan', getCandValue.clan), [candidates]);
   const uniqueTrDecisions = useMemo(() => getUniqueValues('tr_decision', getCandValue.tr_decision), [candidates]);
+  const uniqueContactStatuses = useMemo(() => getUniqueValues('contact_status', getCandValue.contact_status), [candidates]);
 
   // Apply filters
   const handleApplyFilter = (columnKey, selectedValues) => {
@@ -335,6 +337,7 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
       if (activeFilters.status && !activeFilters.status.includes(getStatusInfo(cand).text)) return false;
       if (showTechEvaluatorFilter && activeFilters.clan && !activeFilters.clan.includes(getEval1(cand, 'eval_group') || 'None')) return false;
       if (activeFilters.tr_decision && !activeFilters.tr_decision.includes(getEval2(cand, 'moved_to_round_3') || 'Pending')) return false;
+      if (activeFilters.contact_status && !activeFilters.contact_status.includes(getEval2(cand, 'contact_status') || 'Pending')) return false;
 
       return true;
     });
@@ -543,7 +546,9 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
                 </TableHead>
               )}
               {round === 2 && (
-                <TableHead className="w-[150px] overflow-visible">Contact Status</TableHead>
+                <TableHead className="w-[160px] overflow-visible">
+                  <HeaderFilter label="Contact Status" columnKey="contact_status" uniqueValues={uniqueContactStatuses} activeFilters={activeFilters} onApplyFilter={handleApplyFilter} sortConfig={sortConfig} onSort={handleSort} />
+                </TableHead>
               )}
               {round !== 3 && (
                 <TableHead className="w-[155px] overflow-visible">
@@ -687,8 +692,8 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
 
                     {/* Actions (Review Worksheet) */}
                     <TableCell className="text-right pr-6">
-                      <Button variant="outline" size="sm" onClick={() => onSelectCandidate(cand)} className="h-8 shadow-sm font-semibold rounded-lg text-[#800020] border-[#800020]/20 hover:bg-[#800020] hover:text-white transition-all">
-                        {round === 1 ? 'Evaluate' : 'Review'}
+                      <Button variant="outline" size="sm" onClick={() => onActionClick(cand)} className="h-8 shadow-sm font-semibold rounded-lg text-[#800020] border-[#800020]/20 hover:bg-[#800020] hover:text-white transition-all">
+                        {round === 1 ? ((getEval1(cand, 'app_status') && getEval1(cand, 'app_status') !== 'Pending') ? 'Review' : 'Evaluate') : 'Review'}
                       </Button>
                     </TableCell>
 
