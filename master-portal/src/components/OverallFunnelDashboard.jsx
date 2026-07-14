@@ -922,15 +922,15 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
 
       // Calculate stats
       const totalApplicants = candidatesToExport.length;
-      let t1 = 0, t1Minus = 0, t2 = 0, t2Minus = 0, t3 = 0, t4 = 0;
+      let t1 = 0, t1Plus = 0, t2 = 0, t2Plus = 0, t3 = 0, t4 = 0;
       let scores = [];
       candidatesToExport.forEach(c => {
         const r1 = getR1(c);
         const tier = (r1.tier || '').trim().toUpperCase();
-        if (['T1', 'T1+', 'TIER 1', 'TIER 1+'].includes(tier)) t1++;
-        else if (['T1-', 'TIER 1-'].includes(tier)) t1Minus++;
-        else if (['T2', 'T2+', 'TIER 2', 'TIER 2+'].includes(tier)) t2++;
-        else if (['T2-', 'TIER 2-'].includes(tier)) t2Minus++;
+        if (['T1', 'TIER 1'].includes(tier)) t1++;
+        else if (['T1+', 'TIER 1+'].includes(tier)) t1Plus++;
+        else if (['T2', 'TIER 2'].includes(tier)) t2++;
+        else if (['T2+', 'TIER 2+'].includes(tier)) t2Plus++;
         else if (['T3', 'TIER 3'].includes(tier)) t3++;
         else if (['T4', 'TIER 4'].includes(tier)) t4++;
 
@@ -949,17 +949,26 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
 
       // Funnel reconciliation counts — these mirror the dashboard tiles and the
       // Supabase tables directly so the sheet's numbers can be sanity-checked
-      const fMovedToR2 = candidatesToExport.filter(c => (getR1(c).app_status || '').trim().toLowerCase() === 'yes').length;
+      const fMovedToR2 = candidatesToExport.filter(c => {
+        const status = (getR1(c).app_status || '').trim().toLowerCase();
+        return status === 'yes';
+      }).length;
       const fR2Evaluated = candidatesToExport.filter(c => {
         const r2 = getR2(c);
         return r2.id !== undefined && r2.id !== null;
       }).length;
-      const fRejected = candidatesToExport.filter(c => ['no', 'rejected', 'invalid', 'reject'].includes((getR1(c).app_status || '').trim().toLowerCase())).length;
-      const fPending = totalApplicants - fMovedToR2 - fRejected - candidatesToExport.filter(c => (getR1(c).app_status || '').trim().toLowerCase() === 'maybe').length;
+      const fRejected = candidatesToExport.filter(c => {
+        const status = (getR1(c).app_status || '').trim().toLowerCase();
+        return ['no', 'rejected', 'invalid', 'reject'].includes(status);
+      }).length;
+      const fPending = totalApplicants - fMovedToR2 - fRejected - candidatesToExport.filter(c => {
+        const status = (getR1(c).app_status || '').trim().toLowerCase();
+        return status === 'maybe';
+      }).length;
 
       // Write Row 3 (values)
       sheet.getRow(3).height = 20;
-      const statsVals = [totalApplicants, t1, t1Minus, t2, t2Minus, t3, t4, parseFloat(avgScore.toFixed(1)), topScore, medianScore, fMovedToR2, fR2Evaluated, fRejected, fPending];
+      const statsVals = [totalApplicants, t1, t1Plus, t2, t2Plus, t3, t4, parseFloat(avgScore.toFixed(1)), topScore, medianScore, fMovedToR2, fR2Evaluated, fRejected, fPending];
       statsVals.forEach((val, idx) => {
         const colLetter = String.fromCharCode(65 + idx); // A to J
         const cell = unshareStyle(sheet.getCell(`${colLetter}3`));
@@ -977,7 +986,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
 
       // Write Row 4 (labels)
       sheet.getRow(4).height = 18;
-      const statsLabels = ["Applicants", "Tier 1", "Tier 1-", "Tier 2", "Tier 2-", "Tier 3", "Tier 4", "Avg Total", "Top Score", "Median", "Moved to R2", "R2 Evaluated", "Rejected", "Pending"];
+      const statsLabels = ["Applicants", "Tier 1", "Tier 1+", "Tier 2", "Tier 2+", "Tier 3", "Tier 4", "Avg Total", "Top Score", "Median", "Moved to R2", "R2 Evaluated", "Rejected", "Pending"];
       statsLabels.forEach((label, idx) => {
         const colLetter = String.fromCharCode(65 + idx);
         const cell = unshareStyle(sheet.getCell(`${colLetter}4`));
@@ -999,15 +1008,15 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       // unMergeCells (capital M — exceljs API) dissolves every merge group
       // intersecting the range so the two new merges below cannot collide.
       try {
-        sheet.unMergeCells('A5:AV5');
+        sheet.unMergeCells('A5:AU5');
       } catch (e) {}
       // Three labelled sections: the candidate profile (A-AI), the columns the
-      // R1 reviewer fills (AJ-AM, ending at Status), and the R2 inputs (AN-AV) —
+      // R1 reviewer fills (AJ-AM, ending at Status), and the R2 inputs (AN-AU) —
       // so each label sits directly above its own columns.
       const row5Sections = [
         { range: 'A5:AI5', anchor: 'A5', label: 'Candidate Analysed Details', color: 'FF1F3864' },
         { range: 'AJ5:AM5', anchor: 'AJ5', label: 'Round 1 Inputs', color: 'FF2F5597' },
-        { range: 'AN5:AV5', anchor: 'AN5', label: 'Round 2 Inputs', color: 'FF0070C0' }
+        { range: 'AN5:AU5', anchor: 'AN5', label: 'Round 2 Inputs', color: 'FF0070C0' }
       ];
       row5Sections.forEach(({ range, anchor, label, color }) => {
         try {
@@ -1026,7 +1035,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
         "Substance", "Deploy", "Artifact", "Skills", "Domain", "Degree", "Stream", "College", "F_college", "F_University", 
         "Location", "AI Proj", "FS Proj", "Intern Mo", "Co.Tier", "Deploy Stage", "#Skills", "Claude Lvl", "AI/ML Exp", "Email", 
         "Résumé", "GitHub", "Demo", "Demo Explanation (their project)", "Demo Review Notes (AI)", "R1 Review", "R1 Interview Priority", "To be screened by", 
-        "Status", "Earliest date they can start the internship", "Any concerns / restrictions (with college commitment, personal, others)", "Technical depth of demo / product", "Tech stack used", "Problem-solution fit", "Areas like latency, cost, security, etc been considered", "Decision", "Tier", "Reason for decision (detailed notes)"
+        "Status", "Earliest date they can start the internship", "Any concerns / restrictions (with college commitment, personal, others)", "Technical depth of demo / product", "Tech stack used", "Problem-solution fit", "Areas like latency, cost, security, etc been considered", "Decision", "Reason for decision (detailed notes)"
       ];
 
       sheet.getRow(6).height = 24;
@@ -1136,20 +1145,17 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
           r1.review_comments || '-',
           r1.r1_interview_priority || '-',
           r1.eval_group || '-',
-          r1.app_status || '-', // Status (R2 Status)
-          r2.id ? (r2.when_can_they_start || '-') : '-',
-          r2.id ? (r2.complexity || '-') : '-',
-          r2.id ? (techDepth || '-') : '-',
-          r2.id ? (r2.tech_stack || '-') : '-',
-          r2.id ? (problemFit || '-') : '-',
-          r2.id ? (latency || '-') : '-',
-          // Decision column: carry the Round 1 rejection through so it is
-          // explicitly mentioned instead of showing '-'
-          r2.id && r2.moved_to_round_3
-            ? r2.moved_to_round_3.replace('_draft', '')
-            : (['no', 'rejected', 'invalid', 'reject'].includes((r1.app_status || '').trim().toLowerCase()) ? 'Rejected (R1)' : '-'),
-          "-", // Tier (R2 tier placeholder)
-          r2.id ? (r2.demo_review_comment || '-') : '-'
+          (r1.app_status && String(r1.app_status).trim() && !["-", "None"].includes(String(r1.app_status).trim())) ? r1.app_status : 'Pending',
+          r2.id ? (r2.when_can_they_start || 'NA') : '-',
+          r2.id ? (r2.complexity || 'NA') : '-',
+          r2.id ? (techDepth || 'NA') : '-',
+          r2.id ? (r2.tech_stack || 'NA') : '-',
+          r2.id ? (problemFit || 'NA') : '-',
+          r2.id ? (latency || 'NA') : '-',
+          r2.id
+            ? ((r2.moved_to_round_3 || 'Pending').replace('_draft', '') || 'Pending')
+            : (['no', 'rejected', 'invalid', 'reject'].includes((r1.app_status || '').trim().toLowerCase()) ? 'Rejected (R1)' : 'Pending'),
+          r2.id ? (r2.demo_review_comment || 'NA') : '-'
         ];
 
         rowData.forEach((val, idx) => {
@@ -1192,7 +1198,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       const widths = [
         6, 25, 10, 8, 12, 10, 8, 8, 8, 8, 8, 8, 8, 8, 20, 15, 20, 30, 30, 25,
         18, 10, 10, 10, 10, 18, 10, 15, 15, 30, 25, 25, 25, 35, 35, 30, 18, 18,
-        12, 18, 25, 18, 25, 15, 20, 12, 10, 35
+        12, 18, 25, 18, 25, 15, 20, 12, 35
       ];
       widths.forEach((w, idx) => {
         sheet.getColumn(idx + 1).width = w;

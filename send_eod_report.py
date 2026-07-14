@@ -172,9 +172,9 @@ def build_excel_report():
     # Statistics Calculation
     total_applicants = len(candidates)
     t1 = 0
-    t1_minus = 0
+    t1_plus = 0
     t2 = 0
-    t2_minus = 0
+    t2_plus = 0
     t3 = 0
     t4 = 0
     scores = []
@@ -182,14 +182,14 @@ def build_excel_report():
     for cand in candidates:
         r1 = cand["r1"]
         tier = str(r1.get("tier") or "").strip().upper()
-        if tier in ["T1", "T1+", "TIER 1", "TIER 1+"]:
+        if tier in ["T1", "TIER 1"]:
             t1 += 1
-        elif tier in ["T1-", "TIER 1-"]:
-            t1_minus += 1
-        elif tier in ["T2", "T2+", "TIER 2", "TIER 2+"]:
+        elif tier in ["T1+", "TIER 1+"]:
+            t1_plus += 1
+        elif tier in ["T2", "TIER 2"]:
             t2 += 1
-        elif tier in ["T2-", "TIER 2-"]:
-            t2_minus += 1
+        elif tier in ["T2+", "TIER 2+"]:
+            t2_plus += 1
         elif tier in ["T3", "TIER 3"]:
             t3 += 1
         elif tier in ["T4", "TIER 4"]:
@@ -209,15 +209,18 @@ def build_excel_report():
     # Funnel reconciliation counts — mirror the Supabase tables directly so the
     # sheet's numbers can be sanity-checked against the dashboard
     def _r1_status(cand):
-        return str(cand["r1"].get("app_status") or "").strip().lower()
+        status_val = str(cand["r1"].get("app_status") or "").strip().lower()
+        if not status_val or status_val in ["", "-", "none"]:
+            return "pending"
+        return status_val
     f_moved_to_r2 = sum(1 for cand in candidates if _r1_status(cand) == "yes")
     f_r2_evaluated = sum(1 for cand in candidates if cand["r2"].get("id") is not None)
     f_rejected = sum(1 for cand in candidates if _r1_status(cand) in ["no", "rejected", "invalid", "reject"])
     f_maybe = sum(1 for cand in candidates if _r1_status(cand) == "maybe")
     f_pending = total_applicants - f_moved_to_r2 - f_rejected - f_maybe
 
-    stats_vals = [total_applicants, t1, t1_minus, t2, t2_minus, t3, t4, round(avg_score, 1), top_score, median_score, f_moved_to_r2, f_r2_evaluated, f_rejected, f_pending]
-    stats_labels = ["Applicants", "Tier 1", "Tier 1-", "Tier 2", "Tier 2-", "Tier 3", "Tier 4", "Avg Total", "Top Score", "Median", "Moved to R2", "R2 Evaluated", "Rejected", "Pending"]
+    stats_vals = [total_applicants, t1, t1_plus, t2, t2_plus, t3, t4, round(avg_score, 1), top_score, median_score, f_moved_to_r2, f_r2_evaluated, f_rejected, f_pending]
+    stats_labels = ["Applicants", "Tier 1", "Tier 1+", "Tier 2", "Tier 2+", "Tier 3", "Tier 4", "Avg Total", "Top Score", "Median", "Moved to R2", "R2 Evaluated", "Rejected", "Pending"]
 
     thin_border = Border(
         left=Side(style='thin', color='D9D9D9'),
@@ -330,12 +333,12 @@ def build_excel_report():
                 pass
 
     # Three labelled sections: candidate profile (A-AI), the columns the R1
-    # reviewer fills (AJ-AM, ending at Status), and the R2 inputs (AN-AV) —
+    # reviewer fills (AJ-AM, ending at Status), and the R2 inputs (AN-AU) —
     # so each label sits directly above its own columns.
     row5_sections = [
         ('A5:AI5', 'A5', 'Candidate Analysed Details', '1F3864'),
         ('AJ5:AM5', 'AJ5', 'Round 1 Inputs', '2F5597'),
-        ('AN5:AV5', 'AN5', 'Round 2 Inputs', '0070C0'),
+        ('AN5:AU5', 'AN5', 'Round 2 Inputs', '0070C0'),
     ]
     for rng, anchor, label, color in row5_sections:
         ws.merge_cells(rng)
@@ -352,7 +355,7 @@ def build_excel_report():
             "Substance", "Deploy", "Artifact", "Skills", "Domain", "Degree", "Stream", "College", "F_college", "F_University", 
             "Location", "AI Proj", "FS Proj", "Intern Mo", "Co.Tier", "Deploy Stage", "#Skills", "Claude Lvl", "AI/ML Exp", "Email", 
             "Résumé", "GitHub", "Demo", "Demo Explanation (their project)", "Demo Review Notes (AI)", "R1 Review", "R1 Interview Priority", "To be screened by", 
-            "Status", "Earliest date they can start the internship", "Any concerns / restrictions (with college commitment, personal, others)", "Technical depth of demo / product", "Tech stack used", "Problem-solution fit", "Areas like latency, cost, security, etc been considered", "Decision", "Tier", "Reason for decision (detailed notes)"
+            "Status", "Earliest date they can start the internship", "Any concerns / restrictions (with college commitment, personal, others)", "Technical depth of demo / product", "Tech stack used", "Problem-solution fit", "Areas like latency, cost, security, etc been considered", "Decision", "Reason for decision (detailed notes)"
         ]
 
         ws.row_dimensions[6].height = 24
@@ -419,6 +422,39 @@ def build_excel_report():
             elif raw_depth not in ["High", "Medium", "Low", "None"]:
                 latency = raw_depth
 
+        # R1 Status
+        r1_status_val = r1.get("app_status")
+        if not r1_status_val or str(r1_status_val).strip() in ["", "-", "None"]:
+            r1_status_val = "Pending"
+
+        # R2 Inputs formatting
+        r2_has_id = r2.get("id") is not None
+        
+        def r2_clean(val):
+            if not r2_has_id:
+                return "-"
+            if val is None or str(val).strip() in ["", "-", "None"]:
+                return "NA"
+            return val
+
+        r2_start = r2_clean(r2.get("when_can_they_start"))
+        r2_complexity = r2_clean(r2.get("complexity"))
+        r2_tech_depth = r2_clean(tech_depth)
+        r2_stack = r2_clean(r2.get("tech_stack"))
+        r2_fit = r2_clean(problem_fit)
+        r2_latency = r2_clean(latency)
+        r2_comment = r2_clean(r2.get("demo_review_comment"))
+
+        # R2 Decision logic
+        if r2_has_id:
+            r2_decision_val = (r2.get("moved_to_round_3") or "Pending").replace("_draft", "")
+            if not r2_decision_val or str(r2_decision_val).strip() in ["", "-", "None"]:
+                r2_decision_val = "Pending"
+        elif str(r1.get("app_status") or "").strip().lower() in ["no", "rejected", "invalid", "reject"]:
+            r2_decision_val = "Rejected (R1)"
+        else:
+            r2_decision_val = "Pending"
+
         row_data = [
             index + 1,  # Rank
             c.get("full_name"),
@@ -458,19 +494,16 @@ def build_excel_report():
             r1.get("review_comments") or "-",
             r1.get("r1_interview_priority") or "-",
             r1.get("eval_group") or "-",
-            r1.get("app_status") or "-",
-            r2.get("when_can_they_start") or "-" if r2.get("id") else "-",
-            r2.get("complexity") or "-" if r2.get("id") else "-",
-            tech_depth or "-" if r2.get("id") else "-",
-            r2.get("tech_stack") or "-" if r2.get("id") else "-",
-            problem_fit or "-" if r2.get("id") else "-",
-            latency or "-" if r2.get("id") else "-",
-            # Decision column: carry the Round 1 rejection through so it is
-            # explicitly mentioned instead of showing '-'
-            (r2.get("moved_to_round_3").replace("_draft", "") if (r2.get("id") and r2.get("moved_to_round_3"))
-             else ("Rejected (R1)" if str(r1.get("app_status") or "").strip().lower() in ["no", "rejected", "invalid", "reject"] else "-")),
-            "-",  # Tier placeholder
-            r2.get("demo_review_comment") or "-" if r2.get("id") else "-"
+            r1_status_val,
+            r2_start,
+            r2_complexity,
+            r2_tech_depth,
+            r2_stack,
+            r2_fit,
+            r2_latency,
+            r2_decision_val,
+            # Tier column is removed!
+            r2_comment
         ]
 
         # Column indices (0-based) for decision cells that get color-coded:
@@ -505,7 +538,7 @@ def build_excel_report():
         widths = [
             6, 25, 10, 8, 12, 10, 8, 8, 8, 8, 8, 8, 8, 8, 20, 15, 20, 30, 30, 25,
             18, 10, 10, 10, 10, 18, 10, 15, 15, 30, 25, 25, 25, 35, 35, 30, 18, 18,
-            12, 18, 25, 18, 25, 15, 20, 12, 10, 35
+            12, 18, 25, 18, 25, 15, 20, 12, 35
         ]
         for idx, w in enumerate(widths):
             ws.column_dimensions[get_column_letter(idx + 1)].width = w
