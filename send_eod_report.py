@@ -364,8 +364,8 @@ def build_excel_report():
             "Rank", "Name", "Gender", "Cat", "Graduation", "Tier", "Total", "Edu", "Exp", "Proj", 
             "Substance", "Deploy", "Artifact", "Skills", "Domain", "Degree", "Stream", "College", "F_college", "F_University", 
             "Location", "AI Proj", "FS Proj", "Intern Mo", "Co.Tier", "Deploy Stage", "#Skills", "Claude Lvl", "AI/ML Exp", "Email", 
-            "Résumé", "GitHub", "Demo", "Demo Explanation (their project)", "Demo Review Notes (AI)", "R1 Review", "R1 Interview Priority", "To be screened by", 
-            "Status", "Earliest date they can start the internship", "Any concerns / restrictions (with college commitment, personal, others)", "Technical depth of demo / product", "Tech stack used", "Problem-solution fit", "Areas like latency, cost, security, etc been considered", "Decision", "Reason for decision (detailed notes)"
+            "Résumé", "GitHub", "Demo", "Demo Explanation (their project)", "Demo Review Notes (AI)", "R1 Review", "R1 Interview Priority", "Technical Reviewer",
+            "R1 Status", "Earliest date they can start the internship", "Any concerns / restrictions (with college commitment, personal, others)", "Technical depth of demo / product", "Tech stack used", "Problem-solution fit", "Areas like latency, cost, security, etc been considered", "R2 Decision", "Reason for decision (detailed notes)"
         ]
 
         ws.row_dimensions[6].height = 24
@@ -560,6 +560,14 @@ def build_excel_report():
     for r in range(1, ws.max_row + 1):
         ws.row_dimensions[r].hidden = False
 
+    # Disambiguate the round-input headers so pivot fields are self-explanatory
+    # even when the template supplied row 6 (AL=Technical Reviewer, AM=R1 Status,
+    # AT=R2 Decision)
+    for addr, label in [("AL6", "Technical Reviewer"), ("AM6", "R1 Status"), ("AT6", "R2 Decision")]:
+        ws[addr] = label
+
+    build_pivot_data_sheet(wb)
+
     date_str = datetime.now().strftime("%Y-%m-%d")
     output_filename = f"R1_R2_EOD_REPORT_{date_str}.xlsx"
     wb.save(output_filename)
@@ -583,6 +591,137 @@ def _fetch_all_rows(table, select):
         if len(page) < 1000:
             return rows
         offset += 1000
+
+
+def build_pivot_data_sheet(wb):
+    """One clean, flat sheet — one header row, one row per application — with
+    ready-made dimension columns so the entire funnel narrative can be derived
+    with simple pivot tables (no lookups back into the Analysis tab)."""
+    raw = _fetch_all_rows("raw_submissions", "id,full_name,email,ug_university,Analysis_status")
+    r1 = _fetch_all_rows("round_1_evaluation", "id,tier,total,app_status,review_comments,eval_group")
+    r2 = _fetch_all_rows("round_2_evaluation", "id,moved_to_round_3")
+    r3 = _fetch_all_rows("round_3_evaluation", "id,verdict")
+    r1_map = {x["id"]: x for x in r1}
+    r2_map = {x["id"]: x for x in r2}
+    r3_map = {x["id"]: x for x in r3}
+
+    TOP_TIERS = {"Tier 1", "Tier 1+", "Tier 2", "Tier 2+"}
+    LOW_TIERS = {"Tier 3", "Tier 4"}
+
+    if "Pivot Data" in wb.sheetnames:
+        del wb["Pivot Data"]
+    ws = wb.create_sheet("Pivot Data", 1)  # right after Analysis
+
+    headers = [
+        "Candidate ID", "Full Name", "Email", "University",
+        "Submission Status",          # Evaluated / Duplicate / Awaiting AI Evaluation
+        "R1 Tier", "Tier Group",      # Tier 1-2 Group / Tier 3-4 Group
+        "R1 Score",
+        "R1 Status",                  # Yes / Reject / Maybe / Access requested / Pending
+        "R1 Manually Reviewed",       # Yes / No (decision made or comments written)
+        "Moved To R2",                # Yes / No
+        "Technical Reviewer",         # name / Unassigned
+        "R2 Assigned",                # Yes / No
+        "R2 Review State",            # Finalized / Draft (In Progress) / Not Started
+        "R2 Decision",                # Yes / Maybe / No / Declined / Pending
+        "Moved To R3",                # Yes / No
+        "R3 Verdict",                 # Hired / Maybe / Rejected / Pending
+    ]
+    header_fill = PatternFill(start_color="1F3864", end_color="1F3864", fill_type="solid")
+    for idx, h in enumerate(headers):
+        cell = ws.cell(row=1, column=idx + 1)
+        cell.value = h
+        cell.font = Font(name="Segoe UI", size=10, bold=True, color="FFFFFF")
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    ws.freeze_panes = "A2"
+
+    row_idx = 2
+    for c in sorted(raw, key=lambda x: x["id"]):
+        cid = c["id"]
+        r1r = r1_map.get(cid)
+        r2r = r2_map.get(cid)
+        r3r = r3_map.get(cid)
+
+        if r1r is not None:
+            submission_status = "Evaluated"
+        elif (c.get("Analysis_status") or "") == "Completed":
+            submission_status = "Duplicate"
+        else:
+            submission_status = "Awaiting AI Evaluation"
+
+        tier = (r1r.get("tier") or "").strip() if r1r else ""
+        tier_group = "Tier 1-2 Group" if tier in TOP_TIERS else ("Tier 3-4 Group" if tier in LOW_TIERS else "")
+
+        r1_status = ((r1r.get("app_status") or "Pending").strip() if r1r else "")
+        manually_reviewed = ""
+        if r1r:
+            manually_reviewed = "Yes" if (r1_status != "Pending" or (r1r.get("review_comments") or "").strip()) else "No"
+
+        moved_r2 = "Yes" if r1_status == "Yes" else ("No" if r1r else "")
+
+        reviewer = ""
+        r2_assigned = ""
+        review_state = ""
+        r2_decision = ""
+        moved_r3 = ""
+        if moved_r2 == "Yes":
+            reviewer = (r1r.get("eval_group") or "").strip()
+            r2_assigned = "Yes" if reviewer not in ("", "None", "Unassigned") else "No"
+            if not reviewer or reviewer in ("None", "Unassigned"):
+                reviewer = "Unassigned"
+            raw_dec = ((r2r.get("moved_to_round_3") or "").strip() if r2r else "")
+            if raw_dec.endswith("_draft"):
+                review_state = "Draft (In Progress)"
+                r2_decision = "Pending"
+            elif raw_dec in ("Yes", "Maybe", "No", "Declined"):
+                review_state = "Finalized"
+                r2_decision = raw_dec
+            elif r2r is not None:
+                review_state = "Draft (In Progress)"
+                r2_decision = "Pending"
+            else:
+                review_state = "Not Started"
+                r2_decision = "Pending"
+            moved_r3 = "Yes" if r2_decision in ("Yes", "Maybe") else "No"
+
+        r3_verdict = ""
+        if moved_r3 == "Yes":
+            v = (r3r.get("verdict") or "").strip() if r3r else ""
+            if v in ("Yes", "Hired"):
+                r3_verdict = "Hired"
+            elif v in ("No", "Rejected"):
+                r3_verdict = "Rejected"
+            elif v == "Maybe":
+                r3_verdict = "Maybe"
+            else:
+                r3_verdict = "Pending"
+
+        row = [
+            cid, c.get("full_name") or "", c.get("email") or "", c.get("ug_university") or "",
+            submission_status,
+            tier, tier_group,
+            float(r1r["total"]) if (r1r and r1r.get("total") is not None) else None,
+            r1_status,
+            manually_reviewed,
+            moved_r2,
+            reviewer,
+            r2_assigned,
+            review_state,
+            r2_decision,
+            moved_r3,
+            r3_verdict,
+        ]
+        for col_idx, val in enumerate(row):
+            cell = ws.cell(row=row_idx, column=col_idx + 1)
+            cell.value = val
+            cell.font = Font(name="Segoe UI", size=9.5)
+        row_idx += 1
+
+    widths = [12, 26, 30, 30, 20, 10, 14, 9, 12, 12, 10, 16, 11, 17, 12, 10, 11]
+    for idx, w in enumerate(widths):
+        ws.column_dimensions[get_column_letter(idx + 1)].width = w
+    print(f"Pivot Data sheet written: {row_idx - 2} rows")
 
 
 def build_funnel_summary():
@@ -640,8 +779,8 @@ def build_funnel_summary():
     in_progress = len(r2) - finalized
     promoted = r2_yes + r2_maybe
 
-    hired = sum(1 for x in r3 if (x.get("verdict") or "") == "Yes")
-    rejected_r3 = sum(1 for x in r3 if (x.get("verdict") or "") == "No")
+    hired = sum(1 for x in r3 if (x.get("verdict") or "") in ("Yes", "Hired"))
+    rejected_r3 = sum(1 for x in r3 if (x.get("verdict") or "") in ("No", "Rejected"))
     r3_pending = promoted - hired - rejected_r3
 
     # reviews still open = assigned candidates without a finalized decision

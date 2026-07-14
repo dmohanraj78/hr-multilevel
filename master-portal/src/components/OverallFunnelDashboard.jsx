@@ -1066,9 +1066,9 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       const headers = [
         "Rank", "Name", "Gender", "Cat", "Graduation", "Tier", "Total", "Edu", "Exp", "Proj", 
         "Substance", "Deploy", "Artifact", "Skills", "Domain", "Degree", "Stream", "College", "F_college", "F_University", 
-        "Location", "AI Proj", "FS Proj", "Intern Mo", "Co.Tier", "Deploy Stage", "#Skills", "Claude Lvl", "AI/ML Exp", "Email", 
-        "Résumé", "GitHub", "Demo", "Demo Explanation (their project)", "Demo Review Notes (AI)", "R1 Review", "To be screened by", 
-        "Status", "Earliest date they can start the internship", "Any concerns / restrictions (with college commitment, personal, others)", "Technical depth of demo / product", "Tech stack used", "Problem-solution fit", "Areas like latency, cost, security, etc been considered", "Status", "Reason for decision (detailed notes)"
+        "Location", "AI Proj", "FS Proj", "Intern Mo", "Co.Tier", "Deploy Stage", "Num Skills", "Claude Lvl", "AI/ML Exp", "Email", 
+        "Resume", "GitHub", "Demo", "Demo Explanation", "Demo Review Notes (AI)", "R1 Review", "Screened By", 
+        "R1 Status", "Start Date", "Concerns", "Tech Depth", "Tech Stack", "Problem Fit", "Latency/Cost/Security", "R2 Decision", "TR Comments"
       ];
 
       sheet.getRow(6).height = 24;
@@ -1244,6 +1244,114 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       });
     };
 
+    // --- Tab: Pivot Data (flat, pivot-table-ready — one row per application,
+    // one clean header row, pre-computed dimension columns so the funnel
+    // narrative can be produced with simple pivots) ---
+    const addPivotDataTab = () => {
+      const existing = workbook.getWorksheet('Pivot Data');
+      if (existing) workbook.removeWorksheet(existing.id);
+      const sheet = workbook.addWorksheet('Pivot Data');
+
+      const TOP_TIERS = ['Tier 1', 'Tier 1+', 'Tier 2', 'Tier 2+'];
+      const LOW_TIERS = ['Tier 3', 'Tier 4'];
+
+      sheet.columns = [
+        { header: 'Candidate ID', key: 'id', width: 12 },
+        { header: 'Full Name', key: 'name', width: 26 },
+        { header: 'Email', key: 'email', width: 30 },
+        { header: 'University', key: 'university', width: 30 },
+        { header: 'Submission Status', key: 'submission', width: 20 },
+        { header: 'R1 Tier', key: 'tier', width: 10 },
+        { header: 'Tier Group', key: 'tierGroup', width: 14 },
+        { header: 'R1 Score', key: 'score', width: 9 },
+        { header: 'R1 Status', key: 'r1Status', width: 12 },
+        { header: 'R1 Manually Reviewed', key: 'reviewed', width: 12 },
+        { header: 'Moved To R2', key: 'movedR2', width: 10 },
+        { header: 'Technical Reviewer', key: 'reviewer', width: 16 },
+        { header: 'R2 Assigned', key: 'assigned', width: 11 },
+        { header: 'R2 Review State', key: 'reviewState', width: 17 },
+        { header: 'R2 Decision', key: 'r2Decision', width: 12 },
+        { header: 'Moved To R3', key: 'movedR3', width: 10 },
+        { header: 'R3 Verdict', key: 'r3Verdict', width: 11 },
+      ];
+      const headerRow = sheet.getRow(1);
+      headerRow.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
+      headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F3864' } };
+      headerRow.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+      sheet.views = [{ state: 'frozen', ySplit: 1 }];
+
+      [...globalData].sort((a, b) => a.id - b.id).forEach(c => {
+        const r1 = getR1(c);
+        const r2 = getR2(c);
+        const r3 = getR3(c);
+        const hasR1 = c.round_1_evaluation !== null;
+
+        const submission = hasR1
+          ? 'Evaluated'
+          : ((c.Analysis_status || '') === 'Completed' ? 'Duplicate' : 'Awaiting AI Evaluation');
+
+        const tier = hasR1 ? (r1.tier || '').trim() : '';
+        const tierGroup = TOP_TIERS.includes(tier) ? 'Tier 1-2 Group' : (LOW_TIERS.includes(tier) ? 'Tier 3-4 Group' : '');
+
+        const r1Status = hasR1 ? ((r1.app_status || 'Pending').trim()) : '';
+        const reviewed = hasR1
+          ? ((r1Status !== 'Pending' || (r1.review_comments || '').trim()) ? 'Yes' : 'No')
+          : '';
+        const movedR2 = hasR1 ? (r1Status === 'Yes' ? 'Yes' : 'No') : '';
+
+        let reviewer = '', assigned = '', reviewState = '', r2Decision = '', movedR3 = '';
+        if (movedR2 === 'Yes') {
+          reviewer = (r1.eval_group || '').trim();
+          assigned = (reviewer && reviewer !== 'None' && reviewer !== 'Unassigned') ? 'Yes' : 'No';
+          if (!reviewer || reviewer === 'None') reviewer = 'Unassigned';
+          const rawDec = (r2.moved_to_round_3 || '').trim();
+          if (rawDec.endsWith('_draft')) {
+            reviewState = 'Draft (In Progress)';
+            r2Decision = 'Pending';
+          } else if (['Yes', 'Maybe', 'No', 'Declined'].includes(rawDec)) {
+            reviewState = 'Finalized';
+            r2Decision = rawDec;
+          } else if (r2.id !== undefined && r2.id !== null) {
+            reviewState = 'Draft (In Progress)';
+            r2Decision = 'Pending';
+          } else {
+            reviewState = 'Not Started';
+            r2Decision = 'Pending';
+          }
+          movedR3 = ['Yes', 'Maybe'].includes(r2Decision) ? 'Yes' : 'No';
+        }
+
+        let r3Verdict = '';
+        if (movedR3 === 'Yes') {
+          const v = (r3.verdict || '').trim();
+          if (['Yes', 'Hired'].includes(v)) r3Verdict = 'Hired';
+          else if (['No', 'Rejected'].includes(v)) r3Verdict = 'Rejected';
+          else if (v === 'Maybe') r3Verdict = 'Maybe';
+          else r3Verdict = 'Pending';
+        }
+
+        sheet.addRow({
+          id: c.id,
+          name: c.full_name || '',
+          email: c.email || '',
+          university: c.ug_university || '',
+          submission,
+          tier,
+          tierGroup,
+          score: (hasR1 && r1.total !== null && r1.total !== undefined) ? parseFloat(r1.total) : null,
+          r1Status,
+          reviewed,
+          movedR2,
+          reviewer,
+          assigned,
+          reviewState,
+          r2Decision,
+          movedR3,
+          r3Verdict,
+        });
+      });
+    };
+
     let filename = '';
     const dateSuffix = new Date().toLocaleDateString('en-CA');
     
@@ -1258,6 +1366,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       filename = `round_3_executive_verdicts_${dateSuffix}.xlsx`;
     } else if (roundType === 'side-by-side') {
       addSideBySideTab();
+      addPivotDataTab();
       filename = `r1_r2_side_by_side_report_${dateSuffix}.xlsx`;
     } else {
       addSummaryTab();
