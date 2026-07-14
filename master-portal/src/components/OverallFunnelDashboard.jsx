@@ -242,17 +242,15 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
   const evaluatedCount = evaluatedCandidates.length;
   const rawTotal = globalData.length; // total raw submissions
 
-  // Raw submissions without an R1 record are NOT all duplicates — split them:
-  // duplicates = same email already evaluated under another id; the rest are
-  // genuinely unprocessed candidates still awaiting evaluation.
+  // Raw submissions without an R1 record are NOT all duplicates — split them
+  // using the backend's own Analysis_status field:
+  //   'Completed' but no R1 row  -> analyzed and excluded (duplicate/test entry)
+  //   NULL                       -> genuinely awaiting evaluation
   const { duplicatesRemoved, awaitingEvaluation } = useMemo(() => {
-    const evaluatedEmails = new Set(
-      evaluatedCandidates.map(c => (c.email || '').trim().toLowerCase()).filter(Boolean)
-    );
     const notEvaluated = globalData.filter(c => !c.round_1_evaluation);
-    const dupes = notEvaluated.filter(c => evaluatedEmails.has((c.email || '').trim().toLowerCase())).length;
-    return { duplicatesRemoved: dupes, awaitingEvaluation: notEvaluated.length - dupes };
-  }, [globalData, evaluatedCandidates]);
+    const awaiting = notEvaluated.filter(c => (c.Analysis_status || '') !== 'Completed').length;
+    return { duplicatesRemoved: notEvaluated.length - awaiting, awaitingEvaluation: awaiting };
+  }, [globalData]);
 
   // 1. Calculate Metrics — use evaluatedCandidates (reflects actual round_1_evaluation records)
   const stats = useMemo(() => {
