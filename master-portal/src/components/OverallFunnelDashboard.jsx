@@ -232,7 +232,15 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
 
   // Base list containing only evaluated candidates (those with a round_1_evaluation record)
   const evaluatedCandidates = useMemo(() => {
-    return globalData.filter(c => c.round_1_evaluation !== null);
+    return globalData.filter(c => {
+      const r1 = c.round_1_evaluation;
+      if (!r1) return false;
+      // Filter out unprocessed template records (where evaluation has not occurred yet)
+      if (r1.total === null && r1.tier === null && r1.review_cat === null) {
+        return false;
+      }
+      return true;
+    });
   }, [globalData]);
 
   const evaluatedCount = evaluatedCandidates.length;

@@ -95,6 +95,9 @@ def build_excel_report():
         raw = r1.get("raw_submissions")
         if not raw:
             continue
+        # Filter out unprocessed template records (where evaluation has not occurred yet)
+        if r1.get("total") is None and r1.get("tier") is None and r1.get("review_cat") is None:
+            continue
         raw_parsed = raw[0] if isinstance(raw, list) else raw
         candidates.append({
             "c": raw_parsed,
