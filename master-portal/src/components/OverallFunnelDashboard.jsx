@@ -721,7 +721,6 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
         { header: 'Candidate ID', key: 'id', width: 15 },
         { header: 'Name', key: 'name', width: 25 },
         { header: 'Email', key: 'email', width: 30 },
-        { header: 'Tier', key: 'tier', width: 12 },
         { header: 'Review Score', key: 'score', width: 15 },
         { header: 'Demo-AI Review', key: 'review_cat', width: 18 },
         { header: 'Review Status', key: 'status', width: 18 },
@@ -734,7 +733,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
         { header: 'Technical Depth', key: 'tech_depth', width: 15 },
         { header: 'Latency/Security/Cost', key: 'latency', width: 22 },
         { header: 'Tech Stack', key: 'tech_stack', width: 30 },
-        { header: 'TR Decision', key: 'tr_decision', width: 15 },
+        { header: 'TR Status', key: 'tr_decision', width: 15 },
         { header: 'TR Comments', key: 'tr_comments', width: 45 }
       ];
 
@@ -767,7 +766,6 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
             id: c.id,
             name: c.full_name,
             email: c.email,
-            tier: r1.tier || 'N/A',
             score: parseFloat(r1.total || 0),
             review_cat: r1.review_cat || 'N/A',
             status: reviewStatus,
@@ -798,9 +796,9 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
         { header: 'Tier', key: 'tier', width: 12 },
         { header: 'Review Score', key: 'score', width: 15 },
         { header: 'Technical Reviewer Assigned', key: 'evaluator', width: 28 },
-        { header: 'TR Decision', key: 'tr_decision', width: 15 },
+        { header: 'TR Status', key: 'tr_decision', width: 15 },
         { header: 'TR Comments', key: 'tr_comments', width: 45 },
-        { header: 'Decision', key: 'verdict', width: 15 },
+        { header: 'Status', key: 'verdict', width: 15 },
         { header: 'Executive Decision Comments', key: 'comments', width: 45 },
         { header: 'Decision Date', key: 'date', width: 22 }
       ];
@@ -841,6 +839,16 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
         const rc = sheet.rowCount;
         if (rc >= 7) {
           sheet.spliceRows(7, rc - 6);
+        }
+        
+        // Delete columns from template to match new structure
+        try {
+          // Delete "R1 Interview Priority" (Column 37)
+          sheet.deleteColumn(37);
+          // Delete "Tier" under Round 2 Inputs (was Column 40, now Column 39)
+          sheet.deleteColumn(39);
+        } catch (err) {
+          console.error("Failed to delete columns from template:", err);
         }
       }
       sheet.views = [{ showGridLines: true }];
@@ -1033,15 +1041,15 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       // unMergeCells (capital M — exceljs API) dissolves every merge group
       // intersecting the range so the two new merges below cannot collide.
       try {
-        sheet.unMergeCells('A5:AU5');
+        sheet.unMergeCells('A5:AT5');
       } catch (e) {}
       // Three labelled sections: the candidate profile (A-AI), the columns the
-      // R1 reviewer fills (AJ-AM, ending at Status), and the R2 inputs (AN-AU) —
+      // R1 reviewer fills (AJ-AL, ending at Status), and the R2 inputs (AM-AT) —
       // so each label sits directly above its own columns.
       const row5Sections = [
         { range: 'A5:AI5', anchor: 'A5', label: 'Candidate Analysed Details', color: 'FF1F3864' },
-        { range: 'AJ5:AM5', anchor: 'AJ5', label: 'Round 1 Inputs', color: 'FF2F5597' },
-        { range: 'AN5:AU5', anchor: 'AN5', label: 'Round 2 Inputs', color: 'FF0070C0' }
+        { range: 'AJ5:AL5', anchor: 'AJ5', label: 'Round 1 Inputs', color: 'FF2F5597' },
+        { range: 'AM5:AT5', anchor: 'AM5', label: 'Round 2 Inputs', color: 'FF0070C0' }
       ];
       row5Sections.forEach(({ range, anchor, label, color }) => {
         try {
@@ -1059,8 +1067,8 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
         "Rank", "Name", "Gender", "Cat", "Graduation", "Tier", "Total", "Edu", "Exp", "Proj", 
         "Substance", "Deploy", "Artifact", "Skills", "Domain", "Degree", "Stream", "College", "F_college", "F_University", 
         "Location", "AI Proj", "FS Proj", "Intern Mo", "Co.Tier", "Deploy Stage", "#Skills", "Claude Lvl", "AI/ML Exp", "Email", 
-        "Résumé", "GitHub", "Demo", "Demo Explanation (their project)", "Demo Review Notes (AI)", "R1 Review", "R1 Interview Priority", "To be screened by", 
-        "Status", "Earliest date they can start the internship", "Any concerns / restrictions (with college commitment, personal, others)", "Technical depth of demo / product", "Tech stack used", "Problem-solution fit", "Areas like latency, cost, security, etc been considered", "Decision", "Reason for decision (detailed notes)"
+        "Résumé", "GitHub", "Demo", "Demo Explanation (their project)", "Demo Review Notes (AI)", "R1 Review", "To be screened by", 
+        "Status", "Earliest date they can start the internship", "Any concerns / restrictions (with college commitment, personal, others)", "Technical depth of demo / product", "Tech stack used", "Problem-solution fit", "Areas like latency, cost, security, etc been considered", "Status", "Reason for decision (detailed notes)"
       ];
 
       sheet.getRow(6).height = 24;
@@ -1069,9 +1077,9 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
         cell.value = h;
         cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
         
-        // Match the row-5 sections: profile (0-34), R1 inputs (35-38 up to
-        // Status), R2 inputs (39+)
-        const headerColor = idx >= 39 ? 'FF0070C0' : idx >= 35 ? 'FF2F5597' : 'FF1F3864';
+        // Match the row-5 sections: profile (0-34), R1 inputs (35-37 up to
+        // Status), R2 inputs (38+)
+        const headerColor = idx >= 38 ? 'FF0070C0' : idx >= 35 ? 'FF2F5597' : 'FF1F3864';
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
@@ -1170,7 +1178,6 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
           c.demo_explanation || c.current_project || '-',
           r1.demo_review_notes_ai || '-',
           r1.review_comments || '-',
-          r1.r1_interview_priority || '-',
           r1.eval_group || '-',
           (r1.app_status && String(r1.app_status).trim() && !["-", "None"].includes(String(r1.app_status).trim())) ? r1.app_status : 'Pending',
           r2.id ? (r2.when_can_they_start || 'NA') : '-',
@@ -1198,8 +1205,8 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
             right: { style: 'thin', color: { argb: 'FFE0E0E0' } }
           };
 
-          // Color-code ONLY R1 Status (idx 38) and R2 Decision (idx 45)
-          const DECISION_COLS = new Set([38, 45]);
+          // Color-code ONLY R1 Status (idx 37) and R2 Decision (idx 44)
+          const DECISION_COLS = new Set([37, 44]);
           if (DECISION_COLS.has(idx)) {
             const valStr = String(val || '').trim().toLowerCase();
             if (['yes', 'promoted', 'approved'].includes(valStr)) {
@@ -1221,11 +1228,11 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
         sheet.getRow(rowNumber).height = 20;
       });
 
-      // Set exact column widths matching typical content
+      // Set exact column widths matching typical content (46 elements)
       const widths = [
         6, 25, 10, 8, 12, 10, 8, 8, 8, 8, 8, 8, 8, 8, 20, 15, 20, 30, 30, 25,
-        18, 10, 10, 10, 10, 18, 10, 15, 15, 30, 25, 25, 25, 35, 35, 30, 18, 18,
-        12, 18, 25, 18, 25, 15, 20, 12, 35
+        18, 10, 10, 10, 10, 18, 10, 15, 15, 30, 25, 25, 25, 35, 35, 30, 18,
+        18, 12, 18, 25, 18, 25, 15, 20, 12, 35
       ];
       widths.forEach((w, idx) => {
         sheet.getColumn(idx + 1).width = w;
