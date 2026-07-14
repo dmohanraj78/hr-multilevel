@@ -506,17 +506,19 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
                   onSort={handleSort}
                 />
               </TableHead>
-              <TableHead className="w-[155px] overflow-visible">
-                <HeaderFilter
-                  label="Status"
-                  columnKey="status"
-                  uniqueValues={uniqueStatuses}
-                  activeFilters={activeFilters}
-                  onApplyFilter={handleApplyFilter}
-                  sortConfig={sortConfig}
-                  onSort={handleSort}
-                />
-              </TableHead>
+              {round !== 2 && (
+                <TableHead className="w-[155px] overflow-visible">
+                  <HeaderFilter
+                    label="Status"
+                    columnKey="status"
+                    uniqueValues={uniqueStatuses}
+                    activeFilters={activeFilters}
+                    onApplyFilter={handleApplyFilter}
+                    sortConfig={sortConfig}
+                    onSort={handleSort}
+                  />
+                </TableHead>
+              )}
               {showTechEvaluatorFilter && (
                 <TableHead className="w-[180px] overflow-visible">
                   <HeaderFilter
@@ -543,7 +545,25 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
                   />
                 </TableHead>
               )}
-              <TableHead className="w-[150px] text-right font-semibold pr-6">Actions</TableHead>
+              {round === 2 && (
+                <TableHead className="w-[150px] text-center font-semibold">Actions</TableHead>
+              )}
+              {round === 2 && (
+                <TableHead className="w-[155px] overflow-visible text-right pr-6">
+                  <HeaderFilter
+                    label="Status"
+                    columnKey="status"
+                    uniqueValues={uniqueStatuses}
+                    activeFilters={activeFilters}
+                    onApplyFilter={handleApplyFilter}
+                    sortConfig={sortConfig}
+                    onSort={handleSort}
+                  />
+                </TableHead>
+              )}
+              {round !== 2 && (
+                <TableHead className="w-[150px] text-right font-semibold pr-6">Actions</TableHead>
+              )}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -585,7 +605,7 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
                       {getEval1(cand, 'total') || 0}
                     </TableCell>
                     <TableCell>{catBadge}</TableCell>
-                    <TableCell>{statusBadge}</TableCell>
+                    {round !== 2 && <TableCell>{statusBadge}</TableCell>}
                     {showTechEvaluatorFilter && (
                       <TableCell className="py-2">
                         {round === 1 ? (
@@ -625,11 +645,23 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
                         {getEval1(cand, 'review_comments') || '-'}
                       </TableCell>
                     )}
-                    <TableCell className="text-right pr-6">
-                      <Button size="sm" variant="outline" onClick={() => onActionClick(cand)} className="rounded-md font-semibold text-xs border-[#800020] text-[#800020] hover:bg-[#800020] hover:text-white transition-colors duration-300">
-                        {actionLabel}
-                      </Button>
-                    </TableCell>
+                    {round === 2 && (
+                      <TableCell className="text-center">
+                        <Button size="sm" variant="outline" onClick={() => onActionClick(cand)} className="rounded-md font-semibold text-xs border-[#800020] text-[#800020] hover:bg-[#800020] hover:text-white transition-colors duration-300">
+                          {actionLabel}
+                        </Button>
+                      </TableCell>
+                    )}
+                    {round === 2 && (
+                      <TableCell className="text-right pr-6">{statusBadge}</TableCell>
+                    )}
+                    {round !== 2 && (
+                      <TableCell className="text-right pr-6">
+                        <Button size="sm" variant="outline" onClick={() => onActionClick(cand)} className="rounded-md font-semibold text-xs border-[#800020] text-[#800020] hover:bg-[#800020] hover:text-white transition-colors duration-300">
+                          {actionLabel}
+                        </Button>
+                      </TableCell>
+                    )}
                   </TableRow>
                 );
               })
