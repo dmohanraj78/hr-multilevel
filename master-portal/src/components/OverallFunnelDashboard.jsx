@@ -241,7 +241,18 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
 
   const evaluatedCount = evaluatedCandidates.length;
   const rawTotal = globalData.length; // total raw submissions
-  const duplicatesRemoved = rawTotal - evaluatedCount; // duplicates removed
+
+  // Raw submissions without an R1 record are NOT all duplicates — split them:
+  // duplicates = same email already evaluated under another id; the rest are
+  // genuinely unprocessed candidates still awaiting evaluation.
+  const { duplicatesRemoved, awaitingEvaluation } = useMemo(() => {
+    const evaluatedEmails = new Set(
+      evaluatedCandidates.map(c => (c.email || '').trim().toLowerCase()).filter(Boolean)
+    );
+    const notEvaluated = globalData.filter(c => !c.round_1_evaluation);
+    const dupes = notEvaluated.filter(c => evaluatedEmails.has((c.email || '').trim().toLowerCase())).length;
+    return { duplicatesRemoved: dupes, awaitingEvaluation: notEvaluated.length - dupes };
+  }, [globalData, evaluatedCandidates]);
 
   // 1. Calculate Metrics — use evaluatedCandidates (reflects actual round_1_evaluation records)
   const stats = useMemo(() => {
@@ -1267,7 +1278,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
             AI Builder Intern — Applicant Funnel
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            <strong className="text-[#800020]">{rawTotal} applications</strong> processed · {duplicatesRemoved} duplicates removed · v2 rubric (max score 30)
+            <strong className="text-[#800020]">{rawTotal} applications</strong> received · {evaluatedCount} evaluated · {duplicatesRemoved} duplicates removed · {awaitingEvaluation} awaiting evaluation · v2 rubric (max score 30)
           </p>
         </div>
         <div className="flex flex-wrap gap-3 items-center shrink-0">
@@ -1335,7 +1346,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
               <span className="text-3xl font-extrabold font-mono text-foreground">{evaluatedFiltered.length}</span>
               <Users className="h-5 w-5 text-slate-400 stroke-[1.5]" />
             </div>
-            <span className="text-[10px] text-muted-foreground">{filteredDuplicatesRemoved} duplicates removed</span>
+            <span className="text-[10px] text-muted-foreground">{filteredDuplicatesRemoved} duplicates · {awaitingEvaluation} awaiting evaluation</span>
           </CardContent>
         </Card>
 
