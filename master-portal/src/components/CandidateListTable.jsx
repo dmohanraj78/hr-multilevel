@@ -208,6 +208,30 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
     return c[field] !== undefined ? c[field] : (r1Parsed?.[field] || '');
   };
 
+  const getEval2 = (c, field) => {
+    if (!c) return '';
+    const r2 = c.round_2_evaluation;
+    const r2Parsed = Array.isArray(r2) ? (r2[0] || {}) : (r2 || {});
+    return r2Parsed?.[field] || '';
+  };
+
+  // Small pill badge for decision-style values, uniform across the tables
+  const decisionBadge = (val) => {
+    const v = String(val || '').trim();
+    if (!v) return <span className="text-muted-foreground text-xs">-</span>;
+    let color = 'bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
+    if (v === 'Yes') color = 'bg-green-600 text-white border-transparent';
+    else if (v === 'Maybe') color = 'bg-amber-500 text-white border-transparent';
+    else if (v === 'No' || v === 'Declined' || v === 'Reject') color = 'bg-red-600 text-white border-transparent';
+    return <Badge className={`rounded-full px-2.5 ${color}`}>{v}</Badge>;
+  };
+
+  // Neutral pill for contact-status-style values
+  const neutralBadge = (val) => {
+    const v = String(val || '').trim() || 'Pending';
+    return <Badge variant="outline" className="rounded-full px-2.5 font-medium border-muted-foreground/30">{v}</Badge>;
+  };
+
   // Safe helper to extract status based on the current round
   const getStatusInfo = (cand) => {
     if (round === 3) {
@@ -248,7 +272,8 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
     score: (c) => parseFloat(getEval1(c, 'total') || 0),
     review_cat: (c) => getEval1(c, 'review_cat') || 'N/A',
     status: (c) => getStatusInfo(c).text,
-    clan: (c) => getEval1(c, 'eval_group') || 'None'
+    clan: (c) => getEval1(c, 'eval_group') || 'None',
+    tr_decision: (c) => getEval2(c, 'moved_to_round_3') || 'Pending'
   };
 
   // Helper to extract unique values for dropdowns
@@ -268,6 +293,7 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
   const uniqueReviewCats = useMemo(() => getUniqueValues('review_cat', getCandValue.review_cat), [candidates]);
   const uniqueStatuses = useMemo(() => getUniqueValues('status', getCandValue.status), [candidates]);
   const uniqueClans = useMemo(() => getUniqueValues('clan', getCandValue.clan), [candidates]);
+  const uniqueTrDecisions = useMemo(() => getUniqueValues('tr_decision', getCandValue.tr_decision), [candidates]);
 
   // Apply filters
   const handleApplyFilter = (columnKey, selectedValues) => {
@@ -308,6 +334,7 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
       if (activeFilters.review_cat && !activeFilters.review_cat.includes(getEval1(cand, 'review_cat') || 'N/A')) return false;
       if (activeFilters.status && !activeFilters.status.includes(getStatusInfo(cand).text)) return false;
       if (showTechEvaluatorFilter && activeFilters.clan && !activeFilters.clan.includes(getEval1(cand, 'eval_group') || 'None')) return false;
+      if (activeFilters.tr_decision && !activeFilters.tr_decision.includes(getEval2(cand, 'moved_to_round_3') || 'Pending')) return false;
 
       return true;
     });
@@ -531,12 +558,14 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
                     <HeaderFilter label="TR Name" columnKey="clan" uniqueValues={uniqueClans} activeFilters={activeFilters} onApplyFilter={handleApplyFilter} sortConfig={sortConfig} onSort={handleSort} />
                   </TableHead>
                   <TableHead className="min-w-[240px] font-semibold">TR Comments</TableHead>
-                  <TableHead className="w-[120px] font-semibold">TR Decision</TableHead>
+                  <TableHead className="w-[130px] overflow-visible">
+                    <HeaderFilter label="TR Decision" columnKey="tr_decision" uniqueValues={uniqueTrDecisions} activeFilters={activeFilters} onApplyFilter={handleApplyFilter} sortConfig={sortConfig} onSort={handleSort} />
+                  </TableHead>
                   <TableHead className="w-[160px] font-semibold">How long they can intern</TableHead>
                 </>
               )}
               
-              <TableHead className="w-[150px] text-right font-semibold pr-6">Review</TableHead>
+              <TableHead className="w-[150px] text-right font-semibold pr-6">Action</TableHead>
               
               {round === 3 && (
                 <TableHead className="w-[155px] overflow-visible">
@@ -622,7 +651,7 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
                     )}
                     {round === 2 && (
                       <TableCell>
-                        {cand.round_2_evaluation?.[0]?.contact_status || cand.round_2_evaluation?.contact_status || 'Pending'}
+                        {neutralBadge(cand.round_2_evaluation?.[0]?.contact_status || cand.round_2_evaluation?.contact_status)}
                       </TableCell>
                     )}
                     {round !== 3 && <TableCell>{statusBadge}</TableCell>}
@@ -647,7 +676,7 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
                             </span>
                           </TableCell>
                           <TableCell>
-                            <span className="text-xs font-semibold">{trDecision}</span>
+                            {decisionBadge(trDecision)}
                           </TableCell>
                           <TableCell>
                             <span className="text-xs">{duration}</span>
@@ -659,7 +688,7 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
                     {/* Actions (Review Worksheet) */}
                     <TableCell className="text-right pr-6">
                       <Button variant="outline" size="sm" onClick={() => onSelectCandidate(cand)} className="h-8 shadow-sm font-semibold rounded-lg text-[#800020] border-[#800020]/20 hover:bg-[#800020] hover:text-white transition-all">
-                        {round === 1 ? 'Evaluate' : round === 2 ? 'Review' : 'Final Verdict'}
+                        {round === 1 ? 'Evaluate' : 'Review'}
                       </Button>
                     </TableCell>
 
