@@ -1275,7 +1275,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
         
         // Col 47: Tier Group
         const tierGroup = ['Tier 1', 'Tier 1+', 'Tier 2', 'Tier 2+', 'Tier 1-', 'Tier 2-', 'T1', 'T1+', 'T2', 'T2+', 'T1-', 'T2-'].includes(tier) 
-          ? 'Tier 1-2+' 
+          ? 'Tier 1-2-' 
           : 'Tier 3-4';
 
         // Col 48: R1 Review Status
