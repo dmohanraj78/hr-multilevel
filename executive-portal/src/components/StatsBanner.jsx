@@ -354,11 +354,9 @@ export default function StatsBanner({ candidates, round = 1, rawCount = 0, activ
               ) : (
                 <>
                   <div className="text-3xl font-extrabold font-mono tracking-tight">{stat.value}</div>
-                  {stat.subtitle && (
-                    <div className="text-[10px] text-muted-foreground mt-1 font-medium font-sans">
-                      {stat.subtitle}
-                    </div>
-                  )}
+                  <div className="text-[10px] text-muted-foreground mt-1 font-medium font-sans min-h-[15px]">
+                    {stat.subtitle || '\u00A0'}
+                  </div>
                 </>
               )}
             </CardContent>
