@@ -521,37 +521,37 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
           <TableHeader className="bg-muted/40 border-b">
             <TableRow>
               {/* Common Columns */}
-              <TableHead className="w-[85px] font-mono text-xs py-3 overflow-visible">
+              <TableHead className="w-[80px] font-mono text-xs py-3 overflow-visible">
                 <HeaderFilter label="ID" columnKey="id" uniqueValues={uniqueIds} activeFilters={activeFilters} onApplyFilter={handleApplyFilter} sortConfig={sortConfig} onSort={handleSort} isNumeric={true} />
               </TableHead>
-              <TableHead className={`overflow-visible ${round === 3 ? 'w-[160px]' : 'min-w-[180px]'}`}>
+              <TableHead className={`overflow-visible ${round === 3 ? 'w-[140px]' : round === 2 ? 'w-[140px]' : 'w-[160px]'}`}>
                 <HeaderFilter label="Candidate" columnKey="candidate" uniqueValues={uniqueCandidates} activeFilters={activeFilters} onApplyFilter={handleApplyFilter} sortConfig={sortConfig} onSort={handleSort} />
               </TableHead>
-              <TableHead className="w-[125px] overflow-visible">
+              <TableHead className="w-[100px] overflow-visible">
                 <HeaderFilter label="Tier" columnKey="tier" uniqueValues={uniqueTiers} activeFilters={activeFilters} onApplyFilter={handleApplyFilter} sortConfig={sortConfig} onSort={handleSort} />
               </TableHead>
-              <TableHead className="w-[110px] overflow-visible">
+              <TableHead className="w-[90px] overflow-visible">
                 <HeaderFilter label="Score" columnKey="score" uniqueValues={uniqueScores} activeFilters={activeFilters} onApplyFilter={handleApplyFilter} sortConfig={sortConfig} onSort={handleSort} isNumeric={true} />
               </TableHead>
 
               {/* Round 1 & 2 */}
               {round !== 3 && (
-                <TableHead className="w-[155px] overflow-visible">
+                <TableHead className="w-[130px] overflow-visible">
                   <HeaderFilter label="Demo-AI Review" columnKey="review_cat" uniqueValues={uniqueReviewCats} activeFilters={activeFilters} onApplyFilter={handleApplyFilter} sortConfig={sortConfig} onSort={handleSort} />
                 </TableHead>
               )}
               {showTechEvaluatorFilter && round !== 3 && (
-                <TableHead className="w-[180px] overflow-visible">
+                <TableHead className="w-[140px] overflow-visible">
                   <HeaderFilter label="Technical Reviewer" columnKey="clan" uniqueValues={uniqueClans} activeFilters={activeFilters} onApplyFilter={handleApplyFilter} sortConfig={sortConfig} onSort={handleSort} />
                 </TableHead>
               )}
               {round === 2 && (
-                <TableHead className="w-[160px] overflow-visible">
+                <TableHead className="w-[140px] overflow-visible">
                   <HeaderFilter label="Contact Status" columnKey="contact_status" uniqueValues={uniqueContactStatuses} activeFilters={activeFilters} onApplyFilter={handleApplyFilter} sortConfig={sortConfig} onSort={handleSort} />
                 </TableHead>
               )}
               {round !== 3 && (
-                <TableHead className="w-[155px] overflow-visible">
+                <TableHead className="w-[120px] overflow-visible">
                   <HeaderFilter label={round === 2 ? "Decision" : "Status"} columnKey="status" uniqueValues={uniqueStatuses} activeFilters={activeFilters} onApplyFilter={handleApplyFilter} sortConfig={sortConfig} onSort={handleSort} />
                 </TableHead>
               )}
@@ -570,7 +570,7 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
                 </>
               )}
               
-              <TableHead className="w-[150px] text-right font-semibold pr-6">Action</TableHead>
+              <TableHead className="w-[110px] text-right font-semibold pr-6">Action</TableHead>
               
               {round === 3 && (
                 <TableHead className="w-[155px] overflow-visible">

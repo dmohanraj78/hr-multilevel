@@ -26,32 +26,46 @@ export default function StatsBanner({ candidates, round = 1, rawCount = 0, activ
   let stats = [];
 
   if (round === 2) {
-    const pendingReview = candidates.filter(c => {
-      const r2 = getR2(c);
-      return !r2.moved_to_round_3;
+    const assignedCount = candidates.filter(c => {
+      const eg = getEvalField(c, 'eval_group');
+      return eg && eg !== 'None';
     }).length;
+    const unassignedCount = total - assignedCount;
 
-    const promoted = candidates.filter(c => {
-      const r2 = getR2(c);
-      return r2.moved_to_round_3 === 'Yes' || r2.moved_to_round_3 === 'Maybe';
-    }).length;
+    const yesCount = candidates.filter(c => getR2(c).moved_to_round_3 === 'Yes').length;
+    const maybeCount = candidates.filter(c => getR2(c).moved_to_round_3 === 'Maybe').length;
+    const noCount = candidates.filter(c => getR2(c).moved_to_round_3 === 'No' || getR2(c).moved_to_round_3 === 'Reject').length;
 
-    const rejected = candidates.filter(c => {
-      const r2 = getR2(c);
-      return r2.moved_to_round_3 === 'No';
-    }).length;
-
-    const declined = candidates.filter(c => {
-      const r2 = getR2(c);
-      return r2.moved_to_round_3 === 'Declined';
+    const yetToSpeak = candidates.filter(c => getR2(c).contact_status === 'Yet to Speak').length;
+    const spoke = candidates.filter(c => getR2(c).contact_status === 'Spoke').length;
+    const scheduled = candidates.filter(c => getR2(c).contact_status === 'Scheduled').length;
+    const noResponse = candidates.filter(c => {
+      const status = String(getR2(c).contact_status || '').toLowerCase();
+      return status === 'no response';
     }).length;
 
     stats = [
-      { title: 'Total in Review', value: total, icon: Users, color: 'text-blue-500 bg-blue-500/10' },
-      { title: 'Promoted (R3)', value: promoted, icon: CheckCircle2, color: 'text-green-500 bg-green-500/10' },
-      { title: 'Pending Review', value: pendingReview, icon: Hourglass, color: 'text-amber-500 bg-amber-500/10' },
-      { title: 'Review Rejected', value: rejected, icon: XCircle, color: 'text-red-500 bg-red-500/10' },
-      { title: 'Review Declined', value: declined, icon: XCircle, color: 'text-red-500 bg-red-500/10' }
+      {
+        title: 'Total Candidates in R2',
+        value: total,
+        subtitle: `${assignedCount} Assigned · ${unassignedCount} Unassigned`,
+        icon: Users,
+        color: 'text-blue-500 bg-blue-500/10'
+      },
+      {
+        title: 'Decisions',
+        value: assignedCount,
+        subtitle: `${yesCount} Yes · ${maybeCount} Maybe · ${noCount} No`,
+        icon: CheckCircle2,
+        color: 'text-green-500 bg-green-500/10'
+      },
+      {
+        title: 'Status',
+        value: assignedCount,
+        subtitle: `${yetToSpeak} Yet to Speak · ${spoke} Spoke · ${scheduled} Scheduled · ${noResponse} No Response`,
+        icon: Hourglass,
+        color: 'text-amber-500 bg-amber-500/10'
+      }
     ];
   } else if (round === 3) {
     const yesCount = candidates.filter(c => {
@@ -106,14 +120,38 @@ export default function StatsBanner({ candidates, round = 1, rawCount = 0, activ
     stats = [
       { title: 'Applications Reviewed', value: total, icon: Users, color: 'text-blue-500 bg-blue-500/10' },
       { title: 'HR Round Cleared', value: approvedR1, icon: CheckCircle2, color: 'text-green-500 bg-green-500/10' },
-      { title: 'Pending for manual review from Tier 1, Tier 1-, Tier 2 and Tier 2-', value: pendingTop, icon: Hourglass, color: 'text-amber-500 bg-amber-500/10' },
+      {
+        title: (
+          <span>
+            Pending for Manual Review <span className="block text-[8px] normal-case font-bold mt-0.5 opacity-90">(Tier 1, 1-, Tier 2, 2-)</span>
+          </span>
+        ),
+        value: pendingTop,
+        icon: Hourglass,
+        color: 'text-amber-500 bg-amber-500/10'
+      },
       { title: 'Rejected', value: rejected, icon: XCircle, color: 'text-red-500 bg-red-500/10' },
-      { title: 'Pending Applications from Tier 3 and Tier 4', value: pendingLow, icon: Hourglass, color: 'text-amber-500 bg-amber-500/10' }
+      {
+        title: (
+          <span>
+            Pending for Manual Review <span className="block text-[8px] normal-case font-bold mt-0.5 opacity-90">(Tier 3 & Tier 4)</span>
+          </span>
+        ),
+        value: pendingLow,
+        icon: Hourglass,
+        color: 'text-amber-500 bg-amber-500/10'
+      }
     ];
   }
 
   return (
-    <div className={`grid grid-cols-2 md:grid-cols-3 ${stats.length === 5 ? 'lg:grid-cols-5' : 'lg:grid-cols-4'} gap-6`}>
+    <div className={`grid gap-6 ${
+      stats.length === 5 
+        ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-5' 
+        : stats.length === 4 
+          ? 'grid-cols-2 lg:grid-cols-4' 
+          : 'grid-cols-1 md:grid-cols-3'
+    }`}>
       {stats.map((stat, i) => {
         const Icon = stat.icon;
         const isClickable = round === 3 && onFilterChange && stat.key;
