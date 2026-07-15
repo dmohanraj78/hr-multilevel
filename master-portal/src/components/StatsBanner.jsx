@@ -176,13 +176,13 @@ export default function StatsBanner({ candidates, round = 1, rawCount = 0, activ
 
             {/* List Rows */}
             <div className="flex flex-col gap-2">
-              {/* Yet to Spoke Row */}
+              {/* Yet to Speak Row */}
               <div className="flex items-center justify-between py-1 border-b border-slate-50 dark:border-slate-800/40 last:border-0 pb-1.5">
                 <div className="flex items-center gap-3">
                   <div className="p-1.5 bg-amber-500/10 text-amber-600 rounded-full">
                     <Headphones className="h-3.5 w-3.5 stroke-[2]" />
                   </div>
-                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Yet to spoke</span>
+                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Yet to speak</span>
                 </div>
                 <span className="text-xs font-bold text-amber-600 dark:text-amber-400 font-mono">{yetToSpeak}</span>
               </div>
@@ -361,7 +361,7 @@ export default function StatsBanner({ candidates, round = 1, rawCount = 0, activ
           return (
             <Card
               key={i}
-              className="h-[230px] flex flex-col justify-between p-5 transition-all duration-300 border border-slate-100 dark:border-slate-800/80 rounded-2xl bg-white dark:bg-slate-900 shadow-sm hover:shadow-md hover:border-slate-200 dark:hover:border-slate-700"
+              className="min-h-[245px] h-full flex flex-col justify-between p-5 transition-all duration-300 border border-slate-100 dark:border-slate-800/80 rounded-2xl bg-white dark:bg-slate-900 shadow-sm hover:shadow-md hover:border-slate-200 dark:hover:border-slate-700"
             >
               {/* Top: Icon */}
               <div className="flex justify-start">
