@@ -213,7 +213,7 @@ export default function CandidateProfileDossier({ candidate, round, onSave, onCa
   const reviewers = [
     'Tejaswini', 'Sohan', 'Basvaraj', 'Pushkaraj', 'Akash', 'Anmol',
     'Sachin', 'Akhil L', 'Vedant', 'Akhil M', 'Samit', 'Snehanshu',
-    'Ankita', 'Kaushik', 'Aman', 'Dhanush'
+    'Ankita', 'Kaushik', 'Aman'
   ];
 
   const skillsList = [

@@ -59,7 +59,6 @@ export const ACCESS = {
 export const EVALUATOR_NAMES = {
   'ayalla@mondee.com': 'Akash',
   'ashrivastava@mondee.com': 'Aman',
-  'dmohanraj@mondee.com': 'Dhanush',
   'amungalapara@mondee.com': 'Ankita',
   'asahu@mondee.com': 'Anmol',
   'bpatil@mondee.com': 'Basvaraj',
