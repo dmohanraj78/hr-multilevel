@@ -864,7 +864,7 @@ export default function App() {
                 </div>
 
                 <div className="bg-[#f8fafc] dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 rounded-xl px-4 py-2.5 text-xs text-slate-600 dark:text-slate-400 font-medium">
-                  We received <strong className="text-foreground">{globalData.length} applications</strong>. <strong className="text-[#800020]">{duplicatesCount} were duplicates</strong>.
+                  We received <strong className="text-foreground">{globalData.length} applications</strong>. <strong className="text-[#800020]">{duplicatesCount} {duplicatesCount === 1 ? 'was a duplicate' : 'were duplicates'}</strong>.
                 </div>
                 
                 <StatsBanner candidates={r1Candidates} rawCount={globalData.length} />
