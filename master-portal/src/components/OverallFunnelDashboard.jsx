@@ -1838,62 +1838,49 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
 
 
 
-      {/* Quick Summary Card only */}
-      <div className="flex justify-end">
-        <Card className="rounded-[1.5rem] border shadow-sm w-full max-w-sm">
-          <CardHeader className="pb-2 text-center border-b">
-            <CardTitle className="text-xs font-black tracking-widest text-slate-500 dark:text-slate-400 uppercase">
-              Quick Summary
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-4 flex flex-col gap-3.5 text-xs font-semibold">
-            {/* Total Applications */}
-            <div className="flex items-center justify-between py-1.5 border-b border-slate-50 dark:border-slate-800/40 last:border-0">
-              <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
-                <Users className="h-3.5 w-3.5 text-blue-500" />
-                <span>Total Applications</span>
+      {/* Quick Summary — horizontal stat strip */}
+      <Card className="rounded-[1.5rem] border shadow-sm w-full">
+        <CardContent className="py-5 px-6">
+          <div className="flex flex-wrap items-center justify-around gap-4">
+            <div className="flex flex-col items-center gap-1 text-center">
+              <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 uppercase tracking-wider font-black text-[10px]">
+                <Users className="h-3 w-3 text-blue-500" /> Total Applications
               </div>
-              <span className="font-mono text-blue-600 dark:text-blue-400 font-bold">{totalApplications}</span>
+              <span className="font-mono text-2xl font-extrabold text-blue-600 dark:text-blue-400">{totalApplications}</span>
             </div>
+            <div className="w-px h-10 bg-slate-100 dark:bg-slate-800 hidden sm:block" />
+            <div className="flex flex-col items-center gap-1 text-center">
+              <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 uppercase tracking-wider font-black text-[10px]">
+                <XCircle className="h-3 w-3 text-red-500" /> Duplicates
+              </div>
+              <span className="font-mono text-2xl font-extrabold text-red-600 dark:text-red-400">{duplicatesCount}</span>
+            </div>
+            <div className="w-px h-10 bg-slate-100 dark:bg-slate-800 hidden sm:block" />
+            <div className="flex flex-col items-center gap-1 text-center">
+              <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 uppercase tracking-wider font-black text-[10px]">
+                <Users className="h-3 w-3 text-blue-500" /> Unique Applications
+              </div>
+              <span className="font-mono text-2xl font-extrabold text-blue-600 dark:text-blue-400">{uniqueCount}</span>
+            </div>
+            <div className="w-px h-10 bg-slate-100 dark:bg-slate-800 hidden sm:block" />
+            <div className="flex flex-col items-center gap-1 text-center">
+              <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 uppercase tracking-wider font-black text-[10px]">
+                <CheckCircle className="h-3 w-3 text-emerald-500" /> Reviewed
+              </div>
+              <span className="font-mono text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">{reviewedCount}</span>
+            </div>
+            <div className="w-px h-10 bg-slate-100 dark:bg-slate-800 hidden sm:block" />
+            <div className="flex flex-col items-center gap-1 text-center">
+              <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 uppercase tracking-wider font-black text-[10px]">
+                <HelpCircle className="h-3 w-3 text-amber-500" /> Pending Review
+              </div>
+              <span className="font-mono text-2xl font-extrabold text-amber-600 dark:text-amber-400">{pendingReviewCount}</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-            {/* Duplicates */}
-            <div className="flex items-center justify-between py-1.5 border-b border-slate-50 dark:border-slate-800/40 last:border-0">
-              <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
-                <XCircle className="h-3.5 w-3.5 text-red-500" />
-                <span>Duplicates</span>
-              </div>
-              <span className="font-mono text-red-600 dark:text-red-400 font-bold">{duplicatesCount}</span>
-            </div>
 
-            {/* Unique Applications */}
-            <div className="flex items-center justify-between py-1.5 border-b border-slate-50 dark:border-slate-800/40 last:border-0">
-              <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
-                <Users className="h-3.5 w-3.5 text-blue-500" />
-                <span>Unique Applications</span>
-              </div>
-              <span className="font-mono text-blue-600 dark:text-blue-400 font-bold">{uniqueCount}</span>
-            </div>
-
-            {/* Reviewed */}
-            <div className="flex items-center justify-between py-1.5 border-b border-slate-50 dark:border-slate-800/40 last:border-0">
-              <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
-                <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />
-                <span>Reviewed</span>
-              </div>
-              <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">{reviewedCount}</span>
-            </div>
-
-            {/* Pending Review */}
-            <div className="flex items-center justify-between py-1.5 border-b border-slate-50 dark:border-slate-800/40 last:border-0">
-              <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
-                <HelpCircle className="h-3.5 w-3.5 text-amber-500" />
-                <span>Pending Review</span>
-              </div>
-              <span className="font-mono text-amber-600 dark:text-amber-400 font-bold">{pendingReviewCount}</span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Pivot Table 1: R1 Applications Divided by Tiers */}
       <Card className="rounded-[1.5rem] border shadow-sm p-6 bg-white dark:bg-slate-900">
