@@ -1835,136 +1835,12 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
 
 
 
-      {/* Round 1 Card */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row items-stretch gap-6">
-        {/* Left indicator column */}
-        <div className="flex flex-row md:flex-col items-center justify-center text-center w-full md:w-28 shrink-0 gap-3 border-b md:border-b-0 md:border-r border-slate-100 dark:border-slate-850 pb-4 md:pb-0 md:pr-6">
-          <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xl font-bold font-mono">
-            1
-          </div>
-          <div className="flex flex-col items-start md:items-center">
-            <div className="text-[11px] font-black tracking-wider text-blue-600 dark:text-blue-400 uppercase">Round 1</div>
-            <Search className="hidden md:block h-5 w-5 text-blue-400 dark:text-blue-500 stroke-[1.5] mt-1.5" />
-          </div>
-        </div>
 
-        {/* Right info column */}
-        <div className="flex-1 flex flex-col justify-between gap-4">
-          <ul className="flex flex-col gap-3.5 text-xs leading-relaxed text-slate-600 dark:text-slate-350 list-none pl-0">
-            <li className="flex items-start gap-2.5">
-              <span className="text-slate-400 dark:text-slate-600 font-mono mt-0.5">•</span>
-              <span>
-                Out of the <span className="font-semibold text-slate-900 dark:text-slate-100">{evaluatedCount}</span> reviewed, <span className="font-semibold text-slate-900 dark:text-slate-100">{t1t2Count}</span> applicants qualified to Tier 1, Tier 1-, Tier 2 and Tier 2-. <span className="font-semibold text-slate-900 dark:text-slate-100">{t1t2ManuallyReviewedCount}</span> applications have been manually reviewed and comments have been marked in Round 1.
-              </span>
-            </li>
-            <li className="flex items-start gap-2.5">
-              <span className="text-slate-400 dark:text-slate-600 font-mono mt-0.5">•</span>
-              <span>
-                Out of that <span className="font-semibold text-slate-900 dark:text-slate-100">{t1t2ManuallyReviewedCount}</span> applications, <span className="text-emerald-600 dark:text-emerald-400 font-bold">{t1t2YesCount} got yes</span>, <span className="text-rose-600 dark:text-rose-400 font-bold">{t1t2NoCount} got no</span> and <span className="text-amber-600 dark:text-amber-400 font-bold">{t1t2PendingCount} are pending review</span>.
-              </span>
-            </li>
-            <li className="flex items-start gap-2.5">
-              <span className="text-slate-400 dark:text-slate-600 font-mono mt-0.5">•</span>
-              <span>
-                Out of the <span className="font-semibold text-slate-900 dark:text-slate-100">{evaluatedCount}</span> reviewed, <span className="font-semibold text-slate-900 dark:text-slate-100">{t3t4Count}</span> applicants qualified to Tier 3 and Tier 4. <span className="font-semibold text-slate-900 dark:text-slate-100">{t3t4ManuallyReviewedCount}</span> were reviewed — out of that <span className="font-semibold text-slate-900 dark:text-slate-100">{t3t4Shortlisted}</span> are shortlisted and <span className="font-semibold text-slate-900 dark:text-slate-100">{t3t4PendingCount}</span> are pending manual review.
-              </span>
-            </li>
-          </ul>
 
-          <div className="bg-blue-500/5 dark:bg-blue-500/10 border border-blue-500/10 rounded-xl p-3 flex items-center gap-2.5 text-xs font-semibold text-blue-900 dark:text-blue-200">
-            <div className="p-1 bg-blue-500 text-white rounded-full">
-              <ArrowRight className="h-3 w-3 stroke-[2.5]" />
-            </div>
-            <span>
-              Total of <span className="font-bold text-blue-700 dark:text-blue-300">{movedR1ToR2Count}</span> out of <span className="font-bold text-blue-700 dark:text-blue-300">{evaluatedCount}</span> applicants moved from Round 1 to Round 2.
-            </span>
-          </div>
-        </div>
-      </div>
 
-      {/* Round 2 Card */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row items-stretch gap-6">
-        {/* Left indicator column */}
-        <div className="flex flex-row md:flex-col items-center justify-center text-center w-full md:w-28 shrink-0 gap-3 border-b md:border-b-0 md:border-r border-slate-100 dark:border-slate-850 pb-4 md:pb-0 md:pr-6">
-          <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xl font-bold font-mono">
-            2
-          </div>
-          <div className="flex flex-col items-start md:items-center">
-            <div className="text-[11px] font-black tracking-wider text-emerald-600 dark:text-emerald-400 uppercase">Round 2</div>
-            <Users className="hidden md:block h-5 w-5 text-emerald-400 dark:text-emerald-500 stroke-[1.5] mt-1.5" />
-          </div>
-        </div>
-
-        {/* Right info column */}
-        <div className="flex-1 flex flex-col justify-between gap-4">
-          <ul className="flex flex-col gap-3.5 text-xs leading-relaxed text-slate-600 dark:text-slate-350 list-none pl-0">
-            <li className="flex items-start gap-2.5">
-              <span className="text-slate-400 dark:text-slate-600 font-mono mt-0.5">•</span>
-              <span>
-                Out of <span className="font-semibold text-slate-900 dark:text-slate-100">{r2TotalCandidates}</span> candidates, <span className="font-semibold text-slate-900 dark:text-slate-100">{r2AssignedCount}</span> candidates were assigned to technical reviewers and <span className="font-semibold text-slate-900 dark:text-slate-100">{r2YetToAssignCount}</span> applicants are yet to be assigned.
-              </span>
-            </li>
-            <li className="flex items-start gap-2.5">
-              <span className="text-slate-400 dark:text-slate-600 font-mono mt-0.5">•</span>
-              <span>
-                Out of the <span className="font-semibold text-slate-900 dark:text-slate-100">{r2AssignedCount}</span> assigned candidates, <span className="font-semibold text-slate-900 dark:text-slate-100">{r2FinalizedCount}</span> reviews are finalized and <span className="font-semibold text-slate-900 dark:text-slate-100">{r2DraftCount}</span> is still in draft (review in progress).
-              </span>
-            </li>
-            <li className="flex items-start gap-2.5">
-              <span className="text-slate-400 dark:text-slate-600 font-mono mt-0.5">•</span>
-              <span>
-                Out of the <span className="font-semibold text-slate-900 dark:text-slate-100">{r2FinalizedCount}</span> finalized reviews, technical reviewers said <span className="text-emerald-600 dark:text-emerald-400 font-bold">yes</span> for <span className="font-semibold text-slate-900 dark:text-slate-100">{r2YesCount}</span> candidates, <span className="text-amber-600 dark:text-amber-400 font-bold">maybe</span> for <span className="font-semibold text-slate-900 dark:text-slate-100">{r2MaybeCount}</span> and <span className="text-rose-600 dark:text-rose-400 font-bold">no</span> for <span className="font-semibold text-slate-900 dark:text-slate-100">{r2NoCount}</span>.
-              </span>
-            </li>
-          </ul>
-
-          <div className="bg-emerald-500/5 dark:bg-emerald-500/10 border border-emerald-500/10 rounded-xl p-3 flex items-center gap-2.5 text-xs font-semibold text-emerald-900 dark:text-emerald-200">
-            <div className="p-1 bg-emerald-500 text-white rounded-full">
-              <ArrowRight className="h-3 w-3 stroke-[2.5]" />
-            </div>
-            <span>
-              Total of <span className="font-bold text-emerald-700 dark:text-emerald-300">{movedR2ToR3Count}</span> candidates moved from Round 2 to Round 3.
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Bottom Side-by-Side row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Round 3 Card */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row items-stretch gap-6 lg:col-span-2">
-          {/* Left indicator column */}
-          <div className="flex flex-row md:flex-col items-center justify-center text-center w-full md:w-28 shrink-0 gap-3 border-b md:border-b-0 md:border-r border-slate-100 dark:border-slate-850 pb-4 md:pb-0 md:pr-6">
-            <div className="w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 flex items-center justify-center text-xl font-bold font-mono">
-              3
-            </div>
-            <div className="flex flex-col items-start md:items-center">
-              <div className="text-[11px] font-black tracking-wider text-purple-600 dark:text-purple-400 uppercase">Round 3</div>
-              <Flag className="hidden md:block h-5 w-5 text-purple-400 dark:text-purple-500 stroke-[1.5] mt-1.5" />
-            </div>
-          </div>
-
-          {/* Right info column */}
-          <div className="flex-1 flex flex-col justify-center gap-2 pt-4 md:pt-0">
-            <ul className="flex flex-col gap-3.5 text-xs leading-relaxed text-slate-600 dark:text-slate-350 list-none pl-0">
-              <li className="flex items-start gap-2.5">
-                <span className="text-slate-400 dark:text-slate-600 font-mono mt-0.5">•</span>
-                <span>
-                  <span className="font-semibold text-slate-900 dark:text-slate-100">{r3PendingCount}</span> candidates pending for review. <span className="font-semibold text-slate-900 dark:text-slate-100">{r3HiredCount}</span> candidates hired.
-                </span>
-              </li>
-              <li className="flex items-start gap-2.5">
-                <span className="text-slate-400 dark:text-slate-600 font-mono mt-0.5">•</span>
-                <span>
-                  <span className="font-semibold text-slate-900 dark:text-slate-100">{r3RejectedCount}</span> candidates rejected.
-                </span>
-              </li>
-            </ul>
-          </div>
-        </div>
-
-        {/* Quick Summary Table Card */}
-        <Card className="rounded-[1.5rem] border shadow-sm lg:col-span-1">
+      {/* Quick Summary Card only */}
+      <div className="flex justify-end">
+        <Card className="rounded-[1.5rem] border shadow-sm w-full max-w-sm">
           <CardHeader className="pb-2 text-center border-b">
             <CardTitle className="text-xs font-black tracking-widest text-slate-500 dark:text-slate-400 uppercase">
               Quick Summary
@@ -2019,107 +1895,99 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
         </Card>
       </div>
 
-      {/* Pivot Tables Section */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mt-4">
-        {/* Table 1: Tiers Partition */}
-        <Card className="rounded-[1.5rem] border shadow-sm p-6 bg-white dark:bg-slate-900">
-          <CardHeader className="p-0 pb-4 border-b">
-            <CardTitle className="text-sm font-extrabold text-[#800020] uppercase tracking-wider flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" /> Applications Divided by Tiers
-            </CardTitle>
-          </CardHeader>
-          <div className="overflow-x-auto mt-4">
-            <table className="w-full text-xs text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400 font-bold uppercase tracking-wider font-mono">
-                  <th className="py-2.5">Tier</th>
-                  <th className="py-2.5 text-center text-emerald-600 dark:text-emerald-400">Yes</th>
-                  <th className="py-2.5 text-center text-blue-600 dark:text-blue-400">Pending</th>
-                  <th className="py-2.5 text-center text-rose-600 dark:text-rose-400">Reject</th>
-                  <th className="py-2.5 text-right font-bold text-foreground">Grand Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {['Tier 1', 'Tier 1-', 'Tier 2', 'Tier 2-', 'Tier 3', 'Tier 4'].map((tier) => {
-                  const data = tierPivotData[tier] || { yes: 0, pending: 0, reject: 0, total: 0 };
-                  return (
-                    <tr key={tier} className="border-b border-slate-50 dark:border-slate-850 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors font-medium">
-                      <td className="py-3 font-semibold text-slate-800 dark:text-slate-200">{tier}</td>
-                      <td className="py-3 text-center font-mono font-bold text-emerald-600 dark:text-emerald-450">{data.yes}</td>
-                      <td className="py-3 text-center font-mono font-bold text-blue-600 dark:text-blue-455">{data.pending}</td>
-                      <td className="py-3 text-center font-mono font-bold text-rose-600 dark:text-rose-455">{data.reject}</td>
-                      <td className="py-3 text-right font-mono font-bold text-slate-900 dark:text-slate-100">{data.total}</td>
-                    </tr>
-                  );
-                })}
-                {/* Grand Total Row */}
-                <tr className="bg-slate-50/85 dark:bg-slate-850/60 font-bold border-t border-slate-200 dark:border-slate-700">
-                  <td className="py-3 px-1 text-slate-900 dark:text-slate-150">Grand Total</td>
-                  <td className="py-3 text-center font-mono font-extrabold text-emerald-700 dark:text-emerald-400">{tierGrandTotal.yes}</td>
-                  <td className="py-3 text-center font-mono font-extrabold text-blue-700 dark:text-blue-400">{tierGrandTotal.pending}</td>
-                  <td className="py-3 text-center font-mono font-extrabold text-rose-700 dark:text-rose-400">{tierGrandTotal.reject}</td>
-                  <td className="py-3 text-right font-mono font-extrabold text-slate-955 dark:text-white">{tierGrandTotal.total}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </Card>
+      {/* Pivot Table 1: R1 Applications Divided by Tiers */}
+      <Card className="rounded-[1.5rem] border shadow-sm p-6 bg-white dark:bg-slate-900">
+        <CardHeader className="p-0 pb-4 border-b">
+          <CardTitle className="text-sm font-extrabold text-[#800020] uppercase tracking-wider flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" /> Round 1 — Applications Divided by Tiers
+          </CardTitle>
+        </CardHeader>
+        <div className="mt-4">
+          <table className="w-full text-xs text-left border-collapse">
+            <thead>
+              <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400 font-bold uppercase tracking-wider font-mono">
+                <th className="py-2.5 w-1/5">Tier</th>
+                <th className="py-2.5 text-center w-1/5 text-emerald-600 dark:text-emerald-400">Yes</th>
+                <th className="py-2.5 text-center w-1/5 text-blue-600 dark:text-blue-400">Pending</th>
+                <th className="py-2.5 text-center w-1/5 text-rose-600 dark:text-rose-400">Reject</th>
+                <th className="py-2.5 text-right w-1/5 font-bold text-foreground">Grand Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {['Tier 1', 'Tier 1-', 'Tier 2', 'Tier 2-', 'Tier 3', 'Tier 4'].map((tier) => {
+                const data = tierPivotData[tier] || { yes: 0, pending: 0, reject: 0, total: 0 };
+                return (
+                  <tr key={tier} className="border-b border-slate-50 dark:border-slate-850 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                    <td className="py-2.5 font-semibold text-slate-800 dark:text-slate-200">{tier}</td>
+                    <td className="py-2.5 text-center font-mono font-bold text-emerald-600">{data.yes}</td>
+                    <td className="py-2.5 text-center font-mono font-bold text-blue-600">{data.pending}</td>
+                    <td className="py-2.5 text-center font-mono font-bold text-rose-600">{data.reject}</td>
+                    <td className="py-2.5 text-right font-mono font-bold text-slate-900 dark:text-slate-100">{data.total}</td>
+                  </tr>
+                );
+              })}
+              <tr className="bg-slate-50 dark:bg-slate-850/60 font-bold border-t border-slate-200 dark:border-slate-700">
+                <td className="py-2.5 px-1 text-slate-900 dark:text-slate-100">Grand Total</td>
+                <td className="py-2.5 text-center font-mono font-extrabold text-emerald-700">{tierGrandTotal.yes}</td>
+                <td className="py-2.5 text-center font-mono font-extrabold text-blue-700">{tierGrandTotal.pending}</td>
+                <td className="py-2.5 text-center font-mono font-extrabold text-rose-700">{tierGrandTotal.reject}</td>
+                <td className="py-2.5 text-right font-mono font-extrabold text-slate-900 dark:text-white">{tierGrandTotal.total}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </Card>
 
-        {/* Table 2: Reviewers Distribution */}
-        <Card className="rounded-[1.5rem] border shadow-sm p-6 bg-white dark:bg-slate-900">
-          <CardHeader className="p-0 pb-4 border-b">
-            <CardTitle className="text-sm font-extrabold text-[#800020] uppercase tracking-wider flex items-center gap-2">
-              <Users className="h-4 w-4" /> Aviators Distribution (Technical Reviewers)
-            </CardTitle>
-          </CardHeader>
-          <div className="overflow-x-auto mt-4">
-            <table className="w-full text-xs text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400 font-bold uppercase tracking-wider font-mono">
-                  <th className="py-2.5">Reviewer</th>
-                  <th className="py-2.5 text-center text-emerald-600 dark:text-emerald-400">Yes</th>
-                  <th className="py-2.5 text-center text-emerald-550/80 dark:text-emerald-350">Maybe</th>
-                  <th className="py-2.5 text-center text-rose-500 dark:text-rose-400">No</th>
-                  <th className="py-2.5 text-center text-blue-600 dark:text-blue-400">Pending</th>
-                  <th className="py-2.5 text-center text-rose-700 dark:text-rose-500">Rejected (R1)</th>
-                  <th className="py-2.5 text-right font-bold text-foreground">Grand Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  'Akash', 'Ankita', 'Anmol', 'Basvaraj', 'Pushkaraj', 
-                  'Sachin', 'Sohan', 'Tejaswini', 'Vedant', 'Unassigned'
-                ].map((name) => {
-                  const data = reviewerPivotData[name] || { yes: 0, maybe: 0, no: 0, pending: 0, rejectedR1: 0, total: 0 };
-                  return (
-                    <tr key={name} className="border-b border-slate-50 dark:border-slate-850 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors font-medium">
-                      <td className="py-2.5 font-semibold text-slate-800 dark:text-slate-200 font-mono">
-                        {name === 'Unassigned' ? <span className="text-slate-400 dark:text-slate-500 font-normal italic">Unassigned</span> : name}
-                      </td>
-                      <td className="py-2.5 text-center font-mono font-bold text-emerald-600 dark:text-emerald-450">{data.yes}</td>
-                      <td className="py-2.5 text-center font-mono font-semibold text-emerald-500 dark:text-emerald-400">{data.maybe}</td>
-                      <td className="py-2.5 text-center font-mono font-bold text-rose-500 dark:text-rose-455">{data.no}</td>
-                      <td className="py-2.5 text-center font-mono font-semibold text-blue-600 dark:text-blue-450">{data.pending}</td>
-                      <td className="py-2.5 text-center font-mono font-semibold text-rose-750 dark:text-rose-500">{data.rejectedR1}</td>
-                      <td className="py-2.5 text-right font-mono font-bold text-slate-900 dark:text-slate-100">{data.total}</td>
-                    </tr>
-                  );
-                })}
-                {/* Grand Total Row */}
-                <tr className="bg-slate-50/85 dark:bg-slate-850/60 font-bold border-t border-slate-200 dark:border-slate-700">
-                  <td className="py-2.5 px-1 text-slate-900 dark:text-slate-150">Grand Total</td>
-                  <td className="py-2.5 text-center font-mono font-extrabold text-emerald-700 dark:text-emerald-400">{reviewerGrandTotal.yes}</td>
-                  <td className="py-2.5 text-center font-mono font-extrabold text-emerald-600 dark:text-emerald-350">{reviewerGrandTotal.maybe}</td>
-                  <td className="py-2.5 text-center font-mono font-extrabold text-rose-700 dark:text-rose-400">{reviewerGrandTotal.no}</td>
-                  <td className="py-2.5 text-center font-mono font-extrabold text-blue-700 dark:text-blue-400">{reviewerGrandTotal.pending}</td>
-                  <td className="py-2.5 text-center font-mono font-extrabold text-rose-800 dark:text-rose-550">{reviewerGrandTotal.rejectedR1}</td>
-                  <td className="py-2.5 text-right font-mono font-extrabold text-slate-955 dark:text-white">{reviewerGrandTotal.total}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </Card>
-      </div>
+      {/* Pivot Table 2: R2 Aviators Distribution */}
+      <Card className="rounded-[1.5rem] border shadow-sm p-6 bg-white dark:bg-slate-900">
+        <CardHeader className="p-0 pb-4 border-b">
+          <CardTitle className="text-sm font-extrabold text-[#800020] uppercase tracking-wider flex items-center gap-2">
+            <Users className="h-4 w-4" /> Round 2 — Aviators Distribution (Technical Reviewers)
+          </CardTitle>
+        </CardHeader>
+        <div className="mt-4">
+          <table className="w-full text-xs text-left border-collapse">
+            <thead>
+              <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400 font-bold uppercase tracking-wider font-mono">
+                <th className="py-2.5">Reviewer</th>
+                <th className="py-2.5 text-center text-emerald-600 dark:text-emerald-400">Yes</th>
+                <th className="py-2.5 text-center text-emerald-500 dark:text-emerald-350">Maybe</th>
+                <th className="py-2.5 text-center text-rose-500 dark:text-rose-400">No</th>
+                <th className="py-2.5 text-center text-blue-600 dark:text-blue-400">Pending</th>
+                <th className="py-2.5 text-center text-rose-700 dark:text-rose-500">Rejected (R1)</th>
+                <th className="py-2.5 text-right font-bold text-foreground">Grand Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {['Akash', 'Ankita', 'Anmol', 'Basvaraj', 'Pushkaraj', 'Sachin', 'Sohan', 'Tejaswini', 'Vedant', 'Unassigned'].map((name) => {
+                const data = reviewerPivotData[name] || { yes: 0, maybe: 0, no: 0, pending: 0, rejectedR1: 0, total: 0 };
+                return (
+                  <tr key={name} className="border-b border-slate-50 dark:border-slate-850 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                    <td className="py-2.5 font-semibold text-slate-800 dark:text-slate-200">
+                      {name === 'Unassigned' ? <span className="text-slate-400 italic font-normal">Unassigned</span> : name}
+                    </td>
+                    <td className="py-2.5 text-center font-mono font-bold text-emerald-600">{data.yes}</td>
+                    <td className="py-2.5 text-center font-mono font-semibold text-emerald-500">{data.maybe}</td>
+                    <td className="py-2.5 text-center font-mono font-bold text-rose-500">{data.no}</td>
+                    <td className="py-2.5 text-center font-mono font-semibold text-blue-600">{data.pending}</td>
+                    <td className="py-2.5 text-center font-mono font-semibold text-rose-700">{data.rejectedR1}</td>
+                    <td className="py-2.5 text-right font-mono font-bold text-slate-900 dark:text-slate-100">{data.total}</td>
+                  </tr>
+                );
+              })}
+              <tr className="bg-slate-50 dark:bg-slate-850/60 font-bold border-t border-slate-200 dark:border-slate-700">
+                <td className="py-2.5 px-1 text-slate-900 dark:text-slate-100">Grand Total</td>
+                <td className="py-2.5 text-center font-mono font-extrabold text-emerald-700">{reviewerGrandTotal.yes}</td>
+                <td className="py-2.5 text-center font-mono font-extrabold text-emerald-600">{reviewerGrandTotal.maybe}</td>
+                <td className="py-2.5 text-center font-mono font-extrabold text-rose-700">{reviewerGrandTotal.no}</td>
+                <td className="py-2.5 text-center font-mono font-extrabold text-blue-700">{reviewerGrandTotal.pending}</td>
+                <td className="py-2.5 text-center font-mono font-extrabold text-rose-800">{reviewerGrandTotal.rejectedR1}</td>
+                <td className="py-2.5 text-right font-mono font-extrabold text-slate-900 dark:text-white">{reviewerGrandTotal.total}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </Card>
 
     </div>
   );
