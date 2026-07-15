@@ -1244,6 +1244,156 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       });
     };
 
+    // --- Tab: Analysis_Clean (63 columns) ---
+    const addAnalysisCleanTab = () => {
+      const cleanSheet = workbook.getWorksheet("Analysis_Clean");
+      if (!cleanSheet) return;
+
+      // Keep rows 1 and 2 (headers), clear data from row 3 onwards
+      const totalRows = cleanSheet.rowCount;
+      if (totalRows >= 3) {
+        cleanSheet.spliceRows(3, totalRows - 2);
+      }
+
+      // Sort order by score descending (so Rank starts at 1 for the highest score)
+      const sortedCandidates = [...evaluatedCandidates].sort((a, b) => {
+        const totalA = parseFloat(getR1(a).total || 0);
+        const totalB = parseFloat(getR1(b).total || 0);
+        return totalB - totalA;
+      });
+
+      sortedCandidates.forEach((c, idx) => {
+        const r1 = getR1(c);
+        const r2 = getR2(c);
+        const r3 = getR3(c);
+
+        const appStatus = r1.app_status || 'Pending';
+        const r2Status = r2.moved_to_round_3 || '';
+        const r3Status = r3.verdict || r3.final_status || '';
+
+        const tier = r1.tier || '';
+        const tierGroup = ['Tier 1', 'Tier 1+', 'Tier 2', 'Tier 2+', 'Tier 1-', 'Tier 2-', 'T1', 'T1+', 'T2', 'T2+', 'T1-', 'T2-'].includes(tier) ? 'Top' : 'Low';
+        const r1ReviewStatus = appStatus === 'Yes' ? 'Yes' : (['No', 'Reject', 'Rejected', 'Invalid'].includes(appStatus) ? 'No' : 'Pending');
+        const r1Reviewed = (appStatus && appStatus !== 'Pending') || (r1.review_comments && r1.review_comments.trim() !== '') ? 'Yes' : 'No';
+        const movedToR2 = appStatus === 'Yes' ? 1 : 0;
+
+        const evalGroup = r1.eval_group;
+        const r2Assignment = evalGroup && evalGroup !== '' && evalGroup !== 'None' && evalGroup !== 'Unassigned' ? 'Assigned' : 'Unassigned';
+        const r2ReviewCompletion = r2Status && !r2Status.endsWith('_draft') && ['Yes', 'Maybe', 'No', 'Declined'].includes(r2Status) ? 'Finalized' : 'In Progress';
+        const r2Outcome = r2Status ? r2Status.replace('_draft', '') : '';
+        const movedToR3 = r2Status && !r2Status.endsWith('_draft') && ['Yes', 'Maybe'].includes(r2Status) ? 1 : 0;
+
+        let funnelStage = 'Round 1';
+        if (['Hired', 'Yes', 'Offer'].includes(r3Status)) {
+          funnelStage = 'Hired';
+        } else if (['Rejected', 'No'].includes(r3Status)) {
+          funnelStage = 'R3 Rejected';
+        } else if (r2Status && !r2Status.endsWith('_draft') && ['Yes', 'Maybe'].includes(r2Status)) {
+          funnelStage = 'Round 3';
+        } else if (r2Status && !r2Status.endsWith('_draft') && ['No', 'Declined'].includes(r2Status)) {
+          funnelStage = 'R2 Rejected';
+        } else if (appStatus === 'Yes') {
+          funnelStage = 'Round 2';
+        } else if (['No', 'Reject', 'Rejected', 'Invalid'].includes(appStatus)) {
+          funnelStage = 'R1 Rejected';
+        }
+
+        const domain = (r1.domain || '').trim();
+        const d_empty = domain === '' || domain === '-' ? 1 : 0;
+        const d_content = domain.toLowerCase().includes('content') ? 1 : 0;
+        const d_creator = domain.toLowerCase().includes('creator economy') ? 1 : 0;
+        const d_healthcare = domain.toLowerCase().includes('healthcare') ? 1 : 0;
+        const d_retail = domain.toLowerCase().includes('retail') ? 1 : 0;
+        const d_travel = domain.toLowerCase().includes('travel') ? 1 : 0;
+        const d_no_match = (domain !== '' && domain !== '-' && !d_content && !d_creator && !d_healthcare && !d_retail && !d_travel) ? 1 : 0;
+
+        const rowNumber = idx + 3;
+        const row = cleanSheet.getRow(rowNumber);
+
+        row.getCell(1).value = idx + 1;
+        row.getCell(2).value = c.full_name || '';
+        row.getCell(3).value = r1.gender || '';
+        row.getCell(4).value = r1.cat || '';
+        row.getCell(5).value = r1.graduation || '';
+        row.getCell(6).value = r1.tier || '';
+        row.getCell(7).value = r1.total !== null && r1.total !== undefined ? parseFloat(r1.total) : null;
+        row.getCell(8).value = r1.edu !== null && r1.edu !== undefined ? parseFloat(r1.edu) : null;
+        row.getCell(9).value = r1.exp !== null && r1.exp !== undefined ? parseFloat(r1.exp) : null;
+        row.getCell(10).value = r1.proj !== null && r1.proj !== undefined ? parseFloat(r1.proj) : null;
+        row.getCell(11).value = r1.substance !== null && r1.substance !== undefined ? parseFloat(r1.substance) : null;
+        row.getCell(12).value = r1.deploy !== null && r1.deploy !== undefined ? parseFloat(r1.deploy) : null;
+        row.getCell(13).value = r1.artifact !== null && r1.artifact !== undefined ? parseFloat(r1.artifact) : null;
+        row.getCell(14).value = r1.skills !== null && r1.skills !== undefined ? parseFloat(r1.skills) : null;
+        row.getCell(15).value = r1.domain || '';
+        row.getCell(16).value = r1.degree || '';
+        row.getCell(17).value = r1.stream || '';
+        row.getCell(18).value = r1.college || '';
+        row.getCell(19).value = r1.college || '';
+        row.getCell(20).value = c.ug_university || '';
+        row.getCell(21).value = r1.location || '';
+        row.getCell(22).value = r1.ai_proj !== null && r1.ai_proj !== undefined ? parseFloat(r1.ai_proj) : null;
+        row.getCell(23).value = r1.fs_proj !== null && r1.fs_proj !== undefined ? parseFloat(r1.fs_proj) : null;
+        row.getCell(24).value = r1.intern_mo !== null && r1.intern_mo !== undefined ? parseFloat(r1.intern_mo) : null;
+        row.getCell(25).value = r1.co_tier !== null && r1.co_tier !== undefined ? parseFloat(r1.co_tier) : null;
+        row.getCell(26).value = r1.deploy_stage || '';
+        row.getCell(27).value = r1.num_skills !== null && r1.num_skills !== undefined ? parseInt(r1.num_skills) : null;
+        row.getCell(28).value = r1.claude_lvl || '';
+        row.getCell(29).value = r1.aiml_exp || '';
+        row.getCell(30).value = c.email || '';
+        row.getCell(31).value = c.resume_drive_url || '';
+        row.getCell(32).value = c.github_url || '';
+        row.getCell(33).value = c.demo_link || '';
+        row.getCell(34).value = c.demo_explanation || c.current_project || '';
+        row.getCell(35).value = r1.demo_review_notes_ai || '';
+        row.getCell(36).value = r1.review_comments || '';
+        row.getCell(37).value = r1.eval_group || '';
+        row.getCell(38).value = r1.app_status || '';
+        row.getCell(39).value = r2.when_can_they_start || '';
+        row.getCell(40).value = r2.complexity || '';
+        row.getCell(41).value = r2.tech_depth || r2.product_depth || '';
+        row.getCell(42).value = r2.tech_stack || '';
+        row.getCell(43).value = r2.problem_fit || r2.solves_business_problem || '';
+        row.getCell(44).value = r2.latency_considerations || r2.product_depth || '';
+        row.getCell(45).value = r2.moved_to_round_3 || '';
+        row.getCell(46).value = r2.demo_review_comment || '';
+        row.getCell(47).value = tierGroup;
+        row.getCell(48).value = r1ReviewStatus;
+        row.getCell(49).value = r1Reviewed;
+        row.getCell(50).value = movedToR2;
+        row.getCell(51).value = r2Assignment;
+        row.getCell(52).value = r2ReviewCompletion;
+        row.getCell(53).value = r2Outcome;
+        row.getCell(54).value = movedToR3;
+        row.getCell(55).value = r3Status;
+        row.getCell(56).value = funnelStage;
+        row.getCell(57).value = d_empty;
+        row.getCell(58).value = d_content;
+        row.getCell(59).value = d_creator;
+        row.getCell(60).value = d_healthcare;
+        row.getCell(61).value = d_retail;
+        row.getCell(62).value = d_travel;
+        row.getCell(63).value = d_no_match;
+
+        row.height = 20;
+        row.alignment = { vertical: 'middle' };
+        
+        // Re-apply borders and fonts to newly written row cells to keep formatting beautiful
+        for (let colIdx = 1; colIdx <= 63; colIdx++) {
+          const cell = row.getCell(colIdx);
+          cell.font = { name: 'Segoe UI', size: 9.5 };
+          cell.border = {
+            top: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+            bottom: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+            left: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+            right: { style: 'thin', color: { argb: 'FFE0E0E0' } }
+          };
+          
+          const val = cell.value;
+          cell.alignment = { vertical: 'middle', horizontal: (typeof val === 'number') ? 'center' : 'left' };
+        }
+      });
+    };
+
     // --- Tab: Pivot Data (flat, pivot-table-ready — one row per application,
     // one clean header row, pre-computed dimension columns so the funnel
     // narrative can be produced with simple pivots) ---
@@ -1366,6 +1516,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       filename = `round_3_executive_verdicts_${dateSuffix}.xlsx`;
     } else if (roundType === 'side-by-side') {
       addSideBySideTab();
+      addAnalysisCleanTab();
       addPivotDataTab();
       filename = `r1_r2_side_by_side_report_${dateSuffix}.xlsx`;
     } else {
@@ -1509,40 +1660,6 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
             <strong className="text-[#800020]">{rawTotal} applications</strong> received · {evaluatedCount} evaluated · {duplicatesRemoved} duplicates removed · {awaitingEvaluation} Application Pending review rubric
           </p>
         </div>
-      </div>
-
-      {/* Date-wise Custom Downloader Card */}
-      <div className="bg-card border border-muted-foreground/10 rounded-2xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Date Selector (Optional Filter)</label>
-            <div className="flex items-center gap-2">
-              <Input 
-                type="date" 
-                value={startDate} 
-                onChange={(e) => setStartDate(e.target.value)} 
-                className="h-10 text-xs w-[145px] bg-card border-muted-foreground/20 rounded-xl"
-              />
-              <span className="text-muted-foreground text-xs font-semibold px-0.5">to</span>
-              <Input 
-                type="date" 
-                value={endDate} 
-                onChange={(e) => setEndDate(e.target.value)} 
-                className="h-10 text-xs w-[145px] bg-card border-muted-foreground/20 rounded-xl"
-              />
-              {(startDate || endDate) && (
-                <Button 
-                  onClick={() => { setStartDate(''); setEndDate(''); }} 
-                  variant="ghost" 
-                  className="h-10 px-3 text-xs text-rose-500 hover:text-rose-600 font-semibold hover:bg-rose-50/50 rounded-xl transition-all"
-                >
-                  Clear Range
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
-
         <div className="flex flex-wrap gap-2 md:items-end justify-end self-stretch md:self-auto">
           <Button 
             onClick={() => downloadExcelReport('side-by-side')} 
@@ -1551,96 +1668,6 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
             <Download className="mr-1.5 h-3.5 w-3.5" /> Download Report
           </Button>
         </div>
-      </div>
-
-      {/* Tiles Metrics Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        
-        {/* Total Tile */}
-        <Card 
-          onClick={() => handleTileClick('ALL')}
-          className={`rounded-2xl border shadow-sm hover:shadow-md transition-all cursor-pointer hover:scale-[1.02] ${
-            currentActiveTile === 'ALL' ? 'ring-2 ring-[#800020] border-transparent' : ''
-          }`}
-        >
-          <CardContent className="pt-4 pb-3 flex flex-col gap-1">
-            <span className="text-xs font-mono text-muted-foreground uppercase tracking-wider block">Applicants</span>
-            <div className="flex items-baseline justify-between mt-1">
-              <span className="text-3xl font-extrabold font-mono text-foreground">{evaluatedFiltered.length}</span>
-              <Users className="h-5 w-5 text-slate-400 stroke-[1.5]" />
-            </div>
-            <span className="text-[10px] text-muted-foreground">{filteredDuplicatesRemoved} duplicates · {awaitingEvaluation} awaiting evaluation</span>
-          </CardContent>
-        </Card>
-
-        {/* Hired Tile */}
-        <Card 
-          onClick={() => handleTileClick('Hired')}
-          className={`rounded-2xl border border-green-500/20 bg-green-500/5 shadow-sm hover:shadow-md transition-all cursor-pointer hover:scale-[1.02] ${
-            currentActiveTile === 'Hired' ? 'ring-2 ring-green-500 border-transparent' : ''
-          }`}
-        >
-          <CardContent className="pt-4 pb-3 flex flex-col gap-1">
-            <span className="text-xs font-mono text-green-700 dark:text-green-400 uppercase tracking-wider block">Hired</span>
-            <div className="flex items-baseline justify-between mt-1">
-              <span className="text-3xl font-extrabold font-mono text-green-600 dark:text-green-400">{stats.hired}</span>
-              <CheckCircle className="h-5 w-5 text-green-500 stroke-[1.5]" />
-            </div>
-            <span className="text-[10px] text-green-600/80">Approved for offer</span>
-          </CardContent>
-        </Card>
-
-        {/* In Review Tile */}
-        <Card 
-          onClick={() => handleTileClick('Review')}
-          className={`rounded-2xl border border-blue-500/20 bg-blue-500/5 shadow-sm hover:shadow-md transition-all cursor-pointer hover:scale-[1.02] ${
-            currentActiveTile === 'Review' ? 'ring-2 ring-blue-500 border-transparent' : ''
-          }`}
-        >
-          <CardContent className="pt-4 pb-3 flex flex-col gap-1">
-            <span className="text-xs font-mono text-blue-700 dark:text-blue-400 uppercase tracking-wider block">HR Approved</span>
-            <div className="flex items-baseline justify-between mt-1">
-              <span className="text-3xl font-extrabold font-mono text-blue-600 dark:text-blue-400">{stats.review}</span>
-              <Flame className="h-5 w-5 text-blue-500 stroke-[1.5]" />
-            </div>
-            <span className="text-[10px] text-blue-600/80">Moved to round 2</span>
-          </CardContent>
-        </Card>
-
-        {/* Pending Review Tile */}
-        <Card 
-          onClick={() => handleTileClick('Pending')}
-          className={`rounded-2xl border border-amber-500/20 bg-amber-500/5 shadow-sm hover:shadow-md transition-all cursor-pointer hover:scale-[1.02] ${
-            currentActiveTile === 'Pending' ? 'ring-2 ring-amber-500 border-transparent' : ''
-          }`}
-        >
-          <CardContent className="pt-4 pb-3 flex flex-col gap-1">
-            <span className="text-xs font-mono text-amber-700 dark:text-amber-400 uppercase tracking-wider block">Pending for manual review</span>
-            <div className="flex items-baseline justify-between mt-1">
-              <span className="text-3xl font-extrabold font-mono text-amber-600 dark:text-amber-400">{stats.pendingScreening}</span>
-              <HelpCircle className="h-5 w-5 text-amber-500 stroke-[1.5]" />
-            </div>
-            <span className="text-[10px] text-amber-600/80">Waiting evaluation</span>
-          </CardContent>
-        </Card>
-
-        {/* Rejected Tile */}
-        <Card 
-          onClick={() => handleTileClick('Rejected')}
-          className={`rounded-2xl border border-red-500/20 bg-red-500/5 shadow-sm hover:shadow-md transition-all cursor-pointer hover:scale-[1.02] ${
-            currentActiveTile === 'Rejected' ? 'ring-2 ring-red-500 border-transparent' : ''
-          }`}
-        >
-          <CardContent className="pt-4 pb-3 flex flex-col gap-1">
-            <span className="text-xs font-mono text-red-700 dark:text-red-400 uppercase tracking-wider block">Rejected</span>
-            <div className="flex items-baseline justify-between mt-1">
-              <span className="text-3xl font-extrabold font-mono text-red-600 dark:text-red-400">{stats.rejected}</span>
-              <XOctagon className="h-5 w-5 text-red-500 stroke-[1.5]" />
-            </div>
-            <span className="text-[10px] text-red-600/80">Rejected in round 1</span>
-          </CardContent>
-        </Card>
-
       </div>
 
       {/* Info summary banner */}
