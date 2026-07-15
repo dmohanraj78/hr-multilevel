@@ -1,4 +1,85 @@
-import React, { useState, useEffect } from 'react';
+import os
+import re
+import shutil
+
+portals = ['master-portal', 'recruiter-portal', 'executive-portal', 'evaluator-portal']
+base_dir = r"c:\Users\Dhanush\Music\aviatorsclaude"
+
+# 1. Copy mondee_logo.svg
+src_logo = os.path.join(base_dir, "sso-portal", "public", "mondee_logo.svg")
+for portal in portals:
+    dst_logo = os.path.join(base_dir, portal, "public", "mondee_logo.svg")
+    if os.path.exists(src_logo):
+        shutil.copy(src_logo, dst_logo)
+
+# 2. Add Dhanush to access.js
+for portal in portals:
+    file_path = os.path.join(base_dir, portal, "src", "lib", "access.js")
+    with open(file_path, "r") as f:
+        content = f.read()
+    if "'dmohanraj@mondee.com': 'Dhanush'" not in content:
+        content = content.replace("'ashrivastava@mondee.com': 'Aman',", "'ashrivastava@mondee.com': 'Aman',\n  'dmohanraj@mondee.com': 'Dhanush',")
+        with open(file_path, "w") as f:
+            f.write(content)
+
+# 3. Add Dhanush to CandidateListTable.jsx
+for portal in portals:
+    file_path = os.path.join(base_dir, portal, "src", "components", "CandidateListTable.jsx")
+    with open(file_path, "r") as f:
+        content = f.read()
+    if 'value="Dhanush"' not in content:
+        content = content.replace('<option value="Aman">Aman</option>', '<option value="Aman">Aman</option>\n                          <option value="Dhanush">Dhanush</option>')
+        with open(file_path, "w") as f:
+            f.write(content)
+
+# 4. Add Dhanush to CandidateProfileDossier.jsx
+for portal in portals:
+    file_path = os.path.join(base_dir, portal, "src", "components", "CandidateProfileDossier.jsx")
+    with open(file_path, "r") as f:
+        content = f.read()
+    if "'Dhanush'" not in content:
+        content = content.replace("'Ankita', 'Kaushik', 'Aman'", "'Ankita', 'Kaushik', 'Aman', 'Dhanush'")
+        with open(file_path, "w") as f:
+            f.write(content)
+
+# 5. Add Dhanush to master and recruiter OverallFunnelDashboard.jsx
+for portal in ['master-portal', 'recruiter-portal']:
+    file_path = os.path.join(base_dir, portal, "src", "components", "OverallFunnelDashboard.jsx")
+    with open(file_path, "r") as f:
+        content = f.read()
+    
+    # Reviewers array (only in master-portal)
+    content = content.replace("'Aman', 'Ankita'", "'Aman', 'Ankita', 'Dhanush'")
+    # Clans object
+    content = content.replace("Aman: 0,", "Aman: 0, Dhanush: 0,")
+    
+    with open(file_path, "w") as f:
+        f.write(content)
+
+# 6. Add Dhanush to evaluator App.jsx
+eval_app = os.path.join(base_dir, "evaluator-portal", "src", "App.jsx")
+with open(eval_app, "r") as f:
+    content = f.read()
+if "'Dhanush'" not in content:
+    dhanush_clan = "{ id: 'Dhanush', name: 'Dhanush', desc: 'Dhanush\\'s Queue', color: 'border-blue-500/20 hover:border-blue-500/80 bg-blue-500/5' },"
+    content = content.replace("{ id: 'Aman', name: 'Aman', desc: 'Aman\\'s Queue', color: 'border-red-500/20 hover:border-red-500/80 bg-red-500/5' },", 
+                              f"{{ id: 'Aman', name: 'Aman', desc: 'Aman\\'s Queue', color: 'border-red-500/20 hover:border-red-500/80 bg-red-500/5' }},\n  {dhanush_clan}")
+    with open(eval_app, "w") as f:
+        f.write(content)
+
+# 7. Add Dhanush to master App.jsx
+master_app = os.path.join(base_dir, "master-portal", "src", "App.jsx")
+with open(master_app, "r") as f:
+    content = f.read()
+if "'Dhanush'" not in content:
+    content = content.replace("'Ankita', 'Kaushik', 'Aman'", "'Ankita', 'Kaushik', 'Aman', 'Dhanush'")
+    content = content.replace("Aman: { border: 'border-t-red-500', text: 'text-red-600 dark:text-red-400', bg: 'bg-red-500/5' }", 
+                              "Aman: { border: 'border-t-red-500', text: 'text-red-600 dark:text-red-400', bg: 'bg-red-500/5' },\n    Dhanush: { border: 'border-t-blue-500', text: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-500/5' }")
+    with open(master_app, "w") as f:
+        f.write(content)
+
+# 8. Redesign AuthGate.jsx
+auth_gate_code = """import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import {
   isMondeeEmail,
@@ -193,3 +274,11 @@ function GoogleIcon() {
     </svg>
   );
 }
+"""
+
+for portal in portals:
+    file_path = os.path.join(base_dir, portal, "src", "AuthGate.jsx")
+    with open(file_path, "w") as f:
+        f.write(auth_gate_code)
+
+print("Done.")

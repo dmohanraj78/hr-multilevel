@@ -584,10 +584,10 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
                   {/* Round 3 specific */}
                   {round === 3 && (
                     <>
-                      <TableHead className="w-[150px] overflow-visible">
+                      <TableHead className="w-[180px] overflow-visible">
                         <HeaderFilter label="TR Name" columnKey="clan" uniqueValues={uniqueClans} activeFilters={activeFilters} onApplyFilter={handleApplyFilter} sortConfig={sortConfig} onSort={handleSort} />
                       </TableHead>
-                      <TableHead className="font-semibold">TR Comments</TableHead>
+                      <TableHead className="min-w-[240px] font-semibold">TR Comments</TableHead>
                       <TableHead className="w-[130px] overflow-visible">
                         <HeaderFilter label="TR Decision" columnKey="tr_decision" uniqueValues={uniqueTrDecisions} activeFilters={activeFilters} onApplyFilter={handleApplyFilter} sortConfig={sortConfig} onSort={handleSort} />
                       </TableHead>
@@ -674,6 +674,7 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
                           <option value="Ankita">Ankita</option>
                           <option value="Kaushik">Kaushik</option>
                           <option value="Aman">Aman</option>
+                          <option value="Dhanush">Dhanush</option>
                         </select>
                       </TableCell>
                     </TableRow>
@@ -722,6 +723,7 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
                             <option value="Ankita">Ankita</option>
                             <option value="Kaushik">Kaushik</option>
                             <option value="Aman">Aman</option>
+                          <option value="Dhanush">Dhanush</option>
                           </select>
                         ) : (
                           <Badge variant="outline" className="font-semibold text-[11px] border-primary/20 text-[#800020] bg-primary/5 rounded-full px-2">
@@ -751,7 +753,7 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
                               {getEval1(cand, 'eval_group') || 'None'}
                             </Badge>
                           </TableCell>
-                          <TableCell className="max-w-[200px]">
+                          <TableCell className="max-w-[280px]">
                             <span title={trComment} className="text-xs text-muted-foreground line-clamp-2 whitespace-normal block">
                               {trComment || 'No comments left.'}
                             </span>

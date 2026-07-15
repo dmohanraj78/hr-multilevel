@@ -11,6 +11,7 @@ import { LayoutDashboard, Users, ShieldAlert, ArrowLeft, GitPullRequest, Loader2
 const TECH_EVALUATORS = [
   { id: 'Akash', name: 'Akash', desc: 'Akash\'s Queue', color: 'border-teal-500/20 hover:border-teal-500/80 bg-teal-500/5' },
   { id: 'Aman', name: 'Aman', desc: 'Aman\'s Queue', color: 'border-red-500/20 hover:border-red-500/80 bg-red-500/5' },
+  { id: 'Dhanush', name: 'Dhanush', desc: 'Dhanush\'s Queue', color: 'border-blue-500/20 hover:border-blue-500/80 bg-blue-500/5' },
   { id: 'Akhil L', name: 'Akhil L', desc: 'Akhil L\'s Queue', color: 'border-indigo-500/20 hover:border-indigo-500/80 bg-indigo-500/5' },
   { id: 'Akhil M', name: 'Akhil M', desc: 'Akhil M\'s Queue', color: 'border-fuchsia-500/20 hover:border-fuchsia-500/80 bg-fuchsia-500/5' },
   { id: 'Anmol', name: 'Anmol', desc: 'Anmol\'s Queue', color: 'border-cyan-500/20 hover:border-cyan-500/80 bg-cyan-500/5' },

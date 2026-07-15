@@ -380,7 +380,7 @@ export default function App() {
   const techEvaluatorsSnapshot = [
     'Tejaswini', 'Sohan', 'Basvaraj', 'Pushkaraj', 'Akash', 'Anmol',
     'Sachin', 'Akhil L', 'Vedant', 'Akhil M', 'Samit', 'Snehanshu',
-    'Ankita', 'Kaushik', 'Aman'
+    'Ankita', 'Kaushik', 'Aman', 'Dhanush'
   ].map(techEvaluatorId => {
     const assigned = globalData.filter(c => getR1(c).eval_group === techEvaluatorId);
     return {
@@ -420,7 +420,8 @@ export default function App() {
     Snehanshu: { border: 'border-t-rose-500', text: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-500/5' },
     Ankita: { border: 'border-t-amber-500', text: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-500/5' },
     Kaushik: { border: 'border-t-orange-500', text: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-500/5' },
-    Aman: { border: 'border-t-red-500', text: 'text-red-600 dark:text-red-400', bg: 'bg-red-500/5' }
+    Aman: { border: 'border-t-red-500', text: 'text-red-600 dark:text-red-400', bg: 'bg-red-500/5' },
+    Dhanush: { border: 'border-t-blue-500', text: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-500/5' }
   };
 
   // Helper to get distinctive words for adaptive merging

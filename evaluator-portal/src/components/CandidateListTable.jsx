@@ -675,6 +675,7 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
                           <option value="Ankita">Ankita</option>
                           <option value="Kaushik">Kaushik</option>
                           <option value="Aman">Aman</option>
+                          <option value="Dhanush">Dhanush</option>
                         </select>
                       </TableCell>
                     </TableRow>
@@ -723,6 +724,7 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
                             <option value="Ankita">Ankita</option>
                             <option value="Kaushik">Kaushik</option>
                             <option value="Aman">Aman</option>
+                          <option value="Dhanush">Dhanush</option>
                           </select>
                         ) : (
                           <Badge variant="outline" className="font-semibold text-[11px] border-primary/20 text-[#800020] bg-primary/5 rounded-full px-2">

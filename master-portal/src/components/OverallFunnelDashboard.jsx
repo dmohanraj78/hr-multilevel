@@ -215,18 +215,37 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     return Array.isArray(val) ? val[0] || {} : val || {};
   };
 
+  const uniqueDeduplicatedCandidates = useMemo(() => {
+    const map = new Map();
+    globalData.forEach(c => {
+      // Use primary key (c.id) to identify unique applications
+      const pk = c.id || c.Applicant_ID || c.applicant_id || c.email;
+      if (!pk) {
+        map.set(Math.random(), c);
+        return;
+      }
+      const r1 = getR1(c);
+      const isDuplicate = r1.app_status === 'Duplicate';
+      
+      if (!map.has(pk) || (!isDuplicate && getR1(map.get(pk)).app_status === 'Duplicate')) {
+        map.set(pk, c);
+      }
+    });
+    return Array.from(map.values());
+  }, [globalData]);
+
   const r1ReviewerPivotData = useMemo(() => {
-    const reviewers = ['Akash', 'Aman', 'Ankita', 'Anmol', 'Basvaraj', 'Pushkaraj', 'Sachin', 'Sohan', 'Tejaswini', 'Vedant'];
+    const reviewers = ['Akash', 'Aman', 'Ankita', 'Dhanush', 'Anmol', 'Basvaraj', 'Pushkaraj', 'Sachin', 'Sohan', 'Tejaswini', 'Vedant'];
     const counts = reviewers.reduce((acc, name) => {
-      acc[name] = { yes: 0, no: 0, pending: 0, accessRequested: 0, total: 0 };
+      acc[name] = { yes: 0, no: 0, pending: 0, accessRequested: 0, total: 0, dedupTotal: 0 };
       return acc;
     }, {});
-    counts['Unassigned'] = { yes: 0, no: 0, pending: 0, accessRequested: 0, total: 0 };
 
-    globalData.forEach(c => {
+    uniqueDeduplicatedCandidates.forEach(c => {
       const r1 = getR1(c);
       const appStatus = r1.app_status || 'Pending';
       const reviewer = r1.eval_group && r1.eval_group !== 'None' ? r1.eval_group : 'Unassigned';
+      if (reviewer === 'Unassigned') return;
       
       let cat = 'pending';
       if (appStatus === 'Yes') cat = 'yes';
@@ -234,13 +253,16 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       else if (appStatus.toLowerCase() === 'access requested') cat = 'accessRequested';
       else cat = 'pending';
 
-      const target = counts[reviewer] || counts['Unassigned'];
-      target[cat]++;
-      target.total++;
+      const target = counts[reviewer];
+      if (target) {
+        target[cat]++;
+        target.total++;
+        target.dedupTotal++; // Since the dataset is now deduplicated, total is dedupTotal
+      }
     });
 
     return counts;
-  }, [globalData]);
+  }, [uniqueDeduplicatedCandidates]);
 
   const tierPivotData = useMemo(() => {
     const tiers = ['Tier 1', 'Tier 1+', 'Tier 2', 'Tier 2+', 'Tier 3', 'Tier 4'];
@@ -249,7 +271,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       return acc;
     }, {});
 
-    globalData.forEach(c => {
+    uniqueDeduplicatedCandidates.forEach(c => {
       const r1 = getR1(c);
       let tier = (r1.tier || '').trim();
       // Keep the exact names requested by standardizing variants
@@ -260,17 +282,21 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       if (counts[tier]) {
         if (appStatus === 'Yes') {
           counts[tier].yes++;
+          counts[tier].total++;
         } else if (['No', 'Reject', 'Rejected', 'Invalid'].includes(appStatus)) {
           counts[tier].reject++;
+          counts[tier].total++;
+        } else if (appStatus && appStatus.toLowerCase() === 'access requested') {
+          // Exclude "Access Requested" completely per user request
         } else {
           counts[tier].pending++;
+          counts[tier].total++;
         }
-        counts[tier].total++;
       }
     });
 
     return counts;
-  }, [globalData]);
+  }, [uniqueDeduplicatedCandidates]);
 
   const tierGrandTotal = useMemo(() => {
     const total = { yes: 0, pending: 0, reject: 0, total: 0 };
@@ -284,15 +310,17 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
   }, [tierPivotData]);
 
   const reviewerPivotData = useMemo(() => {
-    const reviewers = ['Akash', 'Aman', 'Ankita', 'Anmol', 'Basvaraj', 'Pushkaraj', 'Sachin', 'Sohan', 'Tejaswini', 'Vedant'];
+    const reviewers = ['Akash', 'Aman', 'Ankita', 'Dhanush', 'Anmol', 'Basvaraj', 'Pushkaraj', 'Sachin', 'Sohan', 'Tejaswini', 'Vedant'];
     const counts = reviewers.reduce((acc, name) => {
       acc[name] = { yes: 0, maybe: 0, no: 0, pending: 0, rejectedR1: 0, total: 0 };
       return acc;
     }, {});
-    counts['Unassigned'] = { yes: 0, maybe: 0, no: 0, pending: 0, rejectedR1: 0, total: 0 };
 
-    globalData.forEach(c => {
+    uniqueDeduplicatedCandidates.forEach(c => {
       const r1 = getR1(c);
+      const reviewer = r1.eval_group && r1.eval_group !== 'None' ? r1.eval_group : 'Unassigned';
+      if (reviewer === 'Unassigned') return;
+
       const r2 = getR2(c);
       const appStatus = r1.app_status || 'Pending';
       const moved = r2.moved_to_round_3 || '';
@@ -311,16 +339,15 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
         cat = 'pending';
       }
 
-      // Determine reviewer
-      const reviewer = r1.eval_group && r1.eval_group !== 'None' ? r1.eval_group : 'Unassigned';
-      
-      const target = counts[reviewer] || counts['Unassigned'];
-      target[cat]++;
-      target.total++;
+      const target = counts[reviewer];
+      if (target) {
+        target[cat]++;
+        target.total++;
+      }
     });
 
     return counts;
-  }, [globalData]);
+  }, [uniqueDeduplicatedCandidates]);
 
   const reviewerGrandTotal = useMemo(() => {
     const total = { yes: 0, maybe: 0, no: 0, pending: 0, rejectedR1: 0, total: 0 };
@@ -334,6 +361,77 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     });
     return total;
   }, [reviewerPivotData]);
+
+  const graduationPivotData = useMemo(() => {
+    const reviewers = ['Akash', 'Aman', 'Ankita', 'Dhanush', 'Anmol', 'Basvaraj', 'Pushkaraj', 'Sachin', 'Sohan', 'Tejaswini', 'Vedant'];
+    
+    // Deduplicated list of candidates that made it to Round 3
+    const yesCandidates = uniqueDeduplicatedCandidates.filter(c => {
+      const moved = getR2(c).moved_to_round_3 || '';
+      return moved === 'Yes' && !moved.endsWith('_draft');
+    });
+
+    const years = [];
+    const counts = reviewers.reduce((acc, name) => {
+      acc[name] = { total: 0 };
+      return acc;
+    }, {});
+
+    yesCandidates.forEach(c => {
+      const r1 = getR1(c);
+      const reviewer = r1.eval_group && r1.eval_group !== 'None' ? r1.eval_group : 'Unassigned';
+      if (reviewer === 'Unassigned') return;
+      
+      const grad = r1.graduation || '-';
+      const year = grad.match(/\d{4}/)?.[0] || '-';
+
+      if (!years.includes(year) && year !== '-') {
+        years.push(year);
+      }
+      years.sort();
+
+      const target = counts[reviewer];
+      if (target) {
+        if (!target[year]) target[year] = 0;
+        if (year !== '-') {
+          target[year]++;
+        }
+        target.total++;
+      }
+    });
+
+    const grandTotal = { total: 0 };
+    Object.values(counts).forEach(val => {
+      grandTotal.total += val.total;
+      years.forEach(y => {
+        if (!grandTotal[y]) grandTotal[y] = 0;
+        grandTotal[y] += (val[y] || 0);
+      });
+    });
+
+    return { counts, years, grandTotal };
+  }, [uniqueDeduplicatedCandidates]);
+
+  const deployStagePivotData = useMemo(() => {
+    const yesCandidates = uniqueDeduplicatedCandidates.filter(c => {
+      const moved = getR2(c).moved_to_round_3 || '';
+      return moved === 'Yes' && !moved.endsWith('_draft');
+    });
+
+    const counts = {};
+    yesCandidates.forEach(c => {
+      const stage = getR1(c).deploy_stage || '-';
+      if (stage && stage.trim() !== '') {
+        if (!counts[stage]) counts[stage] = 0;
+        counts[stage]++;
+      }
+    });
+    
+    // Sort stages alphabetically
+    const stages = Object.keys(counts).sort();
+
+    return { counts, stages, total: yesCandidates.length };
+  }, [uniqueDeduplicatedCandidates]);
 
   // Funnel Stage Determinator
   const getFunnelStage = (c) => {
@@ -403,7 +501,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
 
   // 2. Chart Calculations — use evaluatedCandidates so Technical Reviewer counts reflect actual eval records
   const chartData = useMemo(() => {
-    const clans = { Tejaswini: 0, Sohan: 0, Basvaraj: 0, Pushkaraj: 0, Akash: 0, Anmol: 0, Sachin: 0, 'Akhil L': 0, Vedant: 0, 'Akhil M': 0, Samit: 0, Snehanshu: 0, Ankita: 0, Kaushik: 0, Aman: 0, Unassigned: 0 };
+    const clans = { Tejaswini: 0, Sohan: 0, Basvaraj: 0, Pushkaraj: 0, Akash: 0, Anmol: 0, Sachin: 0, 'Akhil L': 0, Vedant: 0, 'Akhil M': 0, Samit: 0, Snehanshu: 0, Ankita: 0, Kaushik: 0, Aman: 0, Dhanush: 0, Unassigned: 0 };
     const tiers = { 'Tier 1': 0, 'Tier 1-': 0, 'Tier 2': 0, 'Tier 2-': 0, 'Tier 3': 0, 'Tier 4': 0 };
     const scores = { '0-5': 0, '6-10': 0, '11-15': 0, '16-20': 0, '21-25': 0, '26-30': 0 };
 
@@ -1591,7 +1689,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       if (existing) workbook.removeWorksheet(existing.id);
       const sheet = workbook.addWorksheet('Pivot Data');
 
-      const TOP_TIERS = ['Tier 1', 'Tier 1-', 'Tier 2', 'Tier 2-'];
+      const TOP_TIERS = ['Tier 1', 'Tier 1+', 'Tier 2', 'Tier 2+'];
       const LOW_TIERS = ['Tier 3', 'Tier 4'];
 
       sheet.columns = [
@@ -1731,19 +1829,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     }
   };
 
-  // Deduplicate globalData by email to count unique applicants (only for top level summary)
-  const uniqueDeduplicatedCandidates = useMemo(() => {
-    const seen = new Set();
-    const result = [];
-    globalData.forEach(c => {
-      const email = (c.email || '').trim().toLowerCase();
-      if (!seen.has(email)) {
-        seen.add(email);
-        result.push(c);
-      }
-    });
-    return result;
-  }, [globalData]);
+  // Old deduplication removed here because we moved it to the top
 
   const totalApplications = globalData.length;
   const { duplicatesCount, pendingReviewCount } = useMemo(() => {
@@ -1820,7 +1906,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     return r2AssignedCandidates.filter(c => {
       const status = getR2(c).moved_to_round_3 || '';
       return status.endsWith('_draft') || status === '';
-    }).length;
+    });
   }, [r2AssignedCandidates]);
 
   const r2YesCount = useMemo(() => r2Finalized.filter(c => getR2(c).moved_to_round_3 === 'Yes').length, [r2Finalized]);
@@ -1916,166 +2002,295 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
 
 
       {/* Pivot Tables Analysis Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full items-start">
-        {/* Left Column: Tiers & Screened By Yes Count */}
-        <div className="lg:col-span-4 flex flex-col gap-6">
-          {/* Table 1: Tier Status */}
-          <Card className="rounded-xl border shadow-sm p-4 bg-white dark:bg-slate-900 overflow-x-auto">
-            <table className="w-full text-xs text-left border-collapse whitespace-nowrap">
-              <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800 bg-[#e2e8f0]/50 dark:bg-slate-800/50">
-                  <th className="py-2 px-3 font-bold border-r border-slate-200 dark:border-slate-800">
-                    <div className="text-slate-500 font-normal">Count of Name</div>
-                    <div className="text-foreground">Tier</div>
-                  </th>
-                  <th className="py-2 px-3 font-bold border-r border-slate-200 dark:border-slate-800 bg-[#e2efda] dark:bg-[#e2efda]/10">
-                    <div className="text-slate-500 font-normal">Status</div>
-                    <div className="text-green-700 dark:text-green-400 flex items-center justify-between">Yes <span className="text-[10px] bg-slate-200/50 dark:bg-slate-700/50 px-1 rounded">▼</span></div>
-                  </th>
-                  <th className="py-2 px-3 text-center font-bold bg-[#00b0f0] text-white border-r border-slate-200 dark:border-slate-800">
-                    <div className="text-blue-100 font-normal opacity-0 select-none">Status</div>
-                    Pending
-                  </th>
-                  <th className="py-2 px-3 text-center font-bold bg-[#ff0000] text-white border-r border-slate-200 dark:border-slate-800">
-                    <div className="text-red-100 font-normal opacity-0 select-none">Status</div>
-                    Reject
-                  </th>
-                  <th className="py-2 px-3 text-right font-bold">
-                    <div className="text-slate-500 font-normal opacity-0 select-none">Total</div>
-                    Grand Total
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {['Tier 1', 'Tier 1+', 'Tier 2', 'Tier 2+', 'Tier 3', 'Tier 4'].map(tier => {
-                  const d = tierPivotData[tier] || { yes: 0, pending: 0, reject: 0, total: 0 };
-                  return (
-                    <tr key={tier} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                      <td className="py-1.5 px-3 border-r border-slate-200 dark:border-slate-800">{tier}</td>
-                      <td className="py-1.5 px-3 text-center border-r border-slate-200 dark:border-slate-800">{d.yes || ''}</td>
-                      <td className="py-1.5 px-3 text-center bg-[#00b0f0]/10 border-r border-slate-200 dark:border-slate-800 font-medium text-[#00b0f0]">{d.pending || ''}</td>
-                      <td className="py-1.5 px-3 text-center border-r border-slate-200 dark:border-slate-800">{d.reject || ''}</td>
-                      <td className="py-1.5 px-3 text-right font-medium">{d.total || ''}</td>
-                    </tr>
-                  );
-                })}
-                <tr className="bg-[#e2e8f0]/50 dark:bg-slate-800/50 font-bold border-t border-slate-200 dark:border-slate-700">
-                  <td className="py-2 px-3 border-r border-slate-200 dark:border-slate-800">Grand Total</td>
-                  <td className="py-2 px-3 text-center border-r border-slate-200 dark:border-slate-800 bg-[#a9d08e] text-green-900">{tierGrandTotal.yes || ''}</td>
-                  <td className="py-2 px-3 text-center border-r border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200">{tierGrandTotal.pending || ''}</td>
-                  <td className="py-2 px-3 text-center border-r border-slate-200 dark:border-slate-800">{tierGrandTotal.reject || ''}</td>
-                  <td className="py-2 px-3 text-right">{tierGrandTotal.total || ''}</td>
-                </tr>
-              </tbody>
-            </table>
+      <div className="flex flex-col gap-6 w-full items-stretch">
+        {/* Table 1: Tier Status */}
+          <Card className="rounded-xl shadow-sm bg-white dark:bg-slate-900 overflow-hidden border border-slate-200 dark:border-slate-800">
+            <div className="flex items-center gap-2 px-6 py-4 border-b border-slate-100 dark:border-slate-800 text-[#9b1c1c] dark:text-red-500 font-bold text-sm tracking-wide uppercase">
+              <Users className="w-4 h-4" /> TIER — STATUS DISTRIBUTION
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left whitespace-nowrap">
+                <thead>
+                  <tr className="border-b border-slate-200 dark:border-slate-800 bg-[#e2e8f0]/40 dark:bg-slate-800/40">
+                    <th className="py-2 px-6 font-semibold text-xs text-slate-600 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700">Count of Name</th>
+                    <th className="py-2 px-6 font-semibold text-xs text-slate-600 dark:text-slate-300 text-center">Status ▼</th>
+                    <th className="py-2 px-6"></th>
+                    <th className="py-2 px-6"></th>
+                    <th className="py-2 px-6"></th>
+                  </tr>
+                  <tr className="border-b border-slate-200 dark:border-slate-800">
+                    <th className="py-3 px-6 font-bold text-xs uppercase tracking-wider text-slate-400 border-r border-slate-200 dark:border-slate-700">
+                      Tier
+                    </th>
+                    <th className="py-3 px-6 font-bold text-xs uppercase tracking-wider text-slate-400 text-center">
+                      Yes
+                    </th>
+                    <th className="py-3 px-6 font-bold text-xs uppercase tracking-wider text-slate-400 text-center">
+                      Pending
+                    </th>
+                    <th className="py-3 px-6 font-bold text-xs uppercase tracking-wider text-slate-400 text-center">
+                      Reject
+                    </th>
+                    <th className="py-3 px-6 font-bold text-xs uppercase tracking-wider text-slate-400 text-center">
+                      Grand Total
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {['Tier 1', 'Tier 1+', 'Tier 2', 'Tier 2+', 'Tier 3', 'Tier 4'].map(tier => {
+                    const d = tierPivotData[tier] || { yes: 0, pending: 0, reject: 0, total: 0 };
+                    return (
+                      <tr key={tier} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                        <td className="py-3 px-6 font-bold text-slate-700 dark:text-slate-300">{tier}</td>
+                        <td className="py-3 px-6 text-center font-bold text-[#059669] dark:text-emerald-400">{d.yes || 0}</td>
+                        <td className="py-3 px-6 text-center font-bold text-[#2563eb] dark:text-blue-400">{d.pending || 0}</td>
+                        <td className="py-3 px-6 text-center font-bold text-[#dc2626] dark:text-red-500">{d.reject || 0}</td>
+                        <td className="py-3 px-6 text-center font-bold text-slate-800 dark:text-slate-200">{d.total || 0}</td>
+                      </tr>
+                    );
+                  })}
+                  <tr className="font-bold border-t-2 border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-900">
+                    <td className="py-3 px-6 text-slate-800 dark:text-slate-200">Grand Total</td>
+                    <td className="py-3 px-6 text-center text-[#059669] dark:text-emerald-400">{tierGrandTotal.yes || 0}</td>
+                    <td className="py-3 px-6 text-center text-[#2563eb] dark:text-blue-400">{tierGrandTotal.pending || 0}</td>
+                    <td className="py-3 px-6 text-center text-[#dc2626] dark:text-red-500">{tierGrandTotal.reject || 0}</td>
+                    <td className="py-3 px-6 text-center text-slate-800 dark:text-slate-200">{tierGrandTotal.total || 0}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </Card>
 
           {/* Table 2: Screened By (Status = Yes) */}
-          <Card className="rounded-xl border shadow-sm p-4 bg-white dark:bg-slate-900 overflow-x-auto">
-            <div className="text-xs text-slate-500 mb-1.5 flex items-center gap-2">Status <span className="bg-white border shadow-sm px-2 py-0.5 rounded text-foreground text-[10px] flex items-center gap-1 cursor-default">Yes <span className="text-[8px] text-slate-400">▼</span></span></div>
-            <table className="w-full text-xs text-left border-collapse whitespace-nowrap">
-              <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800 bg-[#e2e8f0]/50 dark:bg-slate-800/50">
-                  <th className="py-2 px-3 font-bold border-r border-slate-200 dark:border-slate-800">
-                    <div className="text-slate-500 font-normal">Count of Name</div>
-                    <div className="text-foreground flex items-center justify-between">To be screened by <span className="text-[10px] bg-slate-200/50 dark:bg-slate-700/50 px-1 rounded">▼</span></div>
-                  </th>
-                  <th className="py-2 px-3 font-bold text-center">
-                    <div className="text-slate-500 font-normal opacity-0 select-none">Total</div>
-                    Total
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {['Akash', 'Ankita', 'Anmol', 'Basvaraj', 'Pushkaraj', 'Sachin', 'Sohan', 'Tejaswini', 'Vedant', 'Unassigned'].map(name => {
-                  const data = r1ReviewerPivotData[name] || { yes: 0 };
-                  if (data.yes === 0 && name !== 'Unassigned') return null; // Show even if 0 if needed, but screenshot hides empty ones (though all had some)
-                  return (
-                    <tr key={name} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                      <td className="py-1.5 px-3 border-r border-slate-200 dark:border-slate-800">{name === 'Unassigned' ? '-' : name}</td>
-                      <td className="py-1.5 px-3 text-center">{data.yes || ''}</td>
-                    </tr>
-                  );
-                })}
-                <tr className="bg-[#e2e8f0]/50 dark:bg-slate-800/50 font-bold border-t border-slate-200 dark:border-slate-700">
-                  <td className="py-2 px-3 border-r border-slate-200 dark:border-slate-800">Grand Total</td>
-                  <td className="py-2 px-3 text-center">
-                    {['Akash', 'Ankita', 'Anmol', 'Basvaraj', 'Pushkaraj', 'Sachin', 'Sohan', 'Tejaswini', 'Vedant', 'Unassigned'].reduce((acc, name) => acc + (r1ReviewerPivotData[name]?.yes || 0), 0)}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <Card className="rounded-xl shadow-sm bg-white dark:bg-slate-900 overflow-hidden border border-slate-200 dark:border-slate-800">
+            <div className="flex items-center gap-2 px-6 py-4 border-b border-slate-100 dark:border-slate-800 text-[#9b1c1c] dark:text-red-500 font-bold text-sm tracking-wide uppercase">
+              <Users className="w-4 h-4" /> SCREENED BY (YES)
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left whitespace-nowrap">
+                <thead>
+                  <tr className="border-b border-slate-200 dark:border-slate-800">
+                    <th className="py-3 px-6 font-bold text-xs uppercase tracking-wider text-slate-400 border-r border-slate-200 dark:border-slate-700">
+                      To be screened by
+                    </th>
+                    <th className="py-3 px-6 font-bold text-xs uppercase tracking-wider text-slate-400 text-center">
+                      Total Assigned
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(() => {
+                    const dynamicReviewers = Object.keys(r1ReviewerPivotData)
+                      .filter(k => k !== 'Unassigned' && k !== 'None')
+                      .sort();
+                    
+                    return dynamicReviewers.map(name => {
+                      const data = r1ReviewerPivotData[name] || { dedupTotal: 0 };
+                      if (data.dedupTotal === 0) return null;
+                      return (
+                        <tr key={name} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                          <td className="py-3 px-6 font-bold text-slate-700 dark:text-slate-300">{name}</td>
+                          <td className="py-3 px-6 text-center font-bold text-[#059669] dark:text-emerald-400">{data.dedupTotal || 0}</td>
+                        </tr>
+                      );
+                    });
+                  })()}
+                  <tr className="font-bold border-t-2 border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-900">
+                    <td className="py-3 px-6 text-slate-800 dark:text-slate-200">Grand Total</td>
+                    <td className="py-3 px-6 text-center text-[#059669] dark:text-emerald-400">
+                      {Object.values(r1ReviewerPivotData).reduce((acc, d) => acc + (d.dedupTotal || 0), 0)}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </Card>
-        </div>
 
-        {/* Right Column: Table 3 Decision Analysis */}
-        <div className="lg:col-span-8">
-          <Card className="rounded-xl border shadow-sm p-4 bg-white dark:bg-slate-900 overflow-x-auto h-full">
-            <table className="w-full text-xs text-left border-collapse whitespace-nowrap">
-              <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800 bg-[#e2e8f0]/50 dark:bg-slate-800/50">
-                  <th className="py-2 px-3 font-bold border-r border-slate-200 dark:border-slate-800">
-                    <div className="text-slate-500 font-normal">Count of Name</div>
-                    <div className="text-foreground flex items-center justify-between">To be screened by <span className="text-[10px] bg-slate-200/50 dark:bg-slate-700/50 px-1 rounded">▼</span></div>
-                  </th>
-                  <th className="py-2 px-3 text-center font-bold border-r border-slate-200 dark:border-slate-800">
-                    <div className="text-slate-500 font-normal flex items-center justify-between mb-0.5">Decision <span className="text-[10px] bg-slate-200/50 dark:bg-slate-700/50 px-1 rounded">▼</span></div>
-                    Yes
-                  </th>
-                  <th className="py-2 px-3 text-center font-bold border-r border-slate-200 dark:border-slate-800">
-                    <div className="text-slate-500 font-normal opacity-0 select-none mb-0.5">Decision</div>
-                    Maybe
-                  </th>
-                  <th className="py-2 px-3 text-center font-bold border-r border-slate-200 dark:border-slate-800">
-                    <div className="text-slate-500 font-normal opacity-0 select-none mb-0.5">Decision</div>
-                    No
-                  </th>
-                  <th className="py-2 px-3 text-center font-bold border-r border-slate-200 dark:border-slate-800">
-                    <div className="text-slate-500 font-normal opacity-0 select-none mb-0.5">Decision</div>
-                    Pending
-                  </th>
-                  <th className="py-2 px-3 text-center font-bold bg-[#ff0000] text-white border-r border-slate-200 dark:border-slate-800">
-                    <div className="text-red-100 font-normal opacity-0 select-none mb-0.5">Decision</div>
-                    Rejected (R1)
-                  </th>
-                  <th className="py-2 px-3 text-right font-bold">
-                    <div className="text-slate-500 font-normal opacity-0 select-none mb-0.5">Total</div>
-                    Grand Total
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {['Akash', 'Ankita', 'Anmol', 'Basvaraj', 'Pushkaraj', 'Sachin', 'Sohan', 'Tejaswini', 'Vedant', 'Unassigned'].map(name => {
-                  const data = reviewerPivotData[name] || { yes: 0, maybe: 0, no: 0, pending: 0, rejectedR1: 0, total: 0 };
-                  if (data.total === 0 && name !== 'Unassigned') return null;
-                  return (
-                    <tr key={name} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                      <td className="py-1.5 px-3 border-r border-slate-200 dark:border-slate-800">{name === 'Unassigned' ? '-' : name}</td>
-                      <td className="py-1.5 px-3 text-center border-r border-slate-200 dark:border-slate-800">{data.yes || ''}</td>
-                      <td className="py-1.5 px-3 text-center border-r border-slate-200 dark:border-slate-800">{data.maybe || ''}</td>
-                      <td className="py-1.5 px-3 text-center border-r border-slate-200 dark:border-slate-800">{data.no || ''}</td>
-                      <td className="py-1.5 px-3 text-center border-r border-slate-200 dark:border-slate-800">{data.pending || ''}</td>
-                      <td className="py-1.5 px-3 text-center border-r border-slate-200 dark:border-slate-800 text-[#ff0000]">{data.rejectedR1 || ''}</td>
-                      <td className="py-1.5 px-3 text-right font-medium">{data.total || ''}</td>
-                    </tr>
-                  );
-                })}
-                <tr className="bg-[#e2e8f0]/50 dark:bg-slate-800/50 font-bold border-t border-slate-200 dark:border-slate-700">
-                  <td className="py-2 px-3 border-r border-slate-200 dark:border-slate-800">Grand Total</td>
-                  <td className="py-2 px-3 text-center border-r border-slate-200 dark:border-slate-800 border-2 border-green-500">{reviewerGrandTotal.yes || ''}</td>
-                  <td className="py-2 px-3 text-center border-r border-slate-200 dark:border-slate-800">{reviewerGrandTotal.maybe || ''}</td>
-                  <td className="py-2 px-3 text-center border-r border-slate-200 dark:border-slate-800">{reviewerGrandTotal.no || ''}</td>
-                  <td className="py-2 px-3 text-center border-r border-slate-200 dark:border-slate-800">{reviewerGrandTotal.pending || ''}</td>
-                  <td className="py-2 px-3 text-center border-r border-slate-200 dark:border-slate-800">{reviewerGrandTotal.rejectedR1 || ''}</td>
-                  <td className="py-2 px-3 text-right">{reviewerGrandTotal.total || ''}</td>
-                </tr>
-              </tbody>
-            </table>
+        {/* Table 3 Decision Analysis */}
+          <Card className="rounded-xl shadow-sm bg-white dark:bg-slate-900 overflow-hidden border border-slate-200 dark:border-slate-800">
+            <div className="flex items-center gap-2 px-6 py-4 border-b border-slate-100 dark:border-slate-800 text-[#9b1c1c] dark:text-red-500 font-bold text-sm tracking-wide uppercase">
+              <Users className="w-4 h-4" /> SCREENED BY DECISION (ROUND 2)
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left whitespace-nowrap">
+                <thead>
+                  <tr className="border-b border-slate-200 dark:border-slate-800 bg-[#e2e8f0]/40 dark:bg-slate-800/40">
+                    <th className="py-2 px-6 font-semibold text-xs text-slate-600 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700">Count of Name</th>
+                    <th className="py-2 px-6 font-semibold text-xs text-slate-600 dark:text-slate-300 text-center">Decision ▼</th>
+                    <th className="py-2 px-6"></th>
+                    <th className="py-2 px-6"></th>
+                    <th className="py-2 px-6"></th>
+                    <th className="py-2 px-6"></th>
+                    <th className="py-2 px-6"></th>
+                  </tr>
+                  <tr className="border-b border-slate-200 dark:border-slate-800">
+                    <th className="py-3 px-6 font-bold text-xs uppercase tracking-wider text-slate-400 border-r border-slate-200 dark:border-slate-700">
+                      To be screened by
+                    </th>
+                    <th className="py-3 px-6 font-bold text-xs uppercase tracking-wider text-slate-400 text-center">
+                      Yes
+                    </th>
+                    <th className="py-3 px-6 font-bold text-xs uppercase tracking-wider text-slate-400 text-center">
+                      Maybe
+                    </th>
+                    <th className="py-3 px-6 font-bold text-xs uppercase tracking-wider text-slate-400 text-center">
+                      No
+                    </th>
+                    <th className="py-3 px-6 font-bold text-xs uppercase tracking-wider text-slate-400 text-center">
+                      Pending
+                    </th>
+                    <th className="py-3 px-6 font-bold text-xs uppercase tracking-wider text-slate-400 text-center">
+                      Rejected (R1)
+                    </th>
+                    <th className="py-3 px-6 font-bold text-xs uppercase tracking-wider text-slate-400 text-center">
+                      Grand Total
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(() => {
+                    const dynamicReviewers = Object.keys(reviewerPivotData)
+                      .filter(k => k !== 'Unassigned' && k !== 'None')
+                      .sort();
+                    
+                    return dynamicReviewers.map(name => {
+                      const data = reviewerPivotData[name] || { yes: 0, maybe: 0, no: 0, pending: 0, rejectedR1: 0, total: 0 };
+                      if (data.total === 0) return null;
+                      return (
+                        <tr key={name} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                          <td className="py-3 px-6 font-bold text-slate-700 dark:text-slate-300">{name}</td>
+                          <td className="py-3 px-6 text-center font-bold text-[#059669] dark:text-emerald-400">{data.yes || 0}</td>
+                          <td className="py-3 px-6 text-center font-bold text-[#d97706] dark:text-amber-500">{data.maybe || 0}</td>
+                          <td className="py-3 px-6 text-center font-bold text-[#dc2626] dark:text-red-500">{data.no || 0}</td>
+                          <td className="py-3 px-6 text-center font-bold text-[#2563eb] dark:text-blue-400">{data.pending || 0}</td>
+                          <td className="py-3 px-6 text-center font-bold text-[#dc2626] dark:text-red-500">{data.rejectedR1 || 0}</td>
+                          <td className="py-3 px-6 text-center font-bold text-slate-800 dark:text-slate-200">{data.total || 0}</td>
+                        </tr>
+                      );
+                    });
+                  })()}
+                  <tr className="font-bold border-t-2 border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-900">
+                    <td className="py-3 px-6 text-slate-800 dark:text-slate-200">Grand Total</td>
+                    <td className="py-3 px-6 text-center text-[#059669] dark:text-emerald-400">{reviewerGrandTotal.yes || 0}</td>
+                    <td className="py-3 px-6 text-center text-[#d97706] dark:text-amber-500">{reviewerGrandTotal.maybe || 0}</td>
+                    <td className="py-3 px-6 text-center text-[#dc2626] dark:text-red-500">{reviewerGrandTotal.no || 0}</td>
+                    <td className="py-3 px-6 text-center text-[#2563eb] dark:text-blue-400">{reviewerGrandTotal.pending || 0}</td>
+                    <td className="py-3 px-6 text-center text-[#dc2626] dark:text-red-500">{reviewerGrandTotal.rejectedR1 || 0}</td>
+                    <td className="py-3 px-6 text-center text-slate-800 dark:text-slate-200">{reviewerGrandTotal.total || 0}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </Card>
-        </div>
+
+        {/* Graduation Wise Table */}
+          <Card className="rounded-xl shadow-sm bg-white dark:bg-slate-900 overflow-hidden border border-slate-200 dark:border-slate-800">
+            <div className="flex items-center gap-2 px-6 py-4 border-b border-slate-100 dark:border-slate-800 text-[#9b1c1c] dark:text-red-500 font-bold text-sm tracking-wide uppercase">
+              <Users className="w-4 h-4" /> GRADUATION WISE TABLE
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left whitespace-nowrap">
+                <thead>
+                  <tr className="border-b border-slate-200 dark:border-slate-800 bg-[#e2e8f0]/40 dark:bg-slate-800/40">
+                    <th className="py-2 px-6 font-semibold text-xs text-slate-600 dark:text-slate-300">Decision</th>
+                    <th className="py-2 px-6 font-semibold text-xs text-slate-600 dark:text-slate-300 text-center" colSpan={graduationPivotData.years.length + 1}>Yes ▼</th>
+                  </tr>
+                  <tr className="border-b border-slate-200 dark:border-slate-800 bg-[#e2e8f0]/20 dark:bg-slate-800/20">
+                    <th className="py-2 px-6 font-semibold text-xs text-slate-600 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700">Count of Name</th>
+                    <th className="py-2 px-6 font-semibold text-xs text-slate-600 dark:text-slate-300 text-center" colSpan={graduationPivotData.years.length + 1}>Graduation ▼</th>
+                  </tr>
+                  <tr className="border-b border-slate-200 dark:border-slate-800">
+                    <th className="py-3 px-6 font-bold text-xs uppercase tracking-wider text-slate-400 border-r border-slate-200 dark:border-slate-700">
+                      To be screened by
+                    </th>
+                    {graduationPivotData.years.map(y => (
+                      <th key={y} className="py-3 px-6 font-bold text-xs uppercase tracking-wider text-slate-400 text-center">
+                        {y}
+                      </th>
+                    ))}
+                    <th className="py-3 px-6 font-bold text-xs uppercase tracking-wider text-slate-400 text-center">
+                      Grand Total
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(() => {
+                    const dynamicReviewers = Object.keys(graduationPivotData.counts)
+                      .filter(k => k !== 'Unassigned' && k !== 'None')
+                      .sort();
+                    
+                    return dynamicReviewers.map(name => {
+                      const data = graduationPivotData.counts[name] || { total: 0 };
+                      if (data.total === 0) return null;
+                      return (
+                        <tr key={name} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                          <td className="py-3 px-6 font-bold text-slate-700 dark:text-slate-300">{name}</td>
+                          {graduationPivotData.years.map(y => (
+                            <td key={y} className="py-3 px-6 text-center font-bold text-[#2563eb] dark:text-blue-400">
+                              {data[y] || 0}
+                            </td>
+                          ))}
+                          <td className="py-3 px-6 text-center font-bold text-slate-800 dark:text-slate-200">{data.total || 0}</td>
+                        </tr>
+                      );
+                    });
+                  })()}
+                  <tr className="font-bold border-t-2 border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-900">
+                    <td className="py-3 px-6 text-slate-800 dark:text-slate-200">Grand Total</td>
+                    {graduationPivotData.years.map(y => (
+                      <td key={y} className="py-3 px-6 text-center text-slate-800 dark:text-slate-200">{graduationPivotData.grandTotal[y] || 0}</td>
+                    ))}
+                    <td className="py-3 px-6 text-center text-slate-800 dark:text-slate-200">{graduationPivotData.grandTotal.total || 0}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </Card>
+
+        {/* Deploy Stage Table */}
+          <Card className="rounded-xl shadow-sm bg-white dark:bg-slate-900 overflow-hidden border border-slate-200 dark:border-slate-800">
+            <div className="flex items-center gap-2 px-6 py-4 border-b border-slate-100 dark:border-slate-800 text-[#9b1c1c] dark:text-red-500 font-bold text-sm tracking-wide uppercase">
+              <Users className="w-4 h-4" /> DEPLOY STAGE TABLE
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left whitespace-nowrap">
+                <thead>
+                  <tr className="border-b border-slate-200 dark:border-slate-800 bg-[#e2e8f0]/40 dark:bg-slate-800/40">
+                    <th className="py-2 px-6 font-semibold text-xs text-slate-600 dark:text-slate-300">Decision</th>
+                    <th className="py-2 px-6 font-semibold text-xs text-slate-600 dark:text-slate-300 text-center">Yes ▼</th>
+                  </tr>
+                  <tr className="border-b border-slate-200 dark:border-slate-800 bg-[#e2e8f0]/20 dark:bg-slate-800/20">
+                    <th className="py-2 px-6 font-semibold text-xs text-slate-600 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700">Count of Name</th>
+                    <th className="py-2 px-6"></th>
+                  </tr>
+                  <tr className="border-b border-slate-200 dark:border-slate-800">
+                    <th className="py-3 px-6 font-bold text-xs uppercase tracking-wider text-slate-400 border-r border-slate-200 dark:border-slate-700">
+                      Deploy Stage
+                    </th>
+                    <th className="py-3 px-6 font-bold text-xs uppercase tracking-wider text-slate-400 text-center">
+                      Total
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {deployStagePivotData.stages.map(stage => {
+                    const count = deployStagePivotData.counts[stage];
+                    return (
+                      <tr key={stage} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                        <td className="py-3 px-6 font-bold text-slate-700 dark:text-slate-300">{stage}</td>
+                        <td className="py-3 px-6 text-center font-bold text-[#059669] dark:text-emerald-400">{count || 0}</td>
+                      </tr>
+                    );
+                  })}
+                  <tr className="font-bold border-t-2 border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-900">
+                    <td className="py-3 px-6 text-slate-800 dark:text-slate-200">Grand Total</td>
+                    <td className="py-3 px-6 text-center text-[#059669] dark:text-emerald-400">{deployStagePivotData.total || 0}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </Card>
       </div>
-
-
     </div>
   );
 }
