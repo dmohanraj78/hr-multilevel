@@ -1655,7 +1655,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
             <li className="flex items-start gap-2.5">
               <span className="text-slate-400 dark:text-slate-600 font-mono mt-0.5">•</span>
               <span>
-                Out of the <span className="font-semibold text-slate-900 dark:text-slate-100">{reviewedCount}</span> reviewed, <span className="font-semibold text-slate-900 dark:text-slate-100">{t1t2Count}</span> applicants qualified to Tier 1, Tier 1-, Tier 2 and Tier 2-. <span className="font-semibold text-slate-900 dark:text-slate-100">{t1t2ManuallyReviewedCount}</span> applications have been manually reviewed and comments have been marked in Round 1.
+                Out of the <span className="font-semibold text-slate-900 dark:text-slate-100">{evaluatedCount}</span> reviewed, <span className="font-semibold text-slate-900 dark:text-slate-100">{t1t2Count}</span> applicants qualified to Tier 1, Tier 1-, Tier 2 and Tier 2-. <span className="font-semibold text-slate-900 dark:text-slate-100">{t1t2ManuallyReviewedCount}</span> applications have been manually reviewed and comments have been marked in Round 1.
               </span>
             </li>
             <li className="flex items-start gap-2.5">
@@ -1667,7 +1667,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
             <li className="flex items-start gap-2.5">
               <span className="text-slate-400 dark:text-slate-600 font-mono mt-0.5">•</span>
               <span>
-                Out of the <span className="font-semibold text-slate-900 dark:text-slate-100">{reviewedCount}</span> reviewed, <span className="font-semibold text-slate-900 dark:text-slate-100">{t3t4Count}</span> applicants qualified to Tier 3 and Tier 4. <span className="font-semibold text-slate-900 dark:text-slate-100">{t3t4ManuallyReviewedCount}</span> were reviewed — out of that <span className="font-semibold text-slate-900 dark:text-slate-100">{t3t4Shortlisted}</span> are shortlisted and <span className="font-semibold text-slate-900 dark:text-slate-100">{t3t4PendingCount}</span> are pending manual review.
+                Out of the <span className="font-semibold text-slate-900 dark:text-slate-100">{evaluatedCount}</span> reviewed, <span className="font-semibold text-slate-900 dark:text-slate-100">{t3t4Count}</span> applicants qualified to Tier 3 and Tier 4. <span className="font-semibold text-slate-900 dark:text-slate-100">{t3t4ManuallyReviewedCount}</span> were reviewed — out of that <span className="font-semibold text-slate-900 dark:text-slate-100">{t3t4Shortlisted}</span> are shortlisted and <span className="font-semibold text-slate-900 dark:text-slate-100">{t3t4PendingCount}</span> are pending manual review.
               </span>
             </li>
           </ul>
@@ -1677,7 +1677,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
               <ArrowRight className="h-3 w-3 stroke-[2.5]" />
             </div>
             <span>
-              Total of <span className="font-bold text-blue-700 dark:text-blue-300">{movedR1ToR2Count}</span> out of <span className="font-bold text-blue-700 dark:text-blue-300">{reviewedCount}</span> applicants moved from Round 1 to Round 2.
+              Total of <span className="font-bold text-blue-700 dark:text-blue-300">{movedR1ToR2Count}</span> out of <span className="font-bold text-blue-700 dark:text-blue-300">{evaluatedCount}</span> applicants moved from Round 1 to Round 2.
             </span>
           </div>
         </div>
