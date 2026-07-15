@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import CandidateListTable from '@/components/CandidateListTable';
 import CandidateProfileDossier from '@/components/CandidateProfileDossier';
-import { fetchRound2Candidates, upsertRound2, upsertRound1 } from '@/lib/supabase';
+import { fetchRound2Candidates, upsertRound2, upsertRound1, supabase } from '@/lib/supabase';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard, Users, ShieldAlert, ArrowLeft, GitPullRequest } from 'lucide-react';
+import { LayoutDashboard, Users, ShieldAlert, ArrowLeft, GitPullRequest, Loader2 } from 'lucide-react';
 
 const TECH_EVALUATORS = [
   { id: 'Akash', name: 'Akash', desc: 'Akash\'s Queue', color: 'border-teal-500/20 hover:border-teal-500/80 bg-teal-500/5' },
@@ -33,6 +33,9 @@ export default function App() {
   const [selectedCandidate, setSelectedCandidate] = useState(null);
   const [worksheetTab, setWorksheetTab] = useState('active'); // 'active' | 'completed'
 
+  const [authChecking, setAuthChecking] = useState(true);
+  const [authRoleError, setAuthRoleError] = useState('');
+
   const loadData = async () => {
     setLoading(true);
     setError(null);
@@ -48,7 +51,57 @@ export default function App() {
   };
 
   useEffect(() => {
-    loadData();
+    const timeoutId = setTimeout(() => {
+      // If we are still checking after 3 seconds, redirect to SSO portal as fallback
+      window.location.href = 'https://aviators-sso.vercel.app';
+    }, 4000);
+
+    const checkSession = async () => {
+      try {
+        // Set the session from the tokens handed off by the SSO portal.
+        // supabase-js requires BOTH access_token and refresh_token — an empty
+        // refresh_token makes setSession throw, so the session never persists.
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get('access_token');
+        const refreshToken = params.get('refresh_token');
+        if (token && refreshToken) {
+          await supabase.auth.setSession({ access_token: token, refresh_token: refreshToken });
+          // Clean parameters from URL
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          clearTimeout(timeoutId);
+          window.location.href = 'https://aviators-sso.vercel.app';
+          return;
+        }
+        
+        // Verify role
+        const { data, error } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('email', session.user.email.toLowerCase().trim())
+          .maybeSingle();
+
+        if (error || !data || !['Admin', 'Evaluator'].includes(data.role)) {
+          clearTimeout(timeoutId);
+          setAuthRoleError(`Access Denied: ${session.user.email} is not authorized for Evaluator Portal.`);
+          setAuthChecking(false);
+          return;
+        }
+
+        clearTimeout(timeoutId);
+        setAuthChecking(false);
+        loadData();
+      } catch (err) {
+        console.error('Auth verification error:', err);
+        clearTimeout(timeoutId);
+        window.location.href = 'https://aviators-sso.vercel.app';
+      }
+    };
+    checkSession();
+    return () => clearTimeout(timeoutId);
   }, []);
 
   useEffect(() => {
@@ -117,6 +170,40 @@ export default function App() {
       return groupMatch && r1.app_status === 'Yes';
     });
   };
+
+  if (authChecking) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center gap-3 font-mono text-xs text-slate-400">
+        <Loader2 className="h-6 w-6 text-[#800020] animate-spin" />
+        Checking portal access permissions...
+      </div>
+    );
+  }
+
+  if (authRoleError) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6">
+        <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl flex flex-col items-center text-center gap-4">
+          <div className="p-4 bg-red-950/30 border border-red-900/30 text-red-500 rounded-full animate-bounce">
+            <ShieldAlert className="h-8 w-8" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-slate-200">Role and Access Mismatch</h1>
+            <p className="text-xs text-slate-400 mt-2 leading-relaxed">{authRoleError}</p>
+          </div>
+          <button
+            onClick={async () => {
+              await supabase.auth.signOut();
+              window.location.href = 'https://aviators-sso.vercel.app';
+            }}
+            className="w-full bg-[#800020] hover:bg-[#800020]/90 text-white font-bold py-3 rounded-2xl text-xs transition-all mt-4"
+          >
+            Return to SSO Login
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans transition-colors duration-200">

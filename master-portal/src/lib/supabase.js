@@ -1,14 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
 
 const defaultUrl = 'https://mujqmdmzloizqhglayxe.supabase.co';
-const defaultKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11anFtZG16bG9penFoZ2xheXhlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MjgxNTk0OCwiZXhwIjoyMDk4MzkxOTQ4fQ.G7AmEylxPwm6TWZ3xjCcBhvhfNPYHdj0V08My0A_rEc';
+const defaultKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11anFtZG16bG9penFoZ2xheXhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4MTU5NDgsImV4cCI6MjA5ODM5MTk0OH0.dqPKhwzhBvuL7gNuoNC9Bl-iCOfzZV61qM0whZLfXaA';
 
 const getCredentials = () => {
   const url = localStorage.getItem('supabase_url') || defaultUrl;
   let key = localStorage.getItem('supabase_key');
   
-  // Automatically clear old anon keys to force the service_role key
-  if (key && (key.includes('ImFub24i') || key.includes('dqPKhwzhBvuL7gNuoNC9Bl-iCOfzZV61qM0whZLfXaA'))) {
+  if (key && (key.includes('ImFub24i') || key.includes('dqPKhwzhBvuL7gNuoNC9Bl-iCOfzZV61qM0whZLfXaA') || key.includes('G7AmEylxPwm6TWZ3xjCcBhvhfNPYHdj0V08My0A_rEc'))) {
     localStorage.removeItem('supabase_key');
     key = null;
   }
@@ -19,11 +18,16 @@ const getCredentials = () => {
 const creds = getCredentials();
 export const supabase = createClient(creds.url, creds.key);
 
+// The SSO token hand-off (access_token + refresh_token from the URL) is applied
+// in App.jsx's auth check. Doing it here too would strip the params from the URL
+// before App.jsx can read them.
+
 export const updateCredentials = (url, key) => {
   localStorage.setItem('supabase_url', url);
   localStorage.setItem('supabase_key', key);
   window.location.reload();
 };
+
 
 // PostgREST caps every request at 1000 rows. The funnel tables keep growing,
 // so page through with .range() — otherwise the dashboard silently truncates
