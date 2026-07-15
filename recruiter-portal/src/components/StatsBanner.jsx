@@ -64,8 +64,12 @@ export default function StatsBanner({ candidates, round = 1, rawCount = 0, activ
         icon: CheckCircle2,
         color: 'text-green-500 bg-green-500/10',
         customContent: (
-          <div className="text-[13px] font-bold text-foreground font-mono leading-relaxed mt-2">
-            Total ({assignedCount}) : Yes = {yesCount}, May be = {maybeCount}, No = {noCount} and Pending = {pendingCount}
+          <div className="text-[13px] font-bold text-foreground font-mono leading-relaxed mt-2 flex flex-col gap-0.5">
+            <div>Total = {assignedCount}</div>
+            <div>Yes = {yesCount}</div>
+            <div>May be = {maybeCount}</div>
+            <div>No = {noCount}</div>
+            <div>Pending = {pendingCount}</div>
           </div>
         )
       },
@@ -74,8 +78,12 @@ export default function StatsBanner({ candidates, round = 1, rawCount = 0, activ
         icon: Hourglass,
         color: 'text-amber-500 bg-amber-500/10',
         customContent: (
-          <div className="text-[13px] font-bold text-foreground font-mono leading-relaxed mt-2">
-            Total ({assignedCount}): Yet to spoke = {yetToSpeak}, spoke = {spoke}, scheduled = {scheduled}, No response = {noResponse}
+          <div className="text-[13px] font-bold text-foreground font-mono leading-relaxed mt-2 flex flex-col gap-0.5">
+            <div>Total = {assignedCount}</div>
+            <div>Yet to spoke = {yetToSpeak}</div>
+            <div>spoke = {spoke}</div>
+            <div>scheduled = {scheduled}</div>
+            <div>No response = {noResponse}</div>
           </div>
         )
       }
