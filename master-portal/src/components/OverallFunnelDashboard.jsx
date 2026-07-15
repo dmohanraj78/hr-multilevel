@@ -215,6 +215,33 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     return Array.isArray(val) ? val[0] || {} : val || {};
   };
 
+  const r1ReviewerPivotData = useMemo(() => {
+    const reviewers = ['Akash', 'Aman', 'Ankita', 'Anmol', 'Basvaraj', 'Pushkaraj', 'Sachin', 'Sohan', 'Tejaswini', 'Vedant'];
+    const counts = reviewers.reduce((acc, name) => {
+      acc[name] = { yes: 0, no: 0, pending: 0, accessRequested: 0, total: 0 };
+      return acc;
+    }, {});
+    counts['Unassigned'] = { yes: 0, no: 0, pending: 0, accessRequested: 0, total: 0 };
+
+    globalData.forEach(c => {
+      const r1 = getR1(c);
+      const appStatus = r1.app_status || 'Pending';
+      const reviewer = r1.eval_group && r1.eval_group !== 'None' ? r1.eval_group : 'Unassigned';
+      
+      let cat = 'pending';
+      if (appStatus === 'Yes') cat = 'yes';
+      else if (['No', 'Reject', 'Rejected', 'Invalid'].includes(appStatus)) cat = 'no';
+      else if (appStatus.toLowerCase() === 'access requested') cat = 'accessRequested';
+      else cat = 'pending';
+
+      const target = counts[reviewer] || counts['Unassigned'];
+      target[cat]++;
+      target.total++;
+    });
+
+    return counts;
+  }, [globalData]);
+
   const tierPivotData = useMemo(() => {
     const tiers = ['Tier 1', 'Tier 1-', 'Tier 2', 'Tier 2-', 'Tier 3', 'Tier 4'];
     const counts = tiers.reduce((acc, tier) => {
@@ -1885,6 +1912,62 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
 
 
 
+
+      {/* Pivot Table 1.5: R1 Aviators Distribution */}
+      <Card className="rounded-[1.5rem] border shadow-sm p-6 bg-white dark:bg-slate-900">
+        <CardHeader className="p-0 pb-4 border-b">
+          <CardTitle className="text-sm font-extrabold text-[#800020] uppercase tracking-wider flex items-center gap-2">
+            <Users className="h-4 w-4" /> Round 1 — Aviators Distribution (Screening)
+          </CardTitle>
+        </CardHeader>
+        <div className="mt-4">
+          <table className="w-full text-xs text-left border-collapse">
+            <thead>
+              <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400 font-bold uppercase tracking-wider font-mono">
+                <th className="py-2.5">Reviewer</th>
+                <th className="py-2.5 text-center text-emerald-600">Yes</th>
+                <th className="py-2.5 text-center text-rose-500">No</th>
+                <th className="py-2.5 text-center text-amber-500">Access Req.</th>
+                <th className="py-2.5 text-center text-blue-600">Pending</th>
+                <th className="py-2.5 text-right font-bold text-foreground">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {['Akash', 'Aman', 'Ankita', 'Anmol', 'Basvaraj', 'Pushkaraj', 'Sachin', 'Sohan', 'Tejaswini', 'Vedant'].map((name) => {
+                const data = r1ReviewerPivotData[name] || { yes: 0, no: 0, accessRequested: 0, pending: 0 };
+                const r1Count = data.yes + data.no + data.accessRequested + data.pending;
+                return (
+                  <tr key={name} className="border-b border-slate-50 dark:border-slate-850 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                    <td className="py-2.5 font-semibold text-slate-800 dark:text-slate-200">{name}</td>
+                    <td className="py-2.5 text-center font-mono font-bold text-emerald-600">{data.yes}</td>
+                    <td className="py-2.5 text-center font-mono font-bold text-rose-500">{data.no}</td>
+                    <td className="py-2.5 text-center font-mono font-semibold text-amber-500">{data.accessRequested}</td>
+                    <td className="py-2.5 text-center font-mono font-semibold text-blue-600">{data.pending}</td>
+                    <td className="py-2.5 text-right font-mono font-bold text-slate-900 dark:text-slate-100">{r1Count}</td>
+                  </tr>
+                );
+              })}
+              {(() => {
+                const assignedTotal = ['Akash', 'Aman', 'Ankita', 'Anmol', 'Basvaraj', 'Pushkaraj', 'Sachin', 'Sohan', 'Tejaswini', 'Vedant'].reduce((acc, name) => {
+                  const d = r1ReviewerPivotData[name] || { yes: 0, no: 0, accessRequested: 0, pending: 0 };
+                  return { yes: acc.yes + d.yes, no: acc.no + d.no, accessRequested: acc.accessRequested + d.accessRequested, pending: acc.pending + d.pending };
+                }, { yes: 0, no: 0, accessRequested: 0, pending: 0 });
+                const grandR1 = assignedTotal.yes + assignedTotal.no + assignedTotal.accessRequested + assignedTotal.pending;
+                return (
+                  <tr className="bg-slate-50 dark:bg-slate-850/60 font-bold border-t border-slate-200 dark:border-slate-700">
+                    <td className="py-2.5 px-1 text-slate-900 dark:text-slate-100">Grand Total</td>
+                    <td className="py-2.5 text-center font-mono font-extrabold text-emerald-700">{assignedTotal.yes}</td>
+                    <td className="py-2.5 text-center font-mono font-extrabold text-rose-700">{assignedTotal.no}</td>
+                    <td className="py-2.5 text-center font-mono font-extrabold text-amber-700">{assignedTotal.accessRequested}</td>
+                    <td className="py-2.5 text-center font-mono font-extrabold text-blue-700">{assignedTotal.pending}</td>
+                    <td className="py-2.5 text-right font-mono font-extrabold text-slate-900 dark:text-white">{grandR1}</td>
+                  </tr>
+                );
+              })()}
+            </tbody>
+          </table>
+        </div>
+      </Card>
 
       {/* Pivot Table 2: R2 Aviators Distribution */}
       <Card className="rounded-[1.5rem] border shadow-sm p-6 bg-white dark:bg-slate-900">
