@@ -1272,30 +1272,98 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
         const r3Status = r3.verdict || r3.final_status || '';
 
         const tier = r1.tier || '';
-        const tierGroup = ['Tier 1', 'Tier 1+', 'Tier 2', 'Tier 2+', 'Tier 1-', 'Tier 2-', 'T1', 'T1+', 'T2', 'T2+', 'T1-', 'T2-'].includes(tier) ? 'Top' : 'Low';
-        const r1ReviewStatus = appStatus === 'Yes' ? 'Yes' : (['No', 'Reject', 'Rejected', 'Invalid'].includes(appStatus) ? 'No' : 'Pending');
-        const r1Reviewed = (appStatus && appStatus !== 'Pending') || (r1.review_comments && r1.review_comments.trim() !== '') ? 'Yes' : 'No';
-        const movedToR2 = appStatus === 'Yes' ? 1 : 0;
+        
+        // Col 47: Tier Group
+        const tierGroup = ['Tier 1', 'Tier 1+', 'Tier 2', 'Tier 2+', 'Tier 1-', 'Tier 2-', 'T1', 'T1+', 'T2', 'T2+', 'T1-', 'T2-'].includes(tier) 
+          ? 'Tier 1-2+' 
+          : 'Tier 3-4';
 
-        const evalGroup = r1.eval_group;
-        const r2Assignment = evalGroup && evalGroup !== '' && evalGroup !== 'None' && evalGroup !== 'Unassigned' ? 'Assigned' : 'Unassigned';
-        const r2ReviewCompletion = r2Status && !r2Status.endsWith('_draft') && ['Yes', 'Maybe', 'No', 'Declined'].includes(r2Status) ? 'Finalized' : 'In Progress';
-        const r2Outcome = r2Status ? r2Status.replace('_draft', '') : '';
-        const movedToR3 = r2Status && !r2Status.endsWith('_draft') && ['Yes', 'Maybe'].includes(r2Status) ? 1 : 0;
-
-        let funnelStage = 'Round 1';
-        if (['Hired', 'Yes', 'Offer'].includes(r3Status)) {
-          funnelStage = 'Hired';
-        } else if (['Rejected', 'No'].includes(r3Status)) {
-          funnelStage = 'R3 Rejected';
-        } else if (r2Status && !r2Status.endsWith('_draft') && ['Yes', 'Maybe'].includes(r2Status)) {
-          funnelStage = 'Round 3';
-        } else if (r2Status && !r2Status.endsWith('_draft') && ['No', 'Declined'].includes(r2Status)) {
-          funnelStage = 'R2 Rejected';
-        } else if (appStatus === 'Yes') {
-          funnelStage = 'Round 2';
+        // Col 48: R1 Review Status
+        let r1ReviewStatus = 'R1 Pending Review';
+        if (appStatus === 'Yes') {
+          r1ReviewStatus = 'R1 Reviewed - Yes';
         } else if (['No', 'Reject', 'Rejected', 'Invalid'].includes(appStatus)) {
-          funnelStage = 'R1 Rejected';
+          r1ReviewStatus = 'R1 Reviewed - Rejected';
+        }
+
+        // Col 49: R1 Reviewed
+        const r1Reviewed = (appStatus && appStatus !== 'Pending') || (r1.review_comments && r1.review_comments.trim() !== '') 
+          ? 'Yes' 
+          : 'No';
+
+        // Col 50: Moved to R2
+        const movedToR2 = appStatus === 'Yes' ? 'Yes' : 'No';
+
+        // Col 51: R2 Assignment
+        let r2Assignment = 'Not in R2';
+        if (appStatus === 'Yes') {
+          const evalGroup = r1.eval_group;
+          r2Assignment = evalGroup && evalGroup !== '' && evalGroup !== 'None' && evalGroup !== 'Unassigned' 
+            ? 'Assigned' 
+            : 'Unassigned';
+        }
+
+        // Col 52: R2 Review Completion
+        let r2ReviewCompletion = 'Not in R2';
+        if (appStatus === 'Yes') {
+          if (r2Status === 'Declined') {
+            r2ReviewCompletion = 'Declined';
+          } else if (r2Status && !r2Status.endsWith('_draft') && ['Yes', 'Maybe', 'No'].includes(r2Status)) {
+            r2ReviewCompletion = 'Finalized';
+          } else {
+            r2ReviewCompletion = 'Pending';
+          }
+        }
+
+        // Col 53: R2 Outcome
+        let r2Outcome = 'Not in R2';
+        if (appStatus === 'Yes') {
+          if (!r2Status || r2Status.endsWith('_draft')) {
+            r2Outcome = 'Pending';
+          } else {
+            r2Outcome = r2Status;
+          }
+        }
+
+        // Col 54: Moved to R3
+        const movedToR3 = (appStatus === 'Yes' && r2Status && !r2Status.endsWith('_draft') && ['Yes', 'Maybe'].includes(r2Status)) 
+          ? 'Yes' 
+          : 'No';
+
+        // Col 55: R3 Status
+        let r3StatusText = 'Not in R3';
+        if (movedToR3 === 'Yes') {
+          if (['Hired', 'Yes', 'Offer'].includes(r3Status)) {
+            r3StatusText = 'Hired';
+          } else if (['Rejected', 'No'].includes(r3Status)) {
+            r3StatusText = 'Rejected';
+          } else {
+            r3StatusText = 'Pending Review';
+          }
+        }
+
+        // Col 56: Funnel Stage
+        let funnelStage = 'Pending R1 Review';
+        if (appStatus === 'Pending' || !appStatus) {
+          funnelStage = 'Pending R1 Review';
+        } else if (['No', 'Reject', 'Rejected', 'Invalid'].includes(appStatus)) {
+          funnelStage = 'Rejected at R1';
+        } else if (appStatus === 'Yes') {
+          if (!r2Status || r2Status.endsWith('_draft')) {
+            funnelStage = 'In R2 (Pending)';
+          } else if (r2Status === 'Declined') {
+            funnelStage = 'Declined (R2)';
+          } else if (r2Status === 'No') {
+            funnelStage = 'Rejected at R2';
+          } else if (['Yes', 'Maybe'].includes(r2Status)) {
+            if (['Hired', 'Yes', 'Offer'].includes(r3Status)) {
+              funnelStage = 'Hired';
+            } else if (['Rejected', 'No'].includes(r3Status)) {
+              funnelStage = 'Rejected at R3';
+            } else {
+              funnelStage = 'In R3 (Pending)';
+            }
+          }
         }
 
         const domain = (r1.domain || '').trim();
@@ -1364,7 +1432,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
         row.getCell(52).value = r2ReviewCompletion;
         row.getCell(53).value = r2Outcome;
         row.getCell(54).value = movedToR3;
-        row.getCell(55).value = r3Status;
+        row.getCell(55).value = r3StatusText;
         row.getCell(56).value = funnelStage;
         row.getCell(57).value = d_empty;
         row.getCell(58).value = d_content;
