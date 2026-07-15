@@ -1925,11 +1925,11 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
         </div>
       </Card>
 
-      {/* Pivot Table 2: R2 Aviators Distribution */}
+      {/* Pivot Table 2: R2 Aviators Distribution — simple */}
       <Card className="rounded-[1.5rem] border shadow-sm p-6 bg-white dark:bg-slate-900">
         <CardHeader className="p-0 pb-4 border-b">
           <CardTitle className="text-sm font-extrabold text-[#800020] uppercase tracking-wider flex items-center gap-2">
-            <Users className="h-4 w-4" /> Round 2 — Aviators Distribution (Technical Reviewers)
+            <Users className="h-4 w-4" /> Round 2 — Candidates per Reviewer
           </CardTitle>
         </CardHeader>
         <div className="mt-4">
@@ -1937,44 +1937,34 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
             <thead>
               <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400 font-bold uppercase tracking-wider font-mono">
                 <th className="py-2.5">Reviewer</th>
-                <th className="py-2.5 text-center text-emerald-600 dark:text-emerald-400">Yes</th>
-                <th className="py-2.5 text-center text-emerald-500 dark:text-emerald-350">Maybe</th>
-                <th className="py-2.5 text-center text-rose-500 dark:text-rose-400">No</th>
-                <th className="py-2.5 text-center text-blue-600 dark:text-blue-400">Pending</th>
-                <th className="py-2.5 text-center text-rose-700 dark:text-rose-500">Rejected (R1)</th>
-                <th className="py-2.5 text-right font-bold text-foreground">Grand Total</th>
+                <th className="py-2.5 text-right font-bold text-foreground">Candidates in Round 2</th>
               </tr>
             </thead>
             <tbody>
-              {['Akash', 'Ankita', 'Anmol', 'Basvaraj', 'Pushkaraj', 'Sachin', 'Sohan', 'Tejaswini', 'Vedant', 'Unassigned'].map((name) => {
+              {['Akash', 'Ankita', 'Anmol', 'Basvaraj', 'Pushkaraj', 'Sachin', 'Sohan', 'Tejaswini', 'Vedant'].map((name) => {
                 const data = reviewerPivotData[name] || { yes: 0, maybe: 0, no: 0, pending: 0, rejectedR1: 0, total: 0 };
+                const r2Count = data.yes + data.maybe + data.no + data.pending;
                 return (
                   <tr key={name} className="border-b border-slate-50 dark:border-slate-850 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                    <td className="py-2.5 font-semibold text-slate-800 dark:text-slate-200">
-                      {name === 'Unassigned' ? <span className="text-slate-400 italic font-normal">Unassigned</span> : name}
-                    </td>
-                    <td className="py-2.5 text-center font-mono font-bold text-emerald-600">{data.yes}</td>
-                    <td className="py-2.5 text-center font-mono font-semibold text-emerald-500">{data.maybe}</td>
-                    <td className="py-2.5 text-center font-mono font-bold text-rose-500">{data.no}</td>
-                    <td className="py-2.5 text-center font-mono font-semibold text-blue-600">{data.pending}</td>
-                    <td className="py-2.5 text-center font-mono font-semibold text-rose-700">{data.rejectedR1}</td>
-                    <td className="py-2.5 text-right font-mono font-bold text-slate-900 dark:text-slate-100">{data.total}</td>
+                    <td className="py-2.5 font-semibold text-slate-800 dark:text-slate-200">{name}</td>
+                    <td className="py-2.5 text-right font-mono font-bold text-slate-900 dark:text-slate-100">{r2Count}</td>
                   </tr>
                 );
               })}
               <tr className="bg-slate-50 dark:bg-slate-850/60 font-bold border-t border-slate-200 dark:border-slate-700">
                 <td className="py-2.5 px-1 text-slate-900 dark:text-slate-100">Grand Total</td>
-                <td className="py-2.5 text-center font-mono font-extrabold text-emerald-700">{reviewerGrandTotal.yes}</td>
-                <td className="py-2.5 text-center font-mono font-extrabold text-emerald-600">{reviewerGrandTotal.maybe}</td>
-                <td className="py-2.5 text-center font-mono font-extrabold text-rose-700">{reviewerGrandTotal.no}</td>
-                <td className="py-2.5 text-center font-mono font-extrabold text-blue-700">{reviewerGrandTotal.pending}</td>
-                <td className="py-2.5 text-center font-mono font-extrabold text-rose-800">{reviewerGrandTotal.rejectedR1}</td>
-                <td className="py-2.5 text-right font-mono font-extrabold text-slate-900 dark:text-white">{reviewerGrandTotal.total}</td>
+                <td className="py-2.5 text-right font-mono font-extrabold text-slate-900 dark:text-white">
+                  {['Akash', 'Ankita', 'Anmol', 'Basvaraj', 'Pushkaraj', 'Sachin', 'Sohan', 'Tejaswini', 'Vedant'].reduce((sum, name) => {
+                    const d = reviewerPivotData[name] || { yes: 0, maybe: 0, no: 0, pending: 0 };
+                    return sum + d.yes + d.maybe + d.no + d.pending;
+                  }, 0)}
+                </td>
               </tr>
             </tbody>
           </table>
         </div>
       </Card>
+
 
     </div>
   );
