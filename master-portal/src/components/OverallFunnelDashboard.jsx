@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Download, Search, LayoutGrid, Users, CheckCircle, Flame, XOctagon, XCircle, HelpCircle, BarChart3, TrendingUp, Filter, ArrowUp, ArrowDown, FileSpreadsheet } from 'lucide-react';
+import { Download, Search, LayoutGrid, Users, CheckCircle, Flame, XOctagon, XCircle, HelpCircle, BarChart3, TrendingUp, Filter, ArrowUp, ArrowDown, FileSpreadsheet, Info, ArrowRight, Flag } from 'lucide-react';
 import ExcelJS from 'exceljs';
 
 function HeaderFilter({
@@ -1391,6 +1391,89 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     }
   };
 
+  // Deduplicate globalData by email to count unique applicants
+  const uniqueDeduplicatedCandidates = useMemo(() => {
+    const seen = new Set();
+    const result = [];
+    globalData.forEach(c => {
+      const email = (c.email || '').trim().toLowerCase();
+      if (!seen.has(email)) {
+        seen.add(email);
+        result.push(c);
+      }
+    });
+    return result;
+  }, [globalData]);
+
+  const totalApplications = globalData.length;
+  const uniqueCount = uniqueDeduplicatedCandidates.length;
+  const duplicatesCount = totalApplications - uniqueCount;
+
+  // Reviewed in R1: app_status is not null/empty/Pending
+  const uniqueReviewed = useMemo(() => {
+    return uniqueDeduplicatedCandidates.filter(c => {
+      const status = getR1(c).app_status;
+      return status && status !== 'Pending';
+    });
+  }, [uniqueDeduplicatedCandidates]);
+
+  const reviewedCount = uniqueReviewed.length;
+  const pendingReviewCount = uniqueCount - reviewedCount;
+
+  // Round 1 Tiers: T1/T1-/T2/T2-
+  const isT1T2 = (tier) => ['Tier 1', 'Tier 1-', 'Tier 2', 'Tier 2-', 'T1', 'T1-', 'T2', 'T2-', 'Tier 1+', 'Tier 2+', 'T1+', 'T2+'].includes(tier);
+  const isT3T4 = (tier) => ['Tier 3', 'Tier 4', 'T3', 'T4'].includes(tier);
+
+  const t1t2Reviewed = useMemo(() => uniqueReviewed.filter(c => isT1T2(getR1(c).tier)), [uniqueReviewed]);
+  const t1t2Count = t1t2Reviewed.length;
+
+  // Manually reviewed and comments marked in R1 (means app_status is Yes or No)
+  const t1t2ManuallyReviewed = useMemo(() => t1t2Reviewed.filter(c => getR1(c).app_status === 'Yes' || ['No', 'Reject'].includes(getR1(c).app_status)), [t1t2Reviewed]);
+  const t1t2ManuallyReviewedCount = t1t2ManuallyReviewed.length;
+
+  const t1t2YesCount = useMemo(() => t1t2ManuallyReviewed.filter(c => getR1(c).app_status === 'Yes').length, [t1t2ManuallyReviewed]);
+  const t1t2NoCount = useMemo(() => t1t2ManuallyReviewed.filter(c => ['No', 'Reject'].includes(getR1(c).app_status)).length, [t1t2ManuallyReviewed]);
+  const t1t2PendingCount = t1t2Count - t1t2ManuallyReviewedCount;
+
+  // R1 T3/T4
+  const t3t4Reviewed = useMemo(() => uniqueReviewed.filter(c => isT3T4(getR1(c).tier)), [uniqueReviewed]);
+  const t3t4Count = t3t4Reviewed.length;
+
+  const t3t4ManuallyReviewed = useMemo(() => t3t4Reviewed.filter(c => getR1(c).app_status === 'Yes' || ['No', 'Reject'].includes(getR1(c).app_status)), [t3t4Reviewed]);
+  const t3t4ManuallyReviewedCount = t3t4ManuallyReviewed.length;
+
+  const t3t4Shortlisted = useMemo(() => t3t4ManuallyReviewed.filter(c => getR1(c).app_status === 'Yes').length, [t3t4ManuallyReviewed]);
+  const t3t4PendingCount = t3t4Count - t3t4ManuallyReviewedCount;
+
+  // Total moved from R1 to R2: unique candidates with app_status = 'Yes'
+  const movedR1ToR2 = useMemo(() => uniqueDeduplicatedCandidates.filter(c => getR1(c).app_status === 'Yes'), [uniqueDeduplicatedCandidates]);
+  const movedR1ToR2Count = movedR1ToR2.length;
+
+  // Round 2
+  const r2TotalCandidates = movedR1ToR2Count;
+  const r2AssignedCandidates = useMemo(() => movedR1ToR2.filter(c => getR1(c).eval_group && getR1(c).eval_group !== 'None'), [movedR1ToR2]);
+  const r2AssignedCount = r2AssignedCandidates.length;
+  const r2YetToAssignCount = r2TotalCandidates - r2AssignedCount;
+
+  // Finalized vs Draft:
+  const r2Finalized = useMemo(() => r2AssignedCandidates.filter(c => getR2(c).moved_to_round_3 && !getR2(c).moved_to_round_3.endsWith('_draft')), [r2AssignedCandidates]);
+  const r2FinalizedCount = r2Finalized.length;
+  const r2DraftCount = r2AssignedCount - r2FinalizedCount;
+
+  const r2YesCount = useMemo(() => r2Finalized.filter(c => getR2(c).moved_to_round_3 === 'Yes').length, [r2Finalized]);
+  const r2MaybeCount = useMemo(() => r2Finalized.filter(c => getR2(c).moved_to_round_3 === 'Maybe').length, [r2Finalized]);
+  const r2NoCount = useMemo(() => r2Finalized.filter(c => ['No', 'Reject', 'Declined'].includes(getR2(c).moved_to_round_3)).length, [r2Finalized]);
+
+  // Moved R2 to R3
+  const movedR2ToR3 = useMemo(() => r2Finalized.filter(c => ['Yes', 'Maybe'].includes(getR2(c).moved_to_round_3)), [r2Finalized]);
+  const movedR2ToR3Count = movedR2ToR3.length;
+
+  // Round 3
+  const r3Total = movedR2ToR3Count;
+  const r3HiredCount = useMemo(() => movedR2ToR3.filter(c => ['Yes', 'Hired'].includes(getR3(c).final_status)).length, [movedR2ToR3]);
+  const r3RejectedCount = useMemo(() => movedR2ToR3.filter(c => ['No', 'Rejected'].includes(getR3(c).final_status)).length, [movedR2ToR3]);
+  const r3PendingCount = r3Total - r3HiredCount - r3RejectedCount;
+
   return (
     <div className="flex flex-col gap-8">
       
@@ -1538,111 +1621,203 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
 
       </div>
 
-      {/* Visual Analytics Row */}
+      {/* Info summary banner */}
+      <div className="bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/50 rounded-2xl p-5 flex items-start gap-4 shadow-sm mt-2">
+        <div className="p-3 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-full shrink-0">
+          <Info className="h-6 w-6 stroke-[1.5]" />
+        </div>
+        <div className="flex flex-col gap-1.5 text-sm leading-relaxed text-slate-700 dark:text-slate-350">
+          <div>
+            We received <span className="font-bold text-blue-900 dark:text-blue-200">{totalApplications}</span> applications. <span className="font-bold text-slate-900 dark:text-slate-100">{duplicatesCount}</span> were duplicates.
+          </div>
+          <div>
+            From a total of <span className="font-bold text-blue-900 dark:text-blue-200">{uniqueCount}</span> unique applications, <span className="font-bold text-blue-900 dark:text-blue-200">{reviewedCount}</span> were reviewed and <span className="font-bold text-blue-900 dark:text-blue-200">{pendingReviewCount}</span> are pending review.
+          </div>
+        </div>
+      </div>
+
+      {/* Round 1 Card */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row items-stretch gap-6">
+        {/* Left indicator column */}
+        <div className="flex flex-row md:flex-col items-center justify-center text-center w-full md:w-28 shrink-0 gap-3 border-b md:border-b-0 md:border-r border-slate-100 dark:border-slate-850 pb-4 md:pb-0 md:pr-6">
+          <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xl font-bold font-mono">
+            1
+          </div>
+          <div className="flex flex-col items-start md:items-center">
+            <div className="text-[11px] font-black tracking-wider text-blue-600 dark:text-blue-400 uppercase">Round 1</div>
+            <Search className="hidden md:block h-5 w-5 text-blue-400 dark:text-blue-500 stroke-[1.5] mt-1.5" />
+          </div>
+        </div>
+
+        {/* Right info column */}
+        <div className="flex-1 flex flex-col justify-between gap-4">
+          <ul className="flex flex-col gap-3.5 text-xs leading-relaxed text-slate-600 dark:text-slate-350 list-none pl-0">
+            <li className="flex items-start gap-2.5">
+              <span className="text-slate-400 dark:text-slate-600 font-mono mt-0.5">•</span>
+              <span>
+                Out of the <span className="font-semibold text-slate-900 dark:text-slate-100">{reviewedCount}</span> reviewed, <span className="font-semibold text-slate-900 dark:text-slate-100">{t1t2Count}</span> applicants qualified to Tier 1, Tier 1-, Tier 2 and Tier 2-. <span className="font-semibold text-slate-900 dark:text-slate-100">{t1t2ManuallyReviewedCount}</span> applications have been manually reviewed and comments have been marked in Round 1.
+              </span>
+            </li>
+            <li className="flex items-start gap-2.5">
+              <span className="text-slate-400 dark:text-slate-600 font-mono mt-0.5">•</span>
+              <span>
+                Out of that <span className="font-semibold text-slate-900 dark:text-slate-100">{t1t2ManuallyReviewedCount}</span> applications, <span className="text-emerald-600 dark:text-emerald-400 font-bold">{t1t2YesCount} got yes</span>, <span className="text-rose-600 dark:text-rose-400 font-bold">{t1t2NoCount} got no</span> and <span className="text-amber-600 dark:text-amber-400 font-bold">{t1t2PendingCount} are pending review</span>.
+              </span>
+            </li>
+            <li className="flex items-start gap-2.5">
+              <span className="text-slate-400 dark:text-slate-600 font-mono mt-0.5">•</span>
+              <span>
+                Out of the <span className="font-semibold text-slate-900 dark:text-slate-100">{reviewedCount}</span> reviewed, <span className="font-semibold text-slate-900 dark:text-slate-100">{t3t4Count}</span> applicants qualified to Tier 3 and Tier 4. <span className="font-semibold text-slate-900 dark:text-slate-100">{t3t4ManuallyReviewedCount}</span> were reviewed — out of that <span className="font-semibold text-slate-900 dark:text-slate-100">{t3t4Shortlisted}</span> are shortlisted and <span className="font-semibold text-slate-900 dark:text-slate-100">{t3t4PendingCount}</span> are pending manual review.
+              </span>
+            </li>
+          </ul>
+
+          <div className="bg-blue-500/5 dark:bg-blue-500/10 border border-blue-500/10 rounded-xl p-3 flex items-center gap-2.5 text-xs font-semibold text-blue-900 dark:text-blue-200">
+            <div className="p-1 bg-blue-500 text-white rounded-full">
+              <ArrowRight className="h-3 w-3 stroke-[2.5]" />
+            </div>
+            <span>
+              Total of <span className="font-bold text-blue-700 dark:text-blue-300">{movedR1ToR2Count}</span> out of <span className="font-bold text-blue-700 dark:text-blue-300">{reviewedCount}</span> applicants moved from Round 1 to Round 2.
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Round 2 Card */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row items-stretch gap-6">
+        {/* Left indicator column */}
+        <div className="flex flex-row md:flex-col items-center justify-center text-center w-full md:w-28 shrink-0 gap-3 border-b md:border-b-0 md:border-r border-slate-100 dark:border-slate-850 pb-4 md:pb-0 md:pr-6">
+          <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xl font-bold font-mono">
+            2
+          </div>
+          <div className="flex flex-col items-start md:items-center">
+            <div className="text-[11px] font-black tracking-wider text-emerald-600 dark:text-emerald-400 uppercase">Round 2</div>
+            <Users className="hidden md:block h-5 w-5 text-emerald-400 dark:text-emerald-500 stroke-[1.5] mt-1.5" />
+          </div>
+        </div>
+
+        {/* Right info column */}
+        <div className="flex-1 flex flex-col justify-between gap-4">
+          <ul className="flex flex-col gap-3.5 text-xs leading-relaxed text-slate-600 dark:text-slate-350 list-none pl-0">
+            <li className="flex items-start gap-2.5">
+              <span className="text-slate-400 dark:text-slate-600 font-mono mt-0.5">•</span>
+              <span>
+                Out of <span className="font-semibold text-slate-900 dark:text-slate-100">{r2TotalCandidates}</span> candidates, <span className="font-semibold text-slate-900 dark:text-slate-100">{r2AssignedCount}</span> candidates were assigned to technical reviewers and <span className="font-semibold text-slate-900 dark:text-slate-100">{r2YetToAssignCount}</span> applicants are yet to be assigned.
+              </span>
+            </li>
+            <li className="flex items-start gap-2.5">
+              <span className="text-slate-400 dark:text-slate-600 font-mono mt-0.5">•</span>
+              <span>
+                Out of the <span className="font-semibold text-slate-900 dark:text-slate-100">{r2AssignedCount}</span> assigned candidates, <span className="font-semibold text-slate-900 dark:text-slate-100">{r2FinalizedCount}</span> reviews are finalized and <span className="font-semibold text-slate-900 dark:text-slate-100">{r2DraftCount}</span> is still in draft (review in progress).
+              </span>
+            </li>
+            <li className="flex items-start gap-2.5">
+              <span className="text-slate-400 dark:text-slate-600 font-mono mt-0.5">•</span>
+              <span>
+                Out of the <span className="font-semibold text-slate-900 dark:text-slate-100">{r2FinalizedCount}</span> finalized reviews, technical reviewers said <span className="text-emerald-600 dark:text-emerald-400 font-bold">yes</span> for <span className="font-semibold text-slate-900 dark:text-slate-100">{r2YesCount}</span> candidates, <span className="text-amber-600 dark:text-amber-400 font-bold">maybe</span> for <span className="font-semibold text-slate-900 dark:text-slate-100">{r2MaybeCount}</span> and <span className="text-rose-600 dark:text-rose-400 font-bold">no</span> for <span className="font-semibold text-slate-900 dark:text-slate-100">{r2NoCount}</span>.
+              </span>
+            </li>
+          </ul>
+
+          <div className="bg-emerald-500/5 dark:bg-emerald-500/10 border border-emerald-500/10 rounded-xl p-3 flex items-center gap-2.5 text-xs font-semibold text-emerald-900 dark:text-emerald-200">
+            <div className="p-1 bg-emerald-500 text-white rounded-full">
+              <ArrowRight className="h-3 w-3 stroke-[2.5]" />
+            </div>
+            <span>
+              Total of <span className="font-bold text-emerald-700 dark:text-emerald-300">{movedR2ToR3Count}</span> candidates moved from Round 2 to Round 3.
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Side-by-Side row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Round 3 Card */}
+        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row items-stretch gap-6 lg:col-span-2">
+          {/* Left indicator column */}
+          <div className="flex flex-row md:flex-col items-center justify-center text-center w-full md:w-28 shrink-0 gap-3 border-b md:border-b-0 md:border-r border-slate-100 dark:border-slate-850 pb-4 md:pb-0 md:pr-6">
+            <div className="w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 flex items-center justify-center text-xl font-bold font-mono">
+              3
+            </div>
+            <div className="flex flex-col items-start md:items-center">
+              <div className="text-[11px] font-black tracking-wider text-purple-600 dark:text-purple-400 uppercase">Round 3</div>
+              <Flag className="hidden md:block h-5 w-5 text-purple-400 dark:text-purple-500 stroke-[1.5] mt-1.5" />
+            </div>
+          </div>
 
-        {/* Tier & score distribution stack (Candidate Tiers first) */}
+          {/* Right info column */}
+          <div className="flex-1 flex flex-col justify-center gap-2 pt-4 md:pt-0">
+            <ul className="flex flex-col gap-3.5 text-xs leading-relaxed text-slate-600 dark:text-slate-350 list-none pl-0">
+              <li className="flex items-start gap-2.5">
+                <span className="text-slate-400 dark:text-slate-600 font-mono mt-0.5">•</span>
+                <span>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">{r3PendingCount}</span> candidates pending for review. <span className="font-semibold text-slate-900 dark:text-slate-100">{r3HiredCount}</span> candidates hired.
+                </span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <span className="text-slate-400 dark:text-slate-600 font-mono mt-0.5">•</span>
+                <span>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">{r3RejectedCount}</span> candidates rejected.
+                </span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Quick Summary Table Card */}
         <Card className="rounded-[1.5rem] border shadow-sm lg:col-span-1">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-bold flex items-center gap-2">
-              <LayoutGrid className="h-4.5 w-4.5 text-[#800020]" /> Candidate Tiers
+          <CardHeader className="pb-2 text-center border-b">
+            <CardTitle className="text-xs font-black tracking-widest text-slate-500 dark:text-slate-400 uppercase">
+              Quick Summary
             </CardTitle>
-            <CardDescription className="text-xs">Evaluator-assigned tier counts</CardDescription>
           </CardHeader>
-          <CardContent className="pt-4 flex flex-col gap-3">
-            {Object.entries(chartData.tiers).map(([tier, count]) => {
-              const max = Math.max(...Object.values(chartData.tiers), 1);
-              const percent = Math.round((count / (globalData.length || 1)) * 100);
-              return (
-                <div key={tier} className="flex items-center justify-between text-xs gap-3">
-                  <Badge variant="outline" className="font-mono w-14 shrink-0 font-bold justify-center border-primary/20 text-[#800020] bg-primary/5">
-                    {tier}
-                  </Badge>
-                  <div className="flex-1 bg-muted h-3 rounded-full overflow-hidden border">
-                    <div 
-                      className="bg-[#800020] h-full rounded-full transition-all"
-                      style={{ width: `${percent}%` }}
-                    />
-                  </div>
-                  <span className="font-mono text-muted-foreground text-right w-12 shrink-0">{count} ({percent}%)</span>
-                </div>
-              );
-            })}
-          </CardContent>
-        </Card>
-
-        {/* Technical Reviewer Workloads table (Middle) */}
-        <Card className="rounded-[1.5rem] border shadow-sm lg:col-span-1 flex flex-col justify-between">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-bold flex items-center gap-2">
-              <BarChart3 className="h-4.5 w-4.5 text-[#800020]" /> Technical Reviewer Workloads
-            </CardTitle>
-            <CardDescription className="text-xs">Candidates assigned to technical reviewers</CardDescription>
-          </CardHeader>
-          <CardContent className="pt-2 overflow-y-auto flex-1 px-4 max-h-[300px]">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-muted/40 border-b">
-                  <th className="py-2 px-1 font-bold text-muted-foreground">Technical Reviewer</th>
-                  <th className="py-2 px-1 font-bold text-muted-foreground text-right w-[80px]">Candidates</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y font-mono">
-                {Object.entries(chartData.clans)
-                .filter(([clan, count]) => count > 0 && clan !== 'Unassigned')
-                  .sort((a, b) => b[1] - a[1])
-                  .map(([clan, count]) => (
-                    <tr key={clan} className="hover:bg-muted/10">
-                      <td className="py-2 px-1 font-sans font-semibold text-foreground">{clan}</td>
-                      <td className="py-2 px-1 text-right text-foreground font-extrabold">{count}</td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-          </CardContent>
-        </Card>
-
-        {/* Funnel Conversion Chart (Last) */}
-        <Card className="rounded-[1.5rem] border shadow-sm lg:col-span-1">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-bold flex items-center gap-2">
-              <TrendingUp className="h-4.5 w-4.5 text-[#800020]" /> Candidate Pipeline
-            </CardTitle>
-            <CardDescription className="text-xs">Recruitment Funnel</CardDescription>
-          </CardHeader>
-                    <CardContent className="pt-4 flex flex-col gap-4">
-            {(() => {
-              const applicationsCount = evaluatedFiltered.length; // total count of round 1 evaluation
-              // Use filteredApplicants (pre-dedup) so counts match round_1_evaluation actuals (137 cleared)
-              const clearedR1Count = filteredApplicants.filter(c => getR1(c).app_status === 'Yes').length;
-              const movedR3Count = filteredApplicants.filter(c => {
-                const m = getR2(c).moved_to_round_3;
-                return m && typeof m === 'string' && !m.endsWith('_draft') && (m === 'Yes' || m === 'Maybe');
-              }).length;
-              const hiredCount = filteredApplicants.filter(c => ['Yes', 'Hired'].includes(getR3(c).verdict)).length;
-
-              return [
-                { label: '1. Applied', count: applicationsCount, percent: 100, color: 'bg-slate-400' },
-                { label: '2. Cleared HR Round', count: clearedR1Count, percent: Math.round((clearedR1Count / (applicationsCount || 1)) * 100), color: 'bg-blue-500' },
-                { label: '3. Selected for Executive Review', count: movedR3Count, percent: Math.round((movedR3Count / (applicationsCount || 1)) * 100), color: 'bg-purple-500' },
-                { label: '4. Hired', count: hiredCount, percent: Math.round((hiredCount / (applicationsCount || 1)) * 100), color: 'bg-[#800020]' }
-              ].map((stage, idx) => (
-              <div key={idx} className="flex flex-col gap-1.5">
-                <div className="flex justify-between text-xs font-semibold">
-                  <span className="text-muted-foreground">{stage.label}</span>
-                  <span className="font-mono text-foreground">{stage.count} ({stage.percent}%)</span>
-                </div>
-                <div className="h-3.5 bg-muted rounded-full overflow-hidden border">
-                  <div 
-                    className={`h-full ${stage.color} rounded-full transition-all duration-500`}
-                    style={{ width: `${stage.percent}%` }}
-                  />
-                </div>
+          <CardContent className="pt-4 flex flex-col gap-3.5 text-xs font-semibold">
+            {/* Total Applications */}
+            <div className="flex items-center justify-between py-1.5 border-b border-slate-50 dark:border-slate-800/40 last:border-0">
+              <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+                <Users className="h-3.5 w-3.5 text-blue-500" />
+                <span>Total Applications</span>
               </div>
-            ))})()}
+              <span className="font-mono text-blue-600 dark:text-blue-400 font-bold">{totalApplications}</span>
+            </div>
+
+            {/* Duplicates */}
+            <div className="flex items-center justify-between py-1.5 border-b border-slate-50 dark:border-slate-800/40 last:border-0">
+              <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+                <XCircle className="h-3.5 w-3.5 text-red-500" />
+                <span>Duplicates</span>
+              </div>
+              <span className="font-mono text-red-600 dark:text-red-400 font-bold">{duplicatesCount}</span>
+            </div>
+
+            {/* Unique Applications */}
+            <div className="flex items-center justify-between py-1.5 border-b border-slate-50 dark:border-slate-800/40 last:border-0">
+              <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+                <Users className="h-3.5 w-3.5 text-blue-500" />
+                <span>Unique Applications</span>
+              </div>
+              <span className="font-mono text-blue-600 dark:text-blue-400 font-bold">{uniqueCount}</span>
+            </div>
+
+            {/* Reviewed */}
+            <div className="flex items-center justify-between py-1.5 border-b border-slate-50 dark:border-slate-800/40 last:border-0">
+              <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+                <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />
+                <span>Reviewed</span>
+              </div>
+              <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">{reviewedCount}</span>
+            </div>
+
+            {/* Pending Review */}
+            <div className="flex items-center justify-between py-1.5 border-b border-slate-50 dark:border-slate-800/40 last:border-0">
+              <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+                <HelpCircle className="h-3.5 w-3.5 text-amber-500" />
+                <span>Pending Review</span>
+              </div>
+              <span className="font-mono text-amber-600 dark:text-amber-400 font-bold">{pendingReviewCount}</span>
+            </div>
           </CardContent>
         </Card>
-
       </div>
 
     </div>
