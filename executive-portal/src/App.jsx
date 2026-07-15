@@ -218,6 +218,7 @@ export default function App() {
             <div className="mt-2">
               <StatsBanner 
                 candidates={executiveCandidates} 
+                round={3}
                 activeFilter={activeFilter}
                 onFilterChange={setActiveFilter}
               />
