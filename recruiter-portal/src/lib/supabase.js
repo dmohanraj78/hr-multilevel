@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
 const defaultUrl = 'https://mujqmdmzloizqhglayxe.supabase.co';
-const defaultKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11anFtZG16bG9penFoZ2xheXhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4MTU5NDgsImV4cCI6MjA5ODM5MTk0OH0.dqPKhwzhBvuL7gNuoNC9Bl-iCOfzZV61qM0whZLfXaA';
+const defaultKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11anFtZG16bG9penFoZ2xheXhlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MjgxNTk0OCwiZXhwIjoyMDk4MzkxOTQ4fQ.G7AmEylxPwm6TWZ3xjCcBhvhfNPYHdj0V08My0A_rEc';
 
 const getCredentials = () => {
   const url = localStorage.getItem('supabase_url') || defaultUrl;
