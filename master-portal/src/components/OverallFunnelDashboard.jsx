@@ -1391,7 +1391,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     }
   };
 
-  // Deduplicate globalData by email to count unique applicants
+  // Deduplicate globalData by email to count unique applicants (only for top level summary)
   const uniqueDeduplicatedCandidates = useMemo(() => {
     const seen = new Set();
     const result = [];
@@ -1420,15 +1420,15 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
   const reviewedCount = uniqueReviewed.length;
   const pendingReviewCount = uniqueCount - reviewedCount;
 
-  // Round 1 Tiers: T1/T1-/T2/T2-
+  // Round 1 Tiers: T1/T1-/T2/T2- (uses evaluatedCandidates to align 100% with worksheets!)
   const isT1T2 = (tier) => ['Tier 1', 'Tier 1-', 'Tier 2', 'Tier 2-', 'T1', 'T1-', 'T2', 'T2-', 'Tier 1+', 'Tier 2+', 'T1+', 'T2+'].includes(tier);
   const isT3T4 = (tier) => ['Tier 3', 'Tier 4', 'T3', 'T4'].includes(tier);
 
-  const t1t2Reviewed = useMemo(() => uniqueReviewed.filter(c => isT1T2(getR1(c).tier)), [uniqueReviewed]);
-  const t1t2Count = t1t2Reviewed.length;
+  const t1t2Candidates = useMemo(() => evaluatedCandidates.filter(c => isT1T2(getR1(c).tier)), [evaluatedCandidates]);
+  const t1t2Count = t1t2Candidates.length;
 
   // Manually reviewed and comments marked in R1 (means app_status is Yes or No)
-  const t1t2ManuallyReviewed = useMemo(() => t1t2Reviewed.filter(c => getR1(c).app_status === 'Yes' || ['No', 'Reject'].includes(getR1(c).app_status)), [t1t2Reviewed]);
+  const t1t2ManuallyReviewed = useMemo(() => t1t2Candidates.filter(c => getR1(c).app_status === 'Yes' || ['No', 'Reject'].includes(getR1(c).app_status)), [t1t2Candidates]);
   const t1t2ManuallyReviewedCount = t1t2ManuallyReviewed.length;
 
   const t1t2YesCount = useMemo(() => t1t2ManuallyReviewed.filter(c => getR1(c).app_status === 'Yes').length, [t1t2ManuallyReviewed]);
@@ -1436,17 +1436,17 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
   const t1t2PendingCount = t1t2Count - t1t2ManuallyReviewedCount;
 
   // R1 T3/T4
-  const t3t4Reviewed = useMemo(() => uniqueReviewed.filter(c => isT3T4(getR1(c).tier)), [uniqueReviewed]);
-  const t3t4Count = t3t4Reviewed.length;
+  const t3t4Candidates = useMemo(() => evaluatedCandidates.filter(c => isT3T4(getR1(c).tier)), [evaluatedCandidates]);
+  const t3t4Count = t3t4Candidates.length;
 
-  const t3t4ManuallyReviewed = useMemo(() => t3t4Reviewed.filter(c => getR1(c).app_status === 'Yes' || ['No', 'Reject'].includes(getR1(c).app_status)), [t3t4Reviewed]);
+  const t3t4ManuallyReviewed = useMemo(() => t3t4Candidates.filter(c => getR1(c).app_status === 'Yes' || ['No', 'Reject'].includes(getR1(c).app_status)), [t3t4Candidates]);
   const t3t4ManuallyReviewedCount = t3t4ManuallyReviewed.length;
 
   const t3t4Shortlisted = useMemo(() => t3t4ManuallyReviewed.filter(c => getR1(c).app_status === 'Yes').length, [t3t4ManuallyReviewed]);
   const t3t4PendingCount = t3t4Count - t3t4ManuallyReviewedCount;
 
-  // Total moved from R1 to R2: unique candidates with app_status = 'Yes'
-  const movedR1ToR2 = useMemo(() => uniqueDeduplicatedCandidates.filter(c => getR1(c).app_status === 'Yes'), [uniqueDeduplicatedCandidates]);
+  // Total moved from R1 to R2: candidates with app_status = 'Yes' (no email dedup to match worksheets)
+  const movedR1ToR2 = useMemo(() => evaluatedCandidates.filter(c => getR1(c).app_status === 'Yes'), [evaluatedCandidates]);
   const movedR1ToR2Count = movedR1ToR2.length;
 
   // Round 2
