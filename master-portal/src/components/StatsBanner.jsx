@@ -58,17 +58,23 @@ export default function StatsBanner({ candidates, round = 1, rawCount = 0, activ
       },
       {
         title: 'Decisions',
-        value: assignedCount,
-        subtitle: `${yesCount} Yes · ${maybeCount} Maybe · ${noCount} No`,
         icon: CheckCircle2,
-        color: 'text-green-500 bg-green-500/10'
+        color: 'text-green-500 bg-green-500/10',
+        customContent: (
+          <div className="text-[13px] font-bold text-foreground font-mono leading-relaxed mt-2">
+            Total ({assignedCount}) : Yes = {yesCount}, May be = {maybeCount}, No = {noCount} and Pending = {pendingCount}
+          </div>
+        )
       },
       {
         title: 'Status',
-        value: assignedCount,
-        subtitle: `${yetToSpeak} Yet to Speak · ${spoke} Spoke · ${scheduled} Scheduled · ${noResponse} No Response`,
         icon: Hourglass,
-        color: 'text-amber-500 bg-amber-500/10'
+        color: 'text-amber-500 bg-amber-500/10',
+        customContent: (
+          <div className="text-[13px] font-bold text-foreground font-mono leading-relaxed mt-2">
+            Total ({assignedCount}): Yet to spoke = {yetToSpeak}, spoke = {spoke}, scheduled = {scheduled}, No response = {noResponse}
+          </div>
+        )
       }
     ];
   } else if (round === 3) {
@@ -184,11 +190,17 @@ export default function StatsBanner({ candidates, round = 1, rawCount = 0, activ
               </div>
             </CardHeader>
             <CardContent className="pb-4 mt-auto">
-              <div className="text-3xl font-extrabold font-mono tracking-tight">{stat.value}</div>
-              {stat.subtitle && (
-                <div className="text-[10px] text-muted-foreground mt-1 font-medium font-sans">
-                  {stat.subtitle}
-                </div>
+              {stat.customContent ? (
+                stat.customContent
+              ) : (
+                <>
+                  <div className="text-3xl font-extrabold font-mono tracking-tight">{stat.value}</div>
+                  {stat.subtitle && (
+                    <div className="text-[10px] text-muted-foreground mt-1 font-medium font-sans">
+                      {stat.subtitle}
+                    </div>
+                  )}
+                </>
               )}
             </CardContent>
           </Card>
