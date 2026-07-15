@@ -215,6 +215,97 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     return Array.isArray(val) ? val[0] || {} : val || {};
   };
 
+  const tierPivotData = useMemo(() => {
+    const tiers = ['Tier 1', 'Tier 1-', 'Tier 2', 'Tier 2-', 'Tier 3', 'Tier 4'];
+    const counts = tiers.reduce((acc, tier) => {
+      acc[tier] = { yes: 0, pending: 0, reject: 0, total: 0 };
+      return acc;
+    }, {});
+
+    globalData.forEach(c => {
+      const r1 = getR1(c);
+      const tier = r1.tier || '';
+      const appStatus = r1.app_status || 'Pending';
+      const normalizedTier = tier === 'Tier 1+' ? 'Tier 1-' : (tier === 'Tier 2+' ? 'Tier 2-' : tier);
+      
+      if (counts[normalizedTier]) {
+        if (appStatus === 'Yes') {
+          counts[normalizedTier].yes++;
+        } else if (['No', 'Reject', 'Rejected', 'Invalid'].includes(appStatus)) {
+          counts[normalizedTier].reject++;
+        } else {
+          counts[normalizedTier].pending++;
+        }
+        counts[normalizedTier].total++;
+      }
+    });
+
+    return counts;
+  }, [globalData]);
+
+  const tierGrandTotal = useMemo(() => {
+    const total = { yes: 0, pending: 0, reject: 0, total: 0 };
+    Object.values(tierPivotData).forEach(val => {
+      total.yes += val.yes;
+      total.pending += val.pending;
+      total.reject += val.reject;
+      total.total += val.total;
+    });
+    return total;
+  }, [tierPivotData]);
+
+  const reviewerPivotData = useMemo(() => {
+    const reviewers = ['Akash', 'Ankita', 'Anmol', 'Basvaraj', 'Pushkaraj', 'Sachin', 'Sohan', 'Tejaswini', 'Vedant'];
+    const counts = reviewers.reduce((acc, name) => {
+      acc[name] = { yes: 0, maybe: 0, no: 0, pending: 0, rejectedR1: 0, total: 0 };
+      return acc;
+    }, {});
+    counts['Unassigned'] = { yes: 0, maybe: 0, no: 0, pending: 0, rejectedR1: 0, total: 0 };
+
+    globalData.forEach(c => {
+      const r1 = getR1(c);
+      const r2 = getR2(c);
+      const appStatus = r1.app_status || 'Pending';
+      const moved = r2.moved_to_round_3 || '';
+      const isDraft = moved.endsWith('_draft');
+      const isFinalized = moved && !isDraft;
+
+      // Determine category
+      let cat = 'pending';
+      if (['No', 'Reject', 'Rejected', 'Invalid'].includes(appStatus)) {
+        cat = 'rejectedR1';
+      } else if (isFinalized) {
+        if (moved === 'Yes') cat = 'yes';
+        else if (moved === 'Maybe') cat = 'maybe';
+        else if (moved === 'No' || moved === 'Declined' || moved === 'Reject') cat = 'no';
+      } else {
+        cat = 'pending';
+      }
+
+      // Determine reviewer
+      const reviewer = r1.eval_group && r1.eval_group !== 'None' ? r1.eval_group : 'Unassigned';
+      
+      const target = counts[reviewer] || counts['Unassigned'];
+      target[cat]++;
+      target.total++;
+    });
+
+    return counts;
+  }, [globalData]);
+
+  const reviewerGrandTotal = useMemo(() => {
+    const total = { yes: 0, maybe: 0, no: 0, pending: 0, rejectedR1: 0, total: 0 };
+    Object.values(reviewerPivotData).forEach(val => {
+      total.yes += val.yes;
+      total.maybe += val.maybe;
+      total.no += val.no;
+      total.pending += val.pending;
+      total.rejectedR1 += val.rejectedR1;
+      total.total += val.total;
+    });
+    return total;
+  }, [reviewerPivotData]);
+
   // Funnel Stage Determinator
   const getFunnelStage = (c) => {
     const r1 = getR1(c);
@@ -1742,20 +1833,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
         </div>
       </div>
 
-      {/* Info summary banner */}
-      <div className="bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/50 rounded-2xl p-5 flex items-start gap-4 shadow-sm mt-2">
-        <div className="p-3 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-full shrink-0">
-          <Info className="h-6 w-6 stroke-[1.5]" />
-        </div>
-        <div className="flex flex-col gap-1.5 text-sm leading-relaxed text-slate-700 dark:text-slate-350">
-          <div>
-            We received <span className="font-bold text-blue-900 dark:text-blue-200">{totalApplications}</span> applications. <span className="font-bold text-slate-900 dark:text-slate-100">{duplicatesCount}</span> were duplicates.
-          </div>
-          <div>
-            From a total of <span className="font-bold text-blue-900 dark:text-blue-200">{uniqueCount}</span> unique applications, <span className="font-bold text-blue-900 dark:text-blue-200">{reviewedCount}</span> were reviewed and <span className="font-bold text-blue-900 dark:text-blue-200">{pendingReviewCount}</span> are pending review.
-          </div>
-        </div>
-      </div>
+
 
       {/* Round 1 Card */}
       <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row items-stretch gap-6">
@@ -1938,6 +2016,108 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
               <span className="font-mono text-amber-600 dark:text-amber-400 font-bold">{pendingReviewCount}</span>
             </div>
           </CardContent>
+        </Card>
+      </div>
+
+      {/* Pivot Tables Section */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mt-4">
+        {/* Table 1: Tiers Partition */}
+        <Card className="rounded-[1.5rem] border shadow-sm p-6 bg-white dark:bg-slate-900">
+          <CardHeader className="p-0 pb-4 border-b">
+            <CardTitle className="text-sm font-extrabold text-[#800020] uppercase tracking-wider flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" /> Applications Divided by Tiers
+            </CardTitle>
+          </CardHeader>
+          <div className="overflow-x-auto mt-4">
+            <table className="w-full text-xs text-left border-collapse">
+              <thead>
+                <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400 font-bold uppercase tracking-wider font-mono">
+                  <th className="py-2.5">Tier</th>
+                  <th className="py-2.5 text-center text-emerald-600 dark:text-emerald-400">Yes</th>
+                  <th className="py-2.5 text-center text-blue-600 dark:text-blue-400">Pending</th>
+                  <th className="py-2.5 text-center text-rose-600 dark:text-rose-400">Reject</th>
+                  <th className="py-2.5 text-right font-bold text-foreground">Grand Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {['Tier 1', 'Tier 1-', 'Tier 2', 'Tier 2-', 'Tier 3', 'Tier 4'].map((tier) => {
+                  const data = tierPivotData[tier] || { yes: 0, pending: 0, reject: 0, total: 0 };
+                  return (
+                    <tr key={tier} className="border-b border-slate-50 dark:border-slate-850 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors font-medium">
+                      <td className="py-3 font-semibold text-slate-800 dark:text-slate-200">{tier}</td>
+                      <td className="py-3 text-center font-mono font-bold text-emerald-600 dark:text-emerald-450">{data.yes}</td>
+                      <td className="py-3 text-center font-mono font-bold text-blue-600 dark:text-blue-455">{data.pending}</td>
+                      <td className="py-3 text-center font-mono font-bold text-rose-600 dark:text-rose-455">{data.reject}</td>
+                      <td className="py-3 text-right font-mono font-bold text-slate-900 dark:text-slate-100">{data.total}</td>
+                    </tr>
+                  );
+                })}
+                {/* Grand Total Row */}
+                <tr className="bg-slate-50/85 dark:bg-slate-850/60 font-bold border-t border-slate-200 dark:border-slate-700">
+                  <td className="py-3 px-1 text-slate-900 dark:text-slate-150">Grand Total</td>
+                  <td className="py-3 text-center font-mono font-extrabold text-emerald-700 dark:text-emerald-400">{tierGrandTotal.yes}</td>
+                  <td className="py-3 text-center font-mono font-extrabold text-blue-700 dark:text-blue-400">{tierGrandTotal.pending}</td>
+                  <td className="py-3 text-center font-mono font-extrabold text-rose-700 dark:text-rose-400">{tierGrandTotal.reject}</td>
+                  <td className="py-3 text-right font-mono font-extrabold text-slate-955 dark:text-white">{tierGrandTotal.total}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </Card>
+
+        {/* Table 2: Reviewers Distribution */}
+        <Card className="rounded-[1.5rem] border shadow-sm p-6 bg-white dark:bg-slate-900">
+          <CardHeader className="p-0 pb-4 border-b">
+            <CardTitle className="text-sm font-extrabold text-[#800020] uppercase tracking-wider flex items-center gap-2">
+              <Users className="h-4 w-4" /> Aviators Distribution (Technical Reviewers)
+            </CardTitle>
+          </CardHeader>
+          <div className="overflow-x-auto mt-4">
+            <table className="w-full text-xs text-left border-collapse">
+              <thead>
+                <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400 font-bold uppercase tracking-wider font-mono">
+                  <th className="py-2.5">Reviewer</th>
+                  <th className="py-2.5 text-center text-emerald-600 dark:text-emerald-400">Yes</th>
+                  <th className="py-2.5 text-center text-emerald-550/80 dark:text-emerald-350">Maybe</th>
+                  <th className="py-2.5 text-center text-rose-500 dark:text-rose-400">No</th>
+                  <th className="py-2.5 text-center text-blue-600 dark:text-blue-400">Pending</th>
+                  <th className="py-2.5 text-center text-rose-700 dark:text-rose-500">Rejected (R1)</th>
+                  <th className="py-2.5 text-right font-bold text-foreground">Grand Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  'Akash', 'Ankita', 'Anmol', 'Basvaraj', 'Pushkaraj', 
+                  'Sachin', 'Sohan', 'Tejaswini', 'Vedant', 'Unassigned'
+                ].map((name) => {
+                  const data = reviewerPivotData[name] || { yes: 0, maybe: 0, no: 0, pending: 0, rejectedR1: 0, total: 0 };
+                  return (
+                    <tr key={name} className="border-b border-slate-50 dark:border-slate-850 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors font-medium">
+                      <td className="py-2.5 font-semibold text-slate-800 dark:text-slate-200 font-mono">
+                        {name === 'Unassigned' ? <span className="text-slate-400 dark:text-slate-500 font-normal italic">Unassigned</span> : name}
+                      </td>
+                      <td className="py-2.5 text-center font-mono font-bold text-emerald-600 dark:text-emerald-450">{data.yes}</td>
+                      <td className="py-2.5 text-center font-mono font-semibold text-emerald-500 dark:text-emerald-400">{data.maybe}</td>
+                      <td className="py-2.5 text-center font-mono font-bold text-rose-500 dark:text-rose-455">{data.no}</td>
+                      <td className="py-2.5 text-center font-mono font-semibold text-blue-600 dark:text-blue-450">{data.pending}</td>
+                      <td className="py-2.5 text-center font-mono font-semibold text-rose-750 dark:text-rose-500">{data.rejectedR1}</td>
+                      <td className="py-2.5 text-right font-mono font-bold text-slate-900 dark:text-slate-100">{data.total}</td>
+                    </tr>
+                  );
+                })}
+                {/* Grand Total Row */}
+                <tr className="bg-slate-50/85 dark:bg-slate-850/60 font-bold border-t border-slate-200 dark:border-slate-700">
+                  <td className="py-2.5 px-1 text-slate-900 dark:text-slate-150">Grand Total</td>
+                  <td className="py-2.5 text-center font-mono font-extrabold text-emerald-700 dark:text-emerald-400">{reviewerGrandTotal.yes}</td>
+                  <td className="py-2.5 text-center font-mono font-extrabold text-emerald-600 dark:text-emerald-350">{reviewerGrandTotal.maybe}</td>
+                  <td className="py-2.5 text-center font-mono font-extrabold text-rose-700 dark:text-rose-400">{reviewerGrandTotal.no}</td>
+                  <td className="py-2.5 text-center font-mono font-extrabold text-blue-700 dark:text-blue-400">{reviewerGrandTotal.pending}</td>
+                  <td className="py-2.5 text-center font-mono font-extrabold text-rose-800 dark:text-rose-550">{reviewerGrandTotal.rejectedR1}</td>
+                  <td className="py-2.5 text-right font-mono font-extrabold text-slate-955 dark:text-white">{reviewerGrandTotal.total}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </Card>
       </div>
 

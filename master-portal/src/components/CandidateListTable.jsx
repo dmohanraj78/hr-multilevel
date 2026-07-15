@@ -591,7 +591,6 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
                       <TableHead className="w-[130px] overflow-visible">
                         <HeaderFilter label="TR Decision" columnKey="tr_decision" uniqueValues={uniqueTrDecisions} activeFilters={activeFilters} onApplyFilter={handleApplyFilter} sortConfig={sortConfig} onSort={handleSort} />
                       </TableHead>
-                      <TableHead className="w-[160px] font-semibold">How long they can intern</TableHead>
                     </>
                   )}
                   
@@ -759,9 +758,6 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
                           </TableCell>
                           <TableCell>
                             {decisionBadge(trDecision)}
-                          </TableCell>
-                          <TableCell>
-                            <span className="text-xs">{duration}</span>
                           </TableCell>
                         </>
                       );

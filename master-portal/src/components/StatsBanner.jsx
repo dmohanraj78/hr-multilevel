@@ -52,7 +52,7 @@ export default function StatsBanner({ candidates, round = 1, rawCount = 0, activ
     }).length;
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
         {/* Card 1: Total Candidates in R2 */}
         <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2rem] p-6 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between relative overflow-hidden h-[350px]">
           {/* Wave Graphic at bottom right */}
@@ -159,74 +159,6 @@ export default function StatsBanner({ candidates, round = 1, rawCount = 0, activ
           </div>
         </div>
 
-        {/* Card 3: Status */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2rem] p-6 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between h-[350px]">
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-amber-500/10 text-amber-600 rounded-full">
-                  <Hourglass className="h-5 w-5 stroke-[1.5]" />
-                </div>
-                <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 font-mono tracking-wider uppercase">Status</span>
-              </div>
-              <div className="h-7 w-7 flex items-center justify-center rounded-full bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer">
-                <MoreHorizontal className="h-4 w-4 text-slate-400" />
-              </div>
-            </div>
-
-            {/* List Rows */}
-            <div className="flex flex-col gap-2">
-              {/* Yet to Speak Row */}
-              <div className="flex items-center justify-between py-1 border-b border-slate-50 dark:border-slate-800/40 last:border-0 pb-1.5">
-                <div className="flex items-center gap-3">
-                  <div className="p-1.5 bg-amber-500/10 text-amber-600 rounded-full">
-                    <Headphones className="h-3.5 w-3.5 stroke-[2]" />
-                  </div>
-                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Yet to speak</span>
-                </div>
-                <span className="text-xs font-bold text-amber-600 dark:text-amber-400 font-mono">{yetToSpeak}</span>
-              </div>
-
-              {/* Spoke Row */}
-              <div className="flex items-center justify-between py-1 border-b border-slate-50 dark:border-slate-800/40 last:border-0 pb-1.5">
-                <div className="flex items-center gap-3">
-                  <div className="p-1.5 bg-amber-500/10 text-amber-600 rounded-full">
-                    <MessageSquare className="h-3.5 w-3.5 stroke-[2]" />
-                  </div>
-                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Spoke</span>
-                </div>
-                <span className="text-xs font-bold text-amber-600 dark:text-amber-400 font-mono">{spoke}</span>
-              </div>
-
-              {/* Scheduled Row */}
-              <div className="flex items-center justify-between py-1 border-b border-slate-50 dark:border-slate-800/40 last:border-0 pb-1.5">
-                <div className="flex items-center gap-3">
-                  <div className="p-1.5 bg-amber-500/10 text-amber-600 rounded-full">
-                    <Calendar className="h-3.5 w-3.5 stroke-[2]" />
-                  </div>
-                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Scheduled</span>
-                </div>
-                <span className="text-xs font-bold text-amber-600 dark:text-amber-400 font-mono">{scheduled}</span>
-              </div>
-
-              {/* No Response Row */}
-              <div className="flex items-center justify-between py-1 border-b border-slate-50 dark:border-slate-800/40 last:border-0 pb-1.5">
-                <div className="flex items-center gap-3">
-                  <div className="p-1.5 bg-amber-500/10 text-amber-600 rounded-full">
-                    <VolumeX className="h-3.5 w-3.5 stroke-[2]" />
-                  </div>
-                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">No response</span>
-                </div>
-                <span className="text-xs font-bold text-amber-600 dark:text-amber-400 font-mono">{noResponse}</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/10 rounded-2xl p-3 flex items-center justify-between">
-            <span className="text-xs font-semibold text-amber-800 dark:text-amber-400">Total</span>
-            <span className="text-sm font-bold text-amber-700 dark:text-amber-400 font-mono">{assignedCount}</span>
-          </div>
-        </div>
       </div>
     );
   } else if (round === 3) {
