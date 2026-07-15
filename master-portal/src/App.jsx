@@ -242,7 +242,7 @@ export default function App() {
     return `${baseUrl}/?candidateId=${cand.id}`;
   };
 
-  const [authChecking, setAuthChecking] = useState(true);
+  const [authChecking, setAuthChecking] = useState(false);
   const [authRoleError, setAuthRoleError] = useState('');
 
   const loadData = async () => {
@@ -269,57 +269,7 @@ export default function App() {
   };
 
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      // If we are still checking after 3 seconds, redirect to SSO portal as fallback
-      window.location.href = 'https://aviators-sso.vercel.app';
-    }, 4000);
-
-    const checkSession = async () => {
-      try {
-        // Set the session from the tokens handed off by the SSO portal.
-        // supabase-js requires BOTH access_token and refresh_token — an empty
-        // refresh_token makes setSession throw, so the session never persists.
-        const params = new URLSearchParams(window.location.search);
-        const token = params.get('access_token');
-        const refreshToken = params.get('refresh_token');
-        if (token && refreshToken) {
-          await supabase.auth.setSession({ access_token: token, refresh_token: refreshToken });
-          // Clean parameters from URL
-          window.history.replaceState({}, document.title, window.location.pathname);
-        }
-
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          clearTimeout(timeoutId);
-          window.location.href = 'https://aviators-sso.vercel.app';
-          return;
-        }
-        
-        // Verify role
-        const { data, error } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('email', session.user.email.toLowerCase().trim())
-          .maybeSingle();
-
-        if (error || !data || data.role !== 'Admin') {
-          clearTimeout(timeoutId);
-          setAuthRoleError(`Access Denied: ${session.user.email} is not authorized for Master Control Portal.`);
-          setAuthChecking(false);
-          return;
-        }
-
-        clearTimeout(timeoutId);
-        setAuthChecking(false);
-        loadData();
-      } catch (err) {
-        console.error('Auth verification error:', err);
-        clearTimeout(timeoutId);
-        window.location.href = 'https://aviators-sso.vercel.app';
-      }
-    };
-    checkSession();
-    return () => clearTimeout(timeoutId);
+    loadData();
   }, []);
 
   const handleSaveDecision = async (payload) => {
