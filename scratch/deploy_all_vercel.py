@@ -36,15 +36,15 @@ for p in portals:
         continue
 
     # Set clean alias
-    print(f"Setting alias: {p['alias']} → {deploy_url}")
+    print(f"Setting alias: {p['alias']} -> {deploy_url}")
     alias_res = subprocess.run(
         f'npx vercel alias set {deploy_url} {p["alias"]}',
         shell=True, cwd=path, capture_output=True, text=True
     )
     if alias_res.returncode == 0:
-        print(f"✅ https://{p['alias']} is live!")
+        print(f"[OK] https://{p['alias']} is live!")
     else:
-        print(f"⚠️  Alias failed: {alias_res.stderr}")
+        print(f"[WARN] Alias failed: {alias_res.stderr}")
 
 print("\n\n=== All done! Clean URLs: ===")
 for p in portals:
