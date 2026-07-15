@@ -1420,11 +1420,18 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
   const reviewedCount = uniqueReviewed.length;
   const pendingReviewCount = uniqueCount - reviewedCount;
 
-  // Round 1 Tiers: T1/T1-/T2/T2- (uses evaluatedCandidates to align 100% with worksheets!)
+  // Unique evaluated candidates (those with an R1 record among unique candidates)
+  const uniqueEvaluatedCandidates = useMemo(() => {
+    return uniqueDeduplicatedCandidates.filter(c => c.round_1_evaluation !== null);
+  }, [uniqueDeduplicatedCandidates]);
+
+  const uniqueEvaluatedCount = uniqueEvaluatedCandidates.length;
+
+  // Round 1 Tiers: T1/T1-/T2/T2- (uses uniqueEvaluatedCandidates to align 100% with worksheets!)
   const isT1T2 = (tier) => ['Tier 1', 'Tier 1-', 'Tier 2', 'Tier 2-', 'T1', 'T1-', 'T2', 'T2-', 'Tier 1+', 'Tier 2+', 'T1+', 'T2+'].includes(tier);
   const isT3T4 = (tier) => ['Tier 3', 'Tier 4', 'T3', 'T4'].includes(tier);
 
-  const t1t2Candidates = useMemo(() => evaluatedCandidates.filter(c => isT1T2(getR1(c).tier)), [evaluatedCandidates]);
+  const t1t2Candidates = useMemo(() => uniqueEvaluatedCandidates.filter(c => isT1T2(getR1(c).tier)), [uniqueEvaluatedCandidates]);
   const t1t2Count = t1t2Candidates.length;
 
   // Manually reviewed and comments marked in R1 (means app_status is Yes or No)
@@ -1433,10 +1440,10 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
 
   const t1t2YesCount = useMemo(() => t1t2ManuallyReviewed.filter(c => getR1(c).app_status === 'Yes').length, [t1t2ManuallyReviewed]);
   const t1t2NoCount = useMemo(() => t1t2ManuallyReviewed.filter(c => ['No', 'Reject'].includes(getR1(c).app_status)).length, [t1t2ManuallyReviewed]);
-  const t1t2PendingCount = t1t2Count - t1t2ManuallyReviewedCount;
+  const t1t2PendingCount = useMemo(() => t1t2Candidates.filter(c => !getR1(c).app_status || getR1(c).app_status === 'Pending' || getR1(c).app_status === 'Access requested').length, [t1t2Candidates]);
 
   // R1 T3/T4
-  const t3t4Candidates = useMemo(() => evaluatedCandidates.filter(c => isT3T4(getR1(c).tier)), [evaluatedCandidates]);
+  const t3t4Candidates = useMemo(() => uniqueEvaluatedCandidates.filter(c => isT3T4(getR1(c).tier)), [uniqueEvaluatedCandidates]);
   const t3t4Count = t3t4Candidates.length;
 
   const t3t4ManuallyReviewed = useMemo(() => t3t4Candidates.filter(c => getR1(c).app_status === 'Yes' || ['No', 'Reject'].includes(getR1(c).app_status)), [t3t4Candidates]);
@@ -1446,7 +1453,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
   const t3t4PendingCount = t3t4Count - t3t4ManuallyReviewedCount;
 
   // Total moved from R1 to R2: candidates with app_status = 'Yes' (no email dedup to match worksheets)
-  const movedR1ToR2 = useMemo(() => evaluatedCandidates.filter(c => getR1(c).app_status === 'Yes'), [evaluatedCandidates]);
+  const movedR1ToR2 = useMemo(() => uniqueDeduplicatedCandidates.filter(c => getR1(c).app_status === 'Yes'), [uniqueDeduplicatedCandidates]);
   const movedR1ToR2Count = movedR1ToR2.length;
 
   // Round 2
@@ -1655,7 +1662,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
             <li className="flex items-start gap-2.5">
               <span className="text-slate-400 dark:text-slate-600 font-mono mt-0.5">•</span>
               <span>
-                Out of the <span className="font-semibold text-slate-900 dark:text-slate-100">{evaluatedCount}</span> reviewed, <span className="font-semibold text-slate-900 dark:text-slate-100">{t1t2Count}</span> applicants qualified to Tier 1, Tier 1-, Tier 2 and Tier 2-. <span className="font-semibold text-slate-900 dark:text-slate-100">{t1t2ManuallyReviewedCount}</span> applications have been manually reviewed and comments have been marked in Round 1.
+                Out of the <span className="font-semibold text-slate-900 dark:text-slate-100">{uniqueEvaluatedCount}</span> reviewed, <span className="font-semibold text-slate-900 dark:text-slate-100">{t1t2Count}</span> applicants qualified to Tier 1, Tier 1-, Tier 2 and Tier 2-. <span className="font-semibold text-slate-900 dark:text-slate-100">{t1t2ManuallyReviewedCount}</span> applications have been manually reviewed and comments have been marked in Round 1.
               </span>
             </li>
             <li className="flex items-start gap-2.5">
@@ -1667,7 +1674,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
             <li className="flex items-start gap-2.5">
               <span className="text-slate-400 dark:text-slate-600 font-mono mt-0.5">•</span>
               <span>
-                Out of the <span className="font-semibold text-slate-900 dark:text-slate-100">{evaluatedCount}</span> reviewed, <span className="font-semibold text-slate-900 dark:text-slate-100">{t3t4Count}</span> applicants qualified to Tier 3 and Tier 4. <span className="font-semibold text-slate-900 dark:text-slate-100">{t3t4ManuallyReviewedCount}</span> were reviewed — out of that <span className="font-semibold text-slate-900 dark:text-slate-100">{t3t4Shortlisted}</span> are shortlisted and <span className="font-semibold text-slate-900 dark:text-slate-100">{t3t4PendingCount}</span> are pending manual review.
+                Out of the <span className="font-semibold text-slate-900 dark:text-slate-100">{uniqueEvaluatedCount}</span> reviewed, <span className="font-semibold text-slate-900 dark:text-slate-100">{t3t4Count}</span> applicants qualified to Tier 3 and Tier 4. <span className="font-semibold text-slate-900 dark:text-slate-100">{t3t4ManuallyReviewedCount}</span> were reviewed — out of that <span className="font-semibold text-slate-900 dark:text-slate-100">{t3t4Shortlisted}</span> are shortlisted and <span className="font-semibold text-slate-900 dark:text-slate-100">{t3t4PendingCount}</span> are pending manual review.
               </span>
             </li>
           </ul>
@@ -1677,7 +1684,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
               <ArrowRight className="h-3 w-3 stroke-[2.5]" />
             </div>
             <span>
-              Total of <span className="font-bold text-blue-700 dark:text-blue-300">{movedR1ToR2Count}</span> out of <span className="font-bold text-blue-700 dark:text-blue-300">{evaluatedCount}</span> applicants moved from Round 1 to Round 2.
+              Total of <span className="font-bold text-blue-700 dark:text-blue-300">{movedR1ToR2Count}</span> out of <span className="font-bold text-blue-700 dark:text-blue-300">{uniqueEvaluatedCount}</span> applicants moved from Round 1 to Round 2.
             </span>
           </div>
         </div>
