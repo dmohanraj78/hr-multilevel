@@ -339,11 +339,12 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
 
   // Raw submissions without an R1 record are NOT all duplicates — split them
   // using the backend's own Analysis_status field:
-  //   'Completed' but no R1 row  -> analyzed and excluded (duplicate/test entry)
+  //   'Duplicate' or 'Completed' but no R1 row  -> analyzed and excluded (duplicate/test entry)
   //   NULL                       -> genuinely awaiting evaluation
+  const isDuplicateStatus = (status) => status === 'Duplicate' || status === 'Completed';
   const { duplicatesRemoved, awaitingEvaluation } = useMemo(() => {
     const notEvaluated = globalData.filter(c => !c.round_1_evaluation);
-    const awaiting = notEvaluated.filter(c => (c.Analysis_status || '') !== 'Completed').length;
+    const awaiting = notEvaluated.filter(c => !isDuplicateStatus(c.Analysis_status || '')).length;
     return { duplicatesRemoved: notEvaluated.length - awaiting, awaitingEvaluation: awaiting };
   }, [globalData]);
 
@@ -1597,7 +1598,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
 
         const submission = hasR1
           ? 'Evaluated'
-          : ((c.Analysis_status || '') === 'Completed' ? 'Duplicate' : 'Awaiting AI Evaluation');
+          : (isDuplicateStatus(c.Analysis_status || '') ? 'Duplicate' : 'Awaiting AI Evaluation');
 
         const tier = hasR1 ? (r1.tier || '').trim() : '';
         const tierGroup = TOP_TIERS.includes(tier) ? 'Tier 1-2 Group' : (LOW_TIERS.includes(tier) ? 'Tier 3-4 Group' : '');
@@ -1718,7 +1719,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
   const totalApplications = globalData.length;
   const { duplicatesCount, pendingReviewCount } = useMemo(() => {
     const notEvaluated = globalData.filter(c => !c.round_1_evaluation);
-    const awaiting = notEvaluated.filter(c => (c.Analysis_status || '') !== 'Completed').length;
+    const awaiting = notEvaluated.filter(c => !isDuplicateStatus(c.Analysis_status || '')).length;
     return { duplicatesCount: notEvaluated.length - awaiting, pendingReviewCount: awaiting };
   }, [globalData]);
 
@@ -1882,48 +1883,8 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
 
 
 
-      {/* Pivot Table 1: R1 Applications Divided by Tiers */}
-      <Card className="rounded-[1.5rem] border shadow-sm p-6 bg-white dark:bg-slate-900">
-        <CardHeader className="p-0 pb-4 border-b">
-          <CardTitle className="text-sm font-extrabold text-[#800020] uppercase tracking-wider flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" /> Round 1 — Applications Divided by Tiers
-          </CardTitle>
-        </CardHeader>
-        <div className="mt-4">
-          <table className="w-full text-xs text-left border-collapse">
-            <thead>
-              <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400 font-bold uppercase tracking-wider font-mono">
-                <th className="py-2.5 w-1/5">Tier</th>
-                <th className="py-2.5 text-center w-1/5 text-emerald-600 dark:text-emerald-400">Yes</th>
-                <th className="py-2.5 text-center w-1/5 text-blue-600 dark:text-blue-400">Pending</th>
-                <th className="py-2.5 text-center w-1/5 text-rose-600 dark:text-rose-400">Reject</th>
-                <th className="py-2.5 text-right w-1/5 font-bold text-foreground">Grand Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {['Tier 1', 'Tier 1-', 'Tier 2', 'Tier 2-', 'Tier 3', 'Tier 4'].map((tier) => {
-                const data = tierPivotData[tier] || { yes: 0, pending: 0, reject: 0, total: 0 };
-                return (
-                  <tr key={tier} className="border-b border-slate-50 dark:border-slate-850 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                    <td className="py-2.5 font-semibold text-slate-800 dark:text-slate-200">{tier}</td>
-                    <td className="py-2.5 text-center font-mono font-bold text-emerald-600">{data.yes}</td>
-                    <td className="py-2.5 text-center font-mono font-bold text-blue-600">{data.pending}</td>
-                    <td className="py-2.5 text-center font-mono font-bold text-rose-600">{data.reject}</td>
-                    <td className="py-2.5 text-right font-mono font-bold text-slate-900 dark:text-slate-100">{data.total}</td>
-                  </tr>
-                );
-              })}
-              <tr className="bg-slate-50 dark:bg-slate-850/60 font-bold border-t border-slate-200 dark:border-slate-700">
-                <td className="py-2.5 px-1 text-slate-900 dark:text-slate-100">Grand Total</td>
-                <td className="py-2.5 text-center font-mono font-extrabold text-emerald-700">{tierGrandTotal.yes}</td>
-                <td className="py-2.5 text-center font-mono font-extrabold text-blue-700">{tierGrandTotal.pending}</td>
-                <td className="py-2.5 text-center font-mono font-extrabold text-rose-700">{tierGrandTotal.reject}</td>
-                <td className="py-2.5 text-right font-mono font-extrabold text-slate-900 dark:text-white">{tierGrandTotal.total}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </Card>
+
+
 
       {/* Pivot Table 2: R2 Aviators Distribution */}
       <Card className="rounded-[1.5rem] border shadow-sm p-6 bg-white dark:bg-slate-900">

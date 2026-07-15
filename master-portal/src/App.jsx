@@ -202,7 +202,8 @@ export default function App() {
   
   const duplicatesCount = useMemo(() => {
     const notEvaluated = globalData.filter(c => !c.round_1_evaluation);
-    const awaiting = notEvaluated.filter(c => (c.Analysis_status || '') !== 'Completed').length;
+    const isDup = (s) => s === 'Duplicate' || s === 'Completed';
+    const awaiting = notEvaluated.filter(c => !isDup(c.Analysis_status || '')).length;
     return notEvaluated.length - awaiting;
   }, [globalData]);
 
@@ -812,38 +813,8 @@ export default function App() {
                     </div>
                   )}
 
-{/* Technical Reviewer Workload Status Snapshots */}
-                <div className="flex flex-col gap-1 mt-2">
-                  <h3 className="text-base font-bold text-foreground font-heading">Technical Reviewer Workload Snapshots</h3>
-                  <p className="text-xs text-muted-foreground">Real-time workloads and status breakdowns for each technical review technical evaluator.</p>
-                </div>
 
-                <div className="border rounded-xl bg-card text-card-foreground overflow-hidden shadow-sm">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs border-collapse">
-                      <thead>
-                        <tr className="bg-muted/40 border-b">
-                          <th className="p-3.5 font-bold text-muted-foreground font-mono uppercase tracking-wider text-[10px]">Technical Reviewer</th>
-                          <th className="p-3.5 font-bold text-muted-foreground text-center font-mono uppercase tracking-wider text-[10px] w-[140px]">Total Assigned</th>
-                          <th className="p-3.5 font-bold text-muted-foreground text-center font-mono uppercase tracking-wider text-[10px] w-[140px]">Pending Review</th>
-                          <th className="p-3.5 font-bold text-muted-foreground text-center font-mono uppercase tracking-wider text-[10px] w-[140px]">Promoted</th>
-                          <th className="p-3.5 font-bold text-muted-foreground text-center font-mono uppercase tracking-wider text-[10px] w-[140px]">Declined</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y font-mono">
-                        {techEvaluatorsSnapshot.map((evaluator) => (
-                          <tr key={evaluator.name} className="hover:bg-muted/10 transition-colors">
-                            <td className="p-3.5 font-sans font-bold text-foreground">{evaluator.name}</td>
-                            <td className="p-3.5 text-center text-foreground font-extrabold">{evaluator.total}</td>
-                            <td className="p-3.5 text-center text-amber-600 font-extrabold">{evaluator.pending}</td>
-                            <td className="p-3.5 text-center text-green-600 font-extrabold">{evaluator.promoted}</td>
-                            <td className="p-3.5 text-center text-red-600 font-extrabold">{evaluator.declined}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+
               </div>
             ))}
 
