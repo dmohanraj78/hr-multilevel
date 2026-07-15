@@ -279,6 +279,12 @@ export default function StatsBanner({ candidates, round = 1, rawCount = 0, activ
       return isPending && LOW_TIERS.includes(tier);
     }).length;
 
+    const demoAccessTop = candidates.filter(c => {
+      const status = getEvalField(c, 'app_status');
+      const tier = getEvalField(c, 'tier');
+      return status === 'Access requested' && TOP_TIERS.includes(tier);
+    }).length;
+
     stats = [
       { title: 'Applications Reviewed', value: total, icon: Users, color: 'text-blue-500 bg-blue-500/10' },
       { title: 'HR Round Cleared', value: approvedR1, icon: CheckCircle2, color: 'text-green-500 bg-green-500/10' },
@@ -289,6 +295,7 @@ export default function StatsBanner({ candidates, round = 1, rawCount = 0, activ
           </span>
         ),
         value: pendingTop,
+        subtitle: `Pending Demo Access Request: ${demoAccessTop}`,
         icon: Hourglass,
         color: 'text-amber-500 bg-amber-500/10'
       },
