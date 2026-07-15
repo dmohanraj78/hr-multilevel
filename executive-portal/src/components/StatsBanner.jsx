@@ -286,20 +286,47 @@ export default function StatsBanner({ candidates, round = 1, rawCount = 0, activ
     }).length;
 
     stats = [
-      { title: 'Applications Reviewed', value: total, icon: Users, color: 'text-blue-500 bg-blue-500/10' },
-      { title: 'HR Round Cleared', value: approvedR1, icon: CheckCircle2, color: 'text-green-500 bg-green-500/10' },
+      { 
+        title: 'Applications Reviewed', 
+        value: total, 
+        icon: Users, 
+        iconColorClass: 'text-blue-600 dark:text-blue-400',
+        iconBgClass: 'bg-blue-50 dark:bg-blue-950/25',
+        titleColorClass: 'text-blue-600 dark:text-blue-400',
+        valueColorClass: 'text-blue-600 dark:text-blue-400'
+      },
+      { 
+        title: 'HR Round Cleared', 
+        value: approvedR1, 
+        icon: Check, 
+        iconColorClass: 'text-green-600 dark:text-green-400',
+        iconBgClass: 'bg-green-50 dark:bg-green-950/25',
+        titleColorClass: 'text-green-600 dark:text-green-400',
+        valueColorClass: 'text-green-600 dark:text-green-400'
+      },
       {
         title: (
           <span>
-            Pending for Manual Review <span className="block text-[8px] normal-case font-bold mt-0.5 opacity-90">(Tier 1, 1-, Tier 2, 2-)</span>
+            Pending for Manual Review <span className="block text-[8px] normal-case font-bold mt-0.5 opacity-90">(Tier 1, 1+, Tier 2, 2-)</span>
           </span>
         ),
         value: pendingTop,
-        subtitle: `Pending Demo Access Request: ${demoAccessTop}`,
+        subtitle: `Pending Demo Access: ${demoAccessTop}`,
         icon: Hourglass,
-        color: 'text-amber-500 bg-amber-500/10'
+        iconColorClass: 'text-[#c2410c] dark:text-orange-400',
+        iconBgClass: 'bg-orange-50 dark:bg-orange-950/25',
+        titleColorClass: 'text-[#c2410c] dark:text-orange-400',
+        valueColorClass: 'text-[#c2410c] dark:text-orange-400'
       },
-      { title: 'Rejected', value: rejected, icon: XCircle, color: 'text-red-500 bg-red-500/10' },
+      { 
+        title: 'Rejected', 
+        value: rejected, 
+        icon: X, 
+        iconColorClass: 'text-red-600 dark:text-red-400',
+        iconBgClass: 'bg-red-50 dark:bg-red-950/25',
+        titleColorClass: 'text-red-600 dark:text-red-400',
+        valueColorClass: 'text-red-600 dark:text-red-400'
+      },
       {
         title: (
           <span>
@@ -308,7 +335,10 @@ export default function StatsBanner({ candidates, round = 1, rawCount = 0, activ
         ),
         value: pendingLow,
         icon: Hourglass,
-        color: 'text-amber-500 bg-amber-500/10'
+        iconColorClass: 'text-[#c2410c] dark:text-orange-400',
+        iconBgClass: 'bg-orange-50 dark:bg-orange-950/25',
+        titleColorClass: 'text-[#c2410c] dark:text-orange-400',
+        valueColorClass: 'text-[#c2410c] dark:text-orange-400'
       }
     ];
   }
@@ -326,6 +356,51 @@ export default function StatsBanner({ candidates, round = 1, rawCount = 0, activ
         const isClickable = round === 3 && onFilterChange && stat.key;
         const isSelected = isClickable && activeFilter === stat.key;
 
+        // Redesigned Card Layout for Round 1
+        if (round !== 2 && round !== 3) {
+          return (
+            <Card
+              key={i}
+              className="h-[230px] flex flex-col justify-between p-5 transition-all duration-300 border border-slate-100 dark:border-slate-800/80 rounded-2xl bg-white dark:bg-slate-900 shadow-sm hover:shadow-md hover:border-slate-200 dark:hover:border-slate-700"
+            >
+              {/* Top: Icon */}
+              <div className="flex justify-start">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${stat.iconBgClass} ${stat.iconColorClass}`}>
+                  <Icon className="h-4 w-4 stroke-[2]" />
+                </div>
+              </div>
+
+              {/* Middle: Title */}
+              <div className="flex flex-col gap-1 mt-3">
+                <span className={`text-[10px] font-extrabold uppercase tracking-wider font-sans leading-normal min-h-[1.75rem] ${stat.titleColorClass}`}>
+                  {stat.title}
+                </span>
+              </div>
+
+              {/* Dotted separator line */}
+              <div className="w-full border-t border-dashed border-slate-200 dark:border-slate-800/80 my-2" />
+
+              {/* Bottom: Value & Subtitle badge */}
+              <div className="flex flex-col gap-2 mt-auto">
+                <div className={`text-4xl font-extrabold font-mono tracking-tight leading-none ${stat.valueColorClass}`}>
+                  {stat.value}
+                </div>
+                {/* Subtitle Badge */}
+                <div className="min-h-[18px] flex items-center mt-0.5">
+                  {stat.subtitle ? (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-bold bg-[#fff7ed] dark:bg-orange-950/20 text-[#c2410c] dark:text-orange-400 border border-[#ffedd5] dark:border-orange-900/50 shadow-sm">
+                      {stat.subtitle}
+                    </span>
+                  ) : (
+                    '\u00A0'
+                  )}
+                </div>
+              </div>
+            </Card>
+          );
+        }
+
+        // Standard Card Layout for Round 2 & 3
         return (
           <Card
             key={i}
