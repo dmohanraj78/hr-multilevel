@@ -26,20 +26,24 @@ export default function StatsBanner({ candidates, round = 1, rawCount = 0, activ
   let stats = [];
 
   if (round === 2) {
-    const assignedCount = candidates.filter(c => {
+    const assignedCandidates = candidates.filter(c => {
       const eg = getEvalField(c, 'eval_group');
       return eg && eg !== 'None';
-    }).length;
+    });
+    const assignedCount = assignedCandidates.length;
     const unassignedCount = total - assignedCount;
 
-    const yesCount = candidates.filter(c => getR2(c).moved_to_round_3 === 'Yes').length;
-    const maybeCount = candidates.filter(c => getR2(c).moved_to_round_3 === 'Maybe').length;
-    const noCount = candidates.filter(c => getR2(c).moved_to_round_3 === 'No' || getR2(c).moved_to_round_3 === 'Reject').length;
+    const yesCount = assignedCandidates.filter(c => getR2(c).moved_to_round_3 === 'Yes').length;
+    const maybeCount = assignedCandidates.filter(c => getR2(c).moved_to_round_3 === 'Maybe').length;
+    const noCount = assignedCandidates.filter(c => getR2(c).moved_to_round_3 === 'No' || getR2(c).moved_to_round_3 === 'Reject').length;
 
-    const yetToSpeak = candidates.filter(c => getR2(c).contact_status === 'Yet to Speak').length;
-    const spoke = candidates.filter(c => getR2(c).contact_status === 'Spoke').length;
-    const scheduled = candidates.filter(c => getR2(c).contact_status === 'Scheduled').length;
-    const noResponse = candidates.filter(c => {
+    const yetToSpeak = assignedCandidates.filter(c => {
+      const status = getR2(c).contact_status;
+      return !status || status === 'Yet to Speak' || status === 'Pending';
+    }).length;
+    const spoke = assignedCandidates.filter(c => getR2(c).contact_status === 'Spoke').length;
+    const scheduled = assignedCandidates.filter(c => getR2(c).contact_status === 'Scheduled').length;
+    const noResponse = assignedCandidates.filter(c => {
       const status = String(getR2(c).contact_status || '').toLowerCase();
       return status === 'no response';
     }).length;
