@@ -6,11 +6,13 @@ export default function StatsBanner({ candidates, round = 1, rawCount = 0, activ
   const total = candidates.length;
   
   const getR2 = (c) => {
+    if (!c) return {};
     const val = c.round_2_evaluation;
     return Array.isArray(val) ? val[0] || {} : val || {};
   };
 
   const getR3 = (c) => {
+    if (!c) return {};
     const val = c.round_3_evaluation;
     return Array.isArray(val) ? val[0] || {} : val || {};
   };
@@ -36,6 +38,7 @@ export default function StatsBanner({ candidates, round = 1, rawCount = 0, activ
     const yesCount = assignedCandidates.filter(c => getR2(c).moved_to_round_3 === 'Yes').length;
     const maybeCount = assignedCandidates.filter(c => getR2(c).moved_to_round_3 === 'Maybe').length;
     const noCount = assignedCandidates.filter(c => getR2(c).moved_to_round_3 === 'No' || getR2(c).moved_to_round_3 === 'Reject').length;
+    const pendingCount = assignedCount - yesCount - maybeCount - noCount;
 
     const yetToSpeak = assignedCandidates.filter(c => {
       const status = getR2(c).contact_status;
