@@ -1557,10 +1557,14 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
   }, [globalData]);
 
   const totalApplications = globalData.length;
-  const duplicatesCount = totalApplications - evaluatedCandidates.length;
-  const uniqueCount = evaluatedCandidates.length;
+  const { duplicatesCount, pendingReviewCount } = useMemo(() => {
+    const notEvaluated = globalData.filter(c => !c.round_1_evaluation);
+    const awaiting = notEvaluated.filter(c => (c.Analysis_status || '') !== 'Completed').length;
+    return { duplicatesCount: notEvaluated.length - awaiting, pendingReviewCount: awaiting };
+  }, [globalData]);
+
+  const uniqueCount = totalApplications - duplicatesCount;
   const reviewedCount = evaluatedCandidates.length;
-  const pendingReviewCount = 0;
 
   // Round 1 Tiers: T1/T1-/T2/T2- (uses evaluatedCandidates to align 100% with worksheets!)
   const isT1T2 = (tier) => ['Tier 1', 'Tier 1-', 'Tier 2', 'Tier 2-', 'T1', 'T1-', 'T2', 'T2-', 'Tier 1+', 'Tier 2+', 'T1+', 'T2+'].includes(tier);
