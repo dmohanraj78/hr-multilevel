@@ -32,13 +32,12 @@ export const PORTAL_ACCENTS = {
 const ALL = ['master', 'recruiter', 'executive', 'evaluator'];
 
 export const ACCESS = {
-  // Full access to every portal
+  // Full access to every portal (admins). In the evaluator portal these four
+  // are not scoped to a queue (not in EVALUATOR_NAMES), so they see all queues.
   'mgoel@mondee.com': ALL, // Mayank
   'dmohanraj@mondee.com': ALL, // Dhanush
-
-  // Master + Recruiter + Executive (no Evaluator)
-  'ggupta@mondee.com': ['master', 'recruiter', 'executive'], // Geetika
-  'prasad@mondee.com': ['master', 'recruiter', 'executive'], // Prasad
+  'ggupta@mondee.com': ALL, // Geetika
+  'prasad@mondee.com': ALL, // Prasad
 
   // Technical reviewers -> Evaluator portal only
   'ayalla@mondee.com': ['evaluator'], // Akash
