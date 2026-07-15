@@ -693,7 +693,7 @@ export default function CandidateListTable({ candidates, actionLabel, onActionCl
                     {/* Actions (Review Worksheet) */}
                     <TableCell className="text-right pr-6">
                       <Button variant="outline" size="sm" onClick={() => onActionClick(cand)} className="h-8 shadow-sm font-semibold rounded-lg text-[#800020] border-[#800020]/20 hover:bg-[#800020] hover:text-white transition-all">
-                        {round === 1 ? ((getEval1(cand, 'app_status') && getEval1(cand, 'app_status') !== 'Pending') ? 'Review' : 'Evaluate') : 'Review'}
+                        Review
                       </Button>
                     </TableCell>
 
