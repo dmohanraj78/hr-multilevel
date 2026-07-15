@@ -243,7 +243,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
   }, [globalData]);
 
   const tierPivotData = useMemo(() => {
-    const tiers = ['Tier 1', 'Tier 1-', 'Tier 2', 'Tier 2-', 'Tier 3', 'Tier 4'];
+    const tiers = ['Tier 1', 'Tier 1+', 'Tier 2', 'Tier 2+', 'Tier 3', 'Tier 4'];
     const counts = tiers.reduce((acc, tier) => {
       acc[tier] = { yes: 0, pending: 0, reject: 0, total: 0 };
       return acc;
@@ -251,19 +251,21 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
 
     globalData.forEach(c => {
       const r1 = getR1(c);
-      const tier = r1.tier || '';
+      let tier = (r1.tier || '').trim();
+      // Keep the exact names requested by standardizing variants
+      if (tier === 'Tier 1-') tier = 'Tier 1+';
+      if (tier === 'Tier 2-') tier = 'Tier 2+';
       const appStatus = r1.app_status || 'Pending';
-      const normalizedTier = tier === 'Tier 1+' ? 'Tier 1-' : (tier === 'Tier 2+' ? 'Tier 2-' : tier);
       
-      if (counts[normalizedTier]) {
+      if (counts[tier]) {
         if (appStatus === 'Yes') {
-          counts[normalizedTier].yes++;
+          counts[tier].yes++;
         } else if (['No', 'Reject', 'Rejected', 'Invalid'].includes(appStatus)) {
-          counts[normalizedTier].reject++;
+          counts[tier].reject++;
         } else {
-          counts[normalizedTier].pending++;
+          counts[tier].pending++;
         }
-        counts[normalizedTier].total++;
+        counts[tier].total++;
       }
     });
 
@@ -1913,117 +1915,165 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
 
 
 
-      {/* Pivot Table 1.5: R1 Aviators Distribution */}
-      <Card className="rounded-[1.5rem] border shadow-sm p-6 bg-white dark:bg-slate-900">
-        <CardHeader className="p-0 pb-4 border-b">
-          <CardTitle className="text-sm font-extrabold text-[#800020] uppercase tracking-wider flex items-center gap-2">
-            <Users className="h-4 w-4" /> Round 1 — Aviators Distribution (Screening)
-          </CardTitle>
-        </CardHeader>
-        <div className="mt-4">
-          <table className="w-full text-xs text-left border-collapse">
-            <thead>
-              <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400 font-bold uppercase tracking-wider font-mono">
-                <th className="py-2.5">Reviewer</th>
-                <th className="py-2.5 text-center text-emerald-600">Yes</th>
-                <th className="py-2.5 text-center text-rose-500">No</th>
-                <th className="py-2.5 text-center text-amber-500">Access Req.</th>
-                <th className="py-2.5 text-center text-blue-600">Pending</th>
-                <th className="py-2.5 text-right font-bold text-foreground">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {['Akash', 'Aman', 'Ankita', 'Anmol', 'Basvaraj', 'Pushkaraj', 'Sachin', 'Sohan', 'Tejaswini', 'Vedant'].map((name) => {
-                const data = r1ReviewerPivotData[name] || { yes: 0, no: 0, accessRequested: 0, pending: 0 };
-                const r1Count = data.yes + data.no + data.accessRequested + data.pending;
-                return (
-                  <tr key={name} className="border-b border-slate-50 dark:border-slate-850 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                    <td className="py-2.5 font-semibold text-slate-800 dark:text-slate-200">{name}</td>
-                    <td className="py-2.5 text-center font-mono font-bold text-emerald-600">{data.yes}</td>
-                    <td className="py-2.5 text-center font-mono font-bold text-rose-500">{data.no}</td>
-                    <td className="py-2.5 text-center font-mono font-semibold text-amber-500">{data.accessRequested}</td>
-                    <td className="py-2.5 text-center font-mono font-semibold text-blue-600">{data.pending}</td>
-                    <td className="py-2.5 text-right font-mono font-bold text-slate-900 dark:text-slate-100">{r1Count}</td>
-                  </tr>
-                );
-              })}
-              {(() => {
-                const assignedTotal = ['Akash', 'Aman', 'Ankita', 'Anmol', 'Basvaraj', 'Pushkaraj', 'Sachin', 'Sohan', 'Tejaswini', 'Vedant'].reduce((acc, name) => {
-                  const d = r1ReviewerPivotData[name] || { yes: 0, no: 0, accessRequested: 0, pending: 0 };
-                  return { yes: acc.yes + d.yes, no: acc.no + d.no, accessRequested: acc.accessRequested + d.accessRequested, pending: acc.pending + d.pending };
-                }, { yes: 0, no: 0, accessRequested: 0, pending: 0 });
-                const grandR1 = assignedTotal.yes + assignedTotal.no + assignedTotal.accessRequested + assignedTotal.pending;
-                return (
-                  <tr className="bg-slate-50 dark:bg-slate-850/60 font-bold border-t border-slate-200 dark:border-slate-700">
-                    <td className="py-2.5 px-1 text-slate-900 dark:text-slate-100">Grand Total</td>
-                    <td className="py-2.5 text-center font-mono font-extrabold text-emerald-700">{assignedTotal.yes}</td>
-                    <td className="py-2.5 text-center font-mono font-extrabold text-rose-700">{assignedTotal.no}</td>
-                    <td className="py-2.5 text-center font-mono font-extrabold text-amber-700">{assignedTotal.accessRequested}</td>
-                    <td className="py-2.5 text-center font-mono font-extrabold text-blue-700">{assignedTotal.pending}</td>
-                    <td className="py-2.5 text-right font-mono font-extrabold text-slate-900 dark:text-white">{grandR1}</td>
-                  </tr>
-                );
-              })()}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+      {/* Pivot Tables Analysis Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full items-start">
+        {/* Left Column: Tiers & Screened By Yes Count */}
+        <div className="lg:col-span-4 flex flex-col gap-6">
+          {/* Table 1: Tier Status */}
+          <Card className="rounded-xl border shadow-sm p-4 bg-white dark:bg-slate-900 overflow-x-auto">
+            <table className="w-full text-xs text-left border-collapse whitespace-nowrap">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-slate-800 bg-[#e2e8f0]/50 dark:bg-slate-800/50">
+                  <th className="py-2 px-3 font-bold border-r border-slate-200 dark:border-slate-800">
+                    <div className="text-slate-500 font-normal">Count of Name</div>
+                    <div className="text-foreground">Tier</div>
+                  </th>
+                  <th className="py-2 px-3 font-bold border-r border-slate-200 dark:border-slate-800 bg-[#e2efda] dark:bg-[#e2efda]/10">
+                    <div className="text-slate-500 font-normal">Status</div>
+                    <div className="text-green-700 dark:text-green-400 flex items-center justify-between">Yes <span className="text-[10px] bg-slate-200/50 dark:bg-slate-700/50 px-1 rounded">▼</span></div>
+                  </th>
+                  <th className="py-2 px-3 text-center font-bold bg-[#00b0f0] text-white border-r border-slate-200 dark:border-slate-800">
+                    <div className="text-blue-100 font-normal opacity-0 select-none">Status</div>
+                    Pending
+                  </th>
+                  <th className="py-2 px-3 text-center font-bold bg-[#ff0000] text-white border-r border-slate-200 dark:border-slate-800">
+                    <div className="text-red-100 font-normal opacity-0 select-none">Status</div>
+                    Reject
+                  </th>
+                  <th className="py-2 px-3 text-right font-bold">
+                    <div className="text-slate-500 font-normal opacity-0 select-none">Total</div>
+                    Grand Total
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {['Tier 1', 'Tier 1+', 'Tier 2', 'Tier 2+', 'Tier 3', 'Tier 4'].map(tier => {
+                  const d = tierPivotData[tier] || { yes: 0, pending: 0, reject: 0, total: 0 };
+                  return (
+                    <tr key={tier} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                      <td className="py-1.5 px-3 border-r border-slate-200 dark:border-slate-800">{tier}</td>
+                      <td className="py-1.5 px-3 text-center border-r border-slate-200 dark:border-slate-800">{d.yes || ''}</td>
+                      <td className="py-1.5 px-3 text-center bg-[#00b0f0]/10 border-r border-slate-200 dark:border-slate-800 font-medium text-[#00b0f0]">{d.pending || ''}</td>
+                      <td className="py-1.5 px-3 text-center border-r border-slate-200 dark:border-slate-800">{d.reject || ''}</td>
+                      <td className="py-1.5 px-3 text-right font-medium">{d.total || ''}</td>
+                    </tr>
+                  );
+                })}
+                <tr className="bg-[#e2e8f0]/50 dark:bg-slate-800/50 font-bold border-t border-slate-200 dark:border-slate-700">
+                  <td className="py-2 px-3 border-r border-slate-200 dark:border-slate-800">Grand Total</td>
+                  <td className="py-2 px-3 text-center border-r border-slate-200 dark:border-slate-800 bg-[#a9d08e] text-green-900">{tierGrandTotal.yes || ''}</td>
+                  <td className="py-2 px-3 text-center border-r border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200">{tierGrandTotal.pending || ''}</td>
+                  <td className="py-2 px-3 text-center border-r border-slate-200 dark:border-slate-800">{tierGrandTotal.reject || ''}</td>
+                  <td className="py-2 px-3 text-right">{tierGrandTotal.total || ''}</td>
+                </tr>
+              </tbody>
+            </table>
+          </Card>
 
-      {/* Pivot Table 2: R2 Aviators Distribution */}
-      <Card className="rounded-[1.5rem] border shadow-sm p-6 bg-white dark:bg-slate-900">
-        <CardHeader className="p-0 pb-4 border-b">
-          <CardTitle className="text-sm font-extrabold text-[#800020] uppercase tracking-wider flex items-center gap-2">
-            <Users className="h-4 w-4" /> Round 2 — Aviators Distribution (Technical Reviewers)
-          </CardTitle>
-        </CardHeader>
-        <div className="mt-4">
-          <table className="w-full text-xs text-left border-collapse">
-            <thead>
-              <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400 font-bold uppercase tracking-wider font-mono">
-                <th className="py-2.5">Reviewer</th>
-                <th className="py-2.5 text-center text-emerald-600">Yes</th>
-                <th className="py-2.5 text-center text-emerald-500">Maybe</th>
-                <th className="py-2.5 text-center text-rose-500">No</th>
-                <th className="py-2.5 text-center text-blue-600">Pending</th>
-                <th className="py-2.5 text-right font-bold text-foreground">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {['Akash', 'Aman', 'Ankita', 'Anmol', 'Basvaraj', 'Pushkaraj', 'Sachin', 'Sohan', 'Tejaswini', 'Vedant'].map((name) => {
-                const data = reviewerPivotData[name] || { yes: 0, maybe: 0, no: 0, pending: 0, rejectedR1: 0, total: 0 };
-                const r2Count = data.yes + data.maybe + data.no + data.pending;
-                return (
-                  <tr key={name} className="border-b border-slate-50 dark:border-slate-850 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                    <td className="py-2.5 font-semibold text-slate-800 dark:text-slate-200">{name}</td>
-                    <td className="py-2.5 text-center font-mono font-bold text-emerald-600">{data.yes}</td>
-                    <td className="py-2.5 text-center font-mono font-semibold text-emerald-500">{data.maybe}</td>
-                    <td className="py-2.5 text-center font-mono font-bold text-rose-500">{data.no}</td>
-                    <td className="py-2.5 text-center font-mono font-semibold text-blue-600">{data.pending}</td>
-                    <td className="py-2.5 text-right font-mono font-bold text-slate-900 dark:text-slate-100">{r2Count}</td>
-                  </tr>
-                );
-              })}
-              {(() => {
-                const assignedTotal = ['Akash', 'Aman', 'Ankita', 'Anmol', 'Basvaraj', 'Pushkaraj', 'Sachin', 'Sohan', 'Tejaswini', 'Vedant'].reduce((acc, name) => {
-                  const d = reviewerPivotData[name] || { yes: 0, maybe: 0, no: 0, pending: 0 };
-                  return { yes: acc.yes + d.yes, maybe: acc.maybe + d.maybe, no: acc.no + d.no, pending: acc.pending + d.pending };
-                }, { yes: 0, maybe: 0, no: 0, pending: 0 });
-                const grandR2 = assignedTotal.yes + assignedTotal.maybe + assignedTotal.no + assignedTotal.pending;
-                return (
-                  <tr className="bg-slate-50 dark:bg-slate-850/60 font-bold border-t border-slate-200 dark:border-slate-700">
-                    <td className="py-2.5 px-1 text-slate-900 dark:text-slate-100">Grand Total</td>
-                    <td className="py-2.5 text-center font-mono font-extrabold text-emerald-700">{assignedTotal.yes}</td>
-                    <td className="py-2.5 text-center font-mono font-extrabold text-emerald-600">{assignedTotal.maybe}</td>
-                    <td className="py-2.5 text-center font-mono font-extrabold text-rose-700">{assignedTotal.no}</td>
-                    <td className="py-2.5 text-center font-mono font-extrabold text-blue-700">{assignedTotal.pending}</td>
-                    <td className="py-2.5 text-right font-mono font-extrabold text-slate-900 dark:text-white">{grandR2}</td>
-                  </tr>
-                );
-              })()}
-            </tbody>
-          </table>
+          {/* Table 2: Screened By (Status = Yes) */}
+          <Card className="rounded-xl border shadow-sm p-4 bg-white dark:bg-slate-900 overflow-x-auto">
+            <div className="text-xs text-slate-500 mb-1.5 flex items-center gap-2">Status <span className="bg-white border shadow-sm px-2 py-0.5 rounded text-foreground text-[10px] flex items-center gap-1 cursor-default">Yes <span className="text-[8px] text-slate-400">▼</span></span></div>
+            <table className="w-full text-xs text-left border-collapse whitespace-nowrap">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-slate-800 bg-[#e2e8f0]/50 dark:bg-slate-800/50">
+                  <th className="py-2 px-3 font-bold border-r border-slate-200 dark:border-slate-800">
+                    <div className="text-slate-500 font-normal">Count of Name</div>
+                    <div className="text-foreground flex items-center justify-between">To be screened by <span className="text-[10px] bg-slate-200/50 dark:bg-slate-700/50 px-1 rounded">▼</span></div>
+                  </th>
+                  <th className="py-2 px-3 font-bold text-center">
+                    <div className="text-slate-500 font-normal opacity-0 select-none">Total</div>
+                    Total
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {['Akash', 'Ankita', 'Anmol', 'Basvaraj', 'Pushkaraj', 'Sachin', 'Sohan', 'Tejaswini', 'Vedant', 'Unassigned'].map(name => {
+                  const data = r1ReviewerPivotData[name] || { yes: 0 };
+                  if (data.yes === 0 && name !== 'Unassigned') return null; // Show even if 0 if needed, but screenshot hides empty ones (though all had some)
+                  return (
+                    <tr key={name} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                      <td className="py-1.5 px-3 border-r border-slate-200 dark:border-slate-800">{name === 'Unassigned' ? '-' : name}</td>
+                      <td className="py-1.5 px-3 text-center">{data.yes || ''}</td>
+                    </tr>
+                  );
+                })}
+                <tr className="bg-[#e2e8f0]/50 dark:bg-slate-800/50 font-bold border-t border-slate-200 dark:border-slate-700">
+                  <td className="py-2 px-3 border-r border-slate-200 dark:border-slate-800">Grand Total</td>
+                  <td className="py-2 px-3 text-center">
+                    {['Akash', 'Ankita', 'Anmol', 'Basvaraj', 'Pushkaraj', 'Sachin', 'Sohan', 'Tejaswini', 'Vedant', 'Unassigned'].reduce((acc, name) => acc + (r1ReviewerPivotData[name]?.yes || 0), 0)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </Card>
         </div>
-      </Card>
+
+        {/* Right Column: Table 3 Decision Analysis */}
+        <div className="lg:col-span-8">
+          <Card className="rounded-xl border shadow-sm p-4 bg-white dark:bg-slate-900 overflow-x-auto h-full">
+            <table className="w-full text-xs text-left border-collapse whitespace-nowrap">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-slate-800 bg-[#e2e8f0]/50 dark:bg-slate-800/50">
+                  <th className="py-2 px-3 font-bold border-r border-slate-200 dark:border-slate-800">
+                    <div className="text-slate-500 font-normal">Count of Name</div>
+                    <div className="text-foreground flex items-center justify-between">To be screened by <span className="text-[10px] bg-slate-200/50 dark:bg-slate-700/50 px-1 rounded">▼</span></div>
+                  </th>
+                  <th className="py-2 px-3 text-center font-bold border-r border-slate-200 dark:border-slate-800">
+                    <div className="text-slate-500 font-normal flex items-center justify-between mb-0.5">Decision <span className="text-[10px] bg-slate-200/50 dark:bg-slate-700/50 px-1 rounded">▼</span></div>
+                    Yes
+                  </th>
+                  <th className="py-2 px-3 text-center font-bold border-r border-slate-200 dark:border-slate-800">
+                    <div className="text-slate-500 font-normal opacity-0 select-none mb-0.5">Decision</div>
+                    Maybe
+                  </th>
+                  <th className="py-2 px-3 text-center font-bold border-r border-slate-200 dark:border-slate-800">
+                    <div className="text-slate-500 font-normal opacity-0 select-none mb-0.5">Decision</div>
+                    No
+                  </th>
+                  <th className="py-2 px-3 text-center font-bold border-r border-slate-200 dark:border-slate-800">
+                    <div className="text-slate-500 font-normal opacity-0 select-none mb-0.5">Decision</div>
+                    Pending
+                  </th>
+                  <th className="py-2 px-3 text-center font-bold bg-[#ff0000] text-white border-r border-slate-200 dark:border-slate-800">
+                    <div className="text-red-100 font-normal opacity-0 select-none mb-0.5">Decision</div>
+                    Rejected (R1)
+                  </th>
+                  <th className="py-2 px-3 text-right font-bold">
+                    <div className="text-slate-500 font-normal opacity-0 select-none mb-0.5">Total</div>
+                    Grand Total
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {['Akash', 'Ankita', 'Anmol', 'Basvaraj', 'Pushkaraj', 'Sachin', 'Sohan', 'Tejaswini', 'Vedant', 'Unassigned'].map(name => {
+                  const data = reviewerPivotData[name] || { yes: 0, maybe: 0, no: 0, pending: 0, rejectedR1: 0, total: 0 };
+                  if (data.total === 0 && name !== 'Unassigned') return null;
+                  return (
+                    <tr key={name} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                      <td className="py-1.5 px-3 border-r border-slate-200 dark:border-slate-800">{name === 'Unassigned' ? '-' : name}</td>
+                      <td className="py-1.5 px-3 text-center border-r border-slate-200 dark:border-slate-800">{data.yes || ''}</td>
+                      <td className="py-1.5 px-3 text-center border-r border-slate-200 dark:border-slate-800">{data.maybe || ''}</td>
+                      <td className="py-1.5 px-3 text-center border-r border-slate-200 dark:border-slate-800">{data.no || ''}</td>
+                      <td className="py-1.5 px-3 text-center border-r border-slate-200 dark:border-slate-800">{data.pending || ''}</td>
+                      <td className="py-1.5 px-3 text-center border-r border-slate-200 dark:border-slate-800 text-[#ff0000]">{data.rejectedR1 || ''}</td>
+                      <td className="py-1.5 px-3 text-right font-medium">{data.total || ''}</td>
+                    </tr>
+                  );
+                })}
+                <tr className="bg-[#e2e8f0]/50 dark:bg-slate-800/50 font-bold border-t border-slate-200 dark:border-slate-700">
+                  <td className="py-2 px-3 border-r border-slate-200 dark:border-slate-800">Grand Total</td>
+                  <td className="py-2 px-3 text-center border-r border-slate-200 dark:border-slate-800 border-2 border-green-500">{reviewerGrandTotal.yes || ''}</td>
+                  <td className="py-2 px-3 text-center border-r border-slate-200 dark:border-slate-800">{reviewerGrandTotal.maybe || ''}</td>
+                  <td className="py-2 px-3 text-center border-r border-slate-200 dark:border-slate-800">{reviewerGrandTotal.no || ''}</td>
+                  <td className="py-2 px-3 text-center border-r border-slate-200 dark:border-slate-800">{reviewerGrandTotal.pending || ''}</td>
+                  <td className="py-2 px-3 text-center border-r border-slate-200 dark:border-slate-800">{reviewerGrandTotal.rejectedR1 || ''}</td>
+                  <td className="py-2 px-3 text-right">{reviewerGrandTotal.total || ''}</td>
+                </tr>
+              </tbody>
+            </table>
+          </Card>
+        </div>
+      </div>
 
 
     </div>
