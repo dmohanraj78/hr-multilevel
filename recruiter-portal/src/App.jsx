@@ -176,6 +176,11 @@ export default function App() {
   const [univSearch, setUnivSearch] = useState('');
   const [showAllUnis, setShowAllUnis] = useState(false); // 'pipeline' | 'overall'
   const [activeWorksheetTab, setActiveWorksheetTab] = useState('all');
+  const duplicatesCount = useMemo(() => {
+    const notEvaluated = globalData.filter(c => !c.round_1_evaluation);
+    const awaiting = notEvaluated.filter(c => (c.Analysis_status || '') !== 'Completed').length;
+    return notEvaluated.length - awaiting;
+  }, [globalData]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedCandidate, setSelectedCandidate] = useState(null);
@@ -442,6 +447,10 @@ export default function App() {
                   <p className="text-sm text-muted-foreground">
                     Monitor resume review rates and inspect candidate scores by active role.
                   </p>
+                </div>
+
+                <div className="bg-[#f8fafc] dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 rounded-xl px-4 py-2.5 text-xs text-slate-600 dark:text-slate-400 font-medium">
+                  We received <strong className="text-foreground">{globalData.length} applications</strong>. <strong className="text-[#800020]">{duplicatesCount} were duplicates</strong>.
                 </div>
 
                 {/* Banner stats */}

@@ -200,6 +200,12 @@ export default function App() {
   const [r2Candidates, setR2Candidates] = useState([]);
   const [r3Candidates, setR3Candidates] = useState([]);
   
+  const duplicatesCount = useMemo(() => {
+    const notEvaluated = globalData.filter(c => !c.round_1_evaluation);
+    const awaiting = notEvaluated.filter(c => (c.Analysis_status || '') !== 'Completed').length;
+    return notEvaluated.length - awaiting;
+  }, [globalData]);
+
   // Executive tab filtering states
   const [r3ActiveFilter, setR3ActiveFilter] = useState('ALL');
   const [r3TrFilter, setR3TrFilter] = useState('ALL');
@@ -847,6 +853,10 @@ export default function App() {
                 <div className="flex flex-col gap-1">
                   <h2 className="text-xl font-extrabold tracking-tight">Round 1 Review Worksheet</h2>
                   <p className="text-xs text-muted-foreground">Manage initial resume review, total scores, and evaluator technical evaluator assignments.</p>
+                </div>
+
+                <div className="bg-[#f8fafc] dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 rounded-xl px-4 py-2.5 text-xs text-slate-600 dark:text-slate-400 font-medium">
+                  We received <strong className="text-foreground">{globalData.length} applications</strong>. <strong className="text-[#800020]">{duplicatesCount} were duplicates</strong>.
                 </div>
                 
                 <StatsBanner candidates={r1Candidates} rawCount={globalData.length} />
