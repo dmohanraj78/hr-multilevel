@@ -53,7 +53,28 @@ export const ACCESS = {
   'vranade@mondee.com': ['evaluator'], // Vedant
 };
 
+// Maps each technical reviewer's login email to their evaluation-queue name
+// (the `eval_group` value candidates are assigned to). Used by the evaluator
+// portal to scope a reviewer to only their own assigned candidates. Admins
+// (mgoel, dmohanraj) are intentionally absent — they see every queue.
+export const EVALUATOR_NAMES = {
+  'ayalla@mondee.com': 'Akash',
+  'ashrivastava@mondee.com': 'Aman',
+  'amungalapara@mondee.com': 'Ankita',
+  'asahu@mondee.com': 'Anmol',
+  'bpatil@mondee.com': 'Basvaraj',
+  'pbaradkar@mondee.com': 'Pushkaraj',
+  'smehndiratta@mondee.com': 'Sachin',
+  'shanagandi@mondee.com': 'Sohan',
+  'tkambaiahgari@mondee.com': 'Tejaswini',
+  'vranade@mondee.com': 'Vedant',
+};
+
 export const normalizeEmail = (email) => (email || '').toLowerCase().trim();
+
+// Returns the reviewer's queue name if the email is a scoped technical
+// reviewer, or null for admins (who may see all queues).
+export const getEvaluatorName = (email) => EVALUATOR_NAMES[normalizeEmail(email)] || null;
 
 export const isMondeeEmail = (email) =>
   normalizeEmail(email).endsWith('@mondee.com');

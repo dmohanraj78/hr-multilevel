@@ -184,7 +184,7 @@ export default function App() {
             <ShieldAlert className="h-5 w-5 shrink-0 text-red-500 mt-0.5" />
             <div>
               <strong className="font-bold block text-foreground mb-1">Live Database Connection Required</strong>
-              Database connection failed: {error}. Since local storage is isolated by port, please click the Settings gear icon in the right top to configure your Supabase URL & Anon Key for port 5175.
+              Database connection failed: {error}. Try signing out and back in; if it persists, contact an administrator.
             </div>
           </div>
         )}

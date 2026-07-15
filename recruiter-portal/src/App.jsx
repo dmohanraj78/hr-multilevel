@@ -454,7 +454,7 @@ export default function App() {
             <ShieldAlert className="h-5 w-5 shrink-0 text-red-500 mt-0.5" />
             <div>
               <strong className="font-bold block text-foreground mb-1">Live Database Connection Required</strong>
-              Database connection failed: {error}. Since local storage is isolated by port, please click the Settings gear icon in the top right to configure your Supabase URL & Anon Key for port 5173.
+              Database connection failed: {error}. Try signing out and back in; if it persists, contact an administrator.
             </div>
           </div>
         )}
@@ -487,7 +487,7 @@ export default function App() {
                 </div>
 
                 <div className="bg-[#f8fafc] dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 rounded-xl px-4 py-2.5 text-xs text-slate-600 dark:text-slate-400 font-medium">
-                  We received <strong className="text-foreground">{globalData.length} applications</strong>. <strong className="text-[#800020]">{duplicatesCount} {duplicatesCount === 1 ? 'was a duplicate' : 'were duplicates'}</strong>.
+                  We received <strong className="text-foreground">{globalData.length} applications</strong>. <strong className="text-[#800020]">{duplicatesCount} duplicate{duplicatesCount === 1 ? '' : 's'}</strong>.
                 </div>
 
                 {/* Banner stats */}

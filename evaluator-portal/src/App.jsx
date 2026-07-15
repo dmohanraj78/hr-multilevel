@@ -3,6 +3,7 @@ import Header from '@/components/Header';
 import CandidateListTable from '@/components/CandidateListTable';
 import CandidateProfileDossier from '@/components/CandidateProfileDossier';
 import { fetchRound2Candidates, upsertRound2, upsertRound1, supabase } from '@/lib/supabase';
+import { getEvaluatorName } from '@/lib/access';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { LayoutDashboard, Users, ShieldAlert, ArrowLeft, GitPullRequest, Loader2 } from 'lucide-react';
@@ -33,8 +34,10 @@ export default function App() {
   const [selectedCandidate, setSelectedCandidate] = useState(null);
   const [worksheetTab, setWorksheetTab] = useState('active'); // 'active' | 'completed'
 
-  const [authChecking, setAuthChecking] = useState(false);
-  const [authRoleError, setAuthRoleError] = useState('');
+  // Which evaluation queue the signed-in user is scoped to. A technical reviewer
+  // is locked to their own queue; an admin (null) may browse every queue.
+  const [myEvaluatorId, setMyEvaluatorId] = useState(null);
+  const [scopeResolved, setScopeResolved] = useState(false);
 
   const loadData = async () => {
     setLoading(true);
@@ -51,7 +54,19 @@ export default function App() {
   };
 
   useEffect(() => {
-    loadData();
+    // Resolve the signed-in user's queue scope, then load data.
+    supabase.auth.getUser().then(({ data }) => {
+      const name = getEvaluatorName(data?.user?.email);
+      if (name) {
+        const mine = TECH_EVALUATORS.find(t => t.id.toLowerCase() === name.toLowerCase());
+        if (mine) {
+          setMyEvaluatorId(mine.id);
+          setSelectedTechEvaluator(mine); // lock reviewers straight into their queue
+        }
+      }
+      setScopeResolved(true);
+      loadData();
+    });
   }, []);
 
   useEffect(() => {
@@ -169,7 +184,7 @@ export default function App() {
             <ShieldAlert className="h-5 w-5 shrink-0 text-red-500 mt-0.5" />
             <div>
               <strong className="font-bold block text-foreground mb-1">Live Database Connection Required</strong>
-              Database connection failed: {error}. Since local storage is isolated by port, please click the Settings gear icon in the top right to configure your Supabase URL & Anon Key for port 5174.
+              Database connection failed: {error}. Try signing out and back in; if it persists, contact an administrator.
             </div>
           </div>
         )}
@@ -194,14 +209,18 @@ export default function App() {
                 // Technical Evaluator Worksheet view
                 <div className="flex flex-col gap-6">
                   <div className="flex items-center gap-3">
-                    <Button variant="outline" size="sm" onClick={() => setSelectedTechEvaluator(null)}>
-                      <ArrowLeft className="mr-2 h-4 w-4" /> Back to Technical Review Hub
-                    </Button>
+                    {!myEvaluatorId && (
+                      <Button variant="outline" size="sm" onClick={() => setSelectedTechEvaluator(null)}>
+                        <ArrowLeft className="mr-2 h-4 w-4" /> Back to Technical Review Hub
+                      </Button>
+                    )}
                     <h2 className="text-2xl font-bold font-heading">{selectedTechEvaluator.name}'s Sheet</h2>
                   </div>
-                  
+
                   <p className="text-sm text-muted-foreground">
-                    Reviewing candidate code-submissions currently assigned to the <strong className="text-foreground">{selectedTechEvaluator.name}</strong> queue.
+                    {myEvaluatorId
+                      ? <>You are signed in as <strong className="text-foreground">{selectedTechEvaluator.name}</strong>. Showing only the candidates assigned to your queue.</>
+                      : <>Reviewing candidate code-submissions currently assigned to the <strong className="text-foreground">{selectedTechEvaluator.name}</strong> queue.</>}
                   </p>
 
                   <CandidateListTable
