@@ -1822,7 +1822,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       if (existing) workbook.removeWorksheet(existing.id);
       const sheet = workbook.addWorksheet('Pivot Data');
 
-      const TOP_TIERS = ['Tier 1', 'Tier 1+', 'Tier 2', 'Tier 2+'];
+      const TOP_TIERS = ['Tier 1', 'Tier 1-', 'Tier 2', 'Tier 2-'];
       const LOW_TIERS = ['Tier 3', 'Tier 4'];
 
       sheet.columns = [
@@ -2170,7 +2170,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
                   </tr>
                 </thead>
                 <tbody>
-                  {['Tier 1', 'Tier 1+', 'Tier 2', 'Tier 2+', 'Tier 3', 'Tier 4'].map(tier => {
+                  {['Tier 1', 'Tier 1-', 'Tier 2', 'Tier 2-', 'Tier 3', 'Tier 4'].map(tier => {
                     const d = tierPivotData[tier] || { yes: 0, pending: 0, reject: 0, total: 0 };
                     return (
                       <tr key={tier} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50">

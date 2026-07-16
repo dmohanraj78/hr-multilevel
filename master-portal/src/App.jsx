@@ -4,6 +4,7 @@ import StatsBanner from '@/components/StatsBanner';
 import CandidateListTable from '@/components/CandidateListTable';
 import CandidateProfileDossier from '@/components/CandidateProfileDossier';
 import OverallFunnelDashboard from '@/components/OverallFunnelDashboard';
+import RubricsView from './components/RubricsView';
 import { 
   fetchCandidates, 
   upsertRound1, 
@@ -32,7 +33,9 @@ import {
   Building,
   ChevronDown,
   ChevronUp,
-  Loader2
+  Loader2,
+  ListChecks,
+  School
 } from 'lucide-react';
 
 function normalizeUniversity(rawName) {
@@ -193,7 +196,7 @@ function normalizeUniversity(rawName) {
 }
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'r1' | 'r2' | 'r3'
+  const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'r1' | 'r2' | 'r3' | 'university' | 'rubrics'
   
   // Data lists
   const [globalData, setGlobalData] = useState([]);
@@ -644,10 +647,25 @@ export default function App() {
                       : 'border border-[#800020]/30 text-[#800020] hover:bg-[#800020]/5 hover:text-[#800020]'
                   }`}
                 >
-                  <GraduationCap className="mr-2 h-4 w-4 stroke-[1.5]" /> University Overview
+                  <School className="mr-2 h-4 w-4 stroke-[1.5]" /> University Overview
+                </Button>
+                
+                <Button
+                  variant={activeTab === 'rubrics' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setActiveTab('rubrics')}
+                  className={`rounded-lg px-4 font-bold text-xs transition-all ${
+                    activeTab === 'rubrics' 
+                      ? 'bg-[#800020] text-white hover:bg-[#800020]/90 border-transparent' 
+                      : 'border border-[#800020]/30 text-[#800020] hover:bg-[#800020]/5 hover:text-[#800020]'
+                  }`}
+                >
+                  <ListChecks className="mr-2 h-4 w-4 stroke-[1.5]" /> Rubrics
                 </Button>
               </div>
             </div>
+
+            {activeTab === 'rubrics' && <RubricsView />}
 
                         {/* Overview Tab Content */}
             {activeTab === 'overview' && (
