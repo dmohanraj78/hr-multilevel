@@ -371,7 +371,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       if (r1.app_status === 'Duplicate') return false;
       return (r1.app_status || 'Pending') === 'Yes';
     });
-    return getTierMatrix(filtered, 'state');
+    return getTierMatrix(filtered, 'State');
   }, [uniqueDeduplicatedCandidates]);
 
   const stateTierPivotR2 = useMemo(() => {
@@ -380,7 +380,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       if (r1.app_status === 'Duplicate') return false;
       return getR2(c).moved_to_round_3 === 'Yes';
     });
-    return getTierMatrix(filtered, 'state');
+    return getTierMatrix(filtered, 'State');
   }, [uniqueDeduplicatedCandidates]);
 
   const cityTierPivotR2 = useMemo(() => {
@@ -389,7 +389,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       if (r1.app_status === 'Duplicate') return false;
       return getR2(c).moved_to_round_3 === 'Yes';
     });
-    return getTierMatrix(filtered, 'city');
+    return getTierMatrix(filtered, 'City');
   }, [uniqueDeduplicatedCandidates]);
 
 
