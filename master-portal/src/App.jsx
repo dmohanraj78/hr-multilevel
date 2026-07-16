@@ -876,7 +876,7 @@ export default function App() {
               <div className="flex flex-col gap-6 animate-in fade-in duration-300">
                 <div className="flex flex-col gap-1">
                   <h2 className="text-xl font-extrabold tracking-tight">Round 1 Review Worksheet</h2>
-                  <p className="text-xs text-muted-foreground">Manage initial resume review, total scores, and evaluator technical evaluator assignments.</p>
+                  <p className="text-xs text-muted-foreground">Manage initial resume review, total scores, and technical reviewer assignments.</p>
                 </div>
 
                 <div className="bg-[#f8fafc] dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 rounded-xl px-4 py-2.5 text-xs text-slate-600 dark:text-slate-400 font-medium">
@@ -904,7 +904,7 @@ export default function App() {
               <div className="flex flex-col gap-6 animate-in fade-in duration-300">
                 <div className="flex flex-col gap-1">
                   <h2 className="text-xl font-extrabold tracking-tight">Round 2 Technical Review Worksheet</h2>
-                  <p className="text-xs text-muted-foreground">Evaluate candidate project depth, start dates, and business-fit alignment.</p>
+                  <p className="text-xs text-muted-foreground">Review candidate project depth, start dates, and business-fit alignment.</p>
                 </div>
 
                 <StatsBanner candidates={r2Candidates} round={2} />
