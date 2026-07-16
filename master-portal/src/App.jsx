@@ -1026,7 +1026,12 @@ export default function App() {
             })()}
 
             {/* University Overview tab content */}
-            {activeTab === 'university' && (() => {
+            
+              {activeTab === 'rubrics' && (
+                <RubricsView />
+              )}
+
+              {activeTab === 'university' && (() => {
 
               // Dedicated sub-page / details view for selected university
               if (selectedUnivName) {
