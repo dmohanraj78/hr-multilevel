@@ -368,6 +368,9 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     
     // Deduplicated list of candidates filtered by decision
     const filteredCandidates = uniqueDeduplicatedCandidates.filter(c => {
+      const r1 = getR1(c);
+      if (r1.app_status === 'Duplicate') return false;
+      
       const moved = getR2(c).moved_to_round_3 || '';
       if (moved.endsWith('_draft')) return false;
       if (graduationDecisionFilter === 'All') return true;
