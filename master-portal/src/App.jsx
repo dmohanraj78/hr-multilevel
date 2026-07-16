@@ -665,8 +665,6 @@ export default function App() {
               </div>
             </div>
 
-            {activeTab === 'rubrics' && <RubricsView />}
-
                         {/* Overview Tab Content */}
             {activeTab === 'overview' && (
               selectedUnivName ? (() => {

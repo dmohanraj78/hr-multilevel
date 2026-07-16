@@ -259,8 +259,6 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     let total = 0;
     filteredCandidates.forEach(c => {
       const r1 = getR1(c);
-      const reviewer = r1.eval_group && r1.eval_group !== 'None' ? r1.eval_group : 'Unassigned';
-      if (reviewer === 'Unassigned') return;
       const loc = c.location || c.Location || r1.location || r1.Location || c.current_location;
       const normalized = normalizeLocation(loc);
       if (!counts[normalized]) counts[normalized] = 0;
@@ -281,8 +279,6 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     let total = 0;
     filteredCandidates.forEach(c => {
       const r1 = getR1(c);
-      const reviewer = r1.eval_group && r1.eval_group !== 'None' ? r1.eval_group : 'Unassigned';
-      if (reviewer === 'Unassigned') return;
       const loc = c.location || c.Location || r1.location || r1.Location || c.current_location;
       const normalized = normalizeLocation(loc);
       if (!counts[normalized]) counts[normalized] = 0;
@@ -323,7 +319,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
   }, [uniqueDeduplicatedCandidates]);
 
   const tierPivotData = useMemo(() => {
-    const tiers = ['Tier 1', 'Tier 1+', 'Tier 2', 'Tier 2+', 'Tier 3', 'Tier 4'];
+    const tiers = ['Tier 1', 'Tier 1-', 'Tier 2', 'Tier 2-', 'Tier 3', 'Tier 4'];
     const counts = tiers.reduce((acc, tier) => {
       acc[tier] = { yes: 0, pending: 0, reject: 0, total: 0 };
       return acc;
@@ -2353,6 +2349,35 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
                     
 
 
+          {/* Location Wise Table (Round 1 Yes) */}
+          <Card className="rounded-xl shadow-sm bg-white dark:bg-slate-900 overflow-hidden border border-slate-200 dark:border-slate-800">
+            <div className="flex items-center gap-2 px-6 py-4 border-b border-slate-100 dark:border-slate-800 text-[#9b1c1c] dark:text-red-500 font-bold text-sm tracking-wide uppercase">
+              <Users className="w-4 h-4" /> LOCATION WISE TABLE (ROUND 1 YES)
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left whitespace-nowrap">
+                <thead>
+                  <tr className="border-b border-slate-200 dark:border-slate-800 bg-[#e2e8f0]/40 dark:bg-slate-800/40">
+                    <th className="py-2 px-6 font-semibold text-xs text-slate-600 dark:text-slate-300">Location</th>
+                    <th className="py-2 px-6 font-semibold text-xs text-slate-600 dark:text-slate-300 text-center">Total ▼</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {locationPivotDataR1.data.map(([loc, count]) => (
+                    <tr key={loc} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                      <td className="py-3 px-6 font-bold text-slate-700 dark:text-slate-300">{loc}</td>
+                      <td className="py-3 px-6 text-center font-bold text-[#059669] dark:text-emerald-400">{count}</td>
+                    </tr>
+                  ))}
+                  <tr className="font-bold border-t-2 border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-900">
+                    <td className="py-3 px-6 text-slate-800 dark:text-slate-200">Grand Total</td>
+                    <td className="py-3 px-6 text-center text-[#059669] dark:text-emerald-400">{locationPivotDataR1.total}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </Card>
+
           {/* Graduation Wise Table */}
           <Card className="rounded-xl shadow-sm bg-white dark:bg-slate-900 overflow-hidden border border-slate-200 dark:border-slate-800">
             <div className="flex items-center gap-2 px-6 py-4 border-b border-slate-100 dark:border-slate-800 text-[#9b1c1c] dark:text-red-500 font-bold text-sm tracking-wide uppercase">
@@ -2427,6 +2452,35 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
             </div>
           </Card>
 
+        {/* Location Wise Table (Round 2 Yes) */}
+          <Card className="rounded-xl shadow-sm bg-white dark:bg-slate-900 overflow-hidden border border-slate-200 dark:border-slate-800">
+            <div className="flex items-center gap-2 px-6 py-4 border-b border-slate-100 dark:border-slate-800 text-[#9b1c1c] dark:text-red-500 font-bold text-sm tracking-wide uppercase">
+              <Users className="w-4 h-4" /> LOCATION WISE TABLE (ROUND 2 YES)
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left whitespace-nowrap">
+                <thead>
+                  <tr className="border-b border-slate-200 dark:border-slate-800 bg-[#e2e8f0]/40 dark:bg-slate-800/40">
+                    <th className="py-2 px-6 font-semibold text-xs text-slate-600 dark:text-slate-300">Location</th>
+                    <th className="py-2 px-6 font-semibold text-xs text-slate-600 dark:text-slate-300 text-center">Total ▼</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {locationPivotDataR2.data.map(([loc, count]) => (
+                    <tr key={loc} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                      <td className="py-3 px-6 font-bold text-slate-700 dark:text-slate-300">{loc}</td>
+                      <td className="py-3 px-6 text-center font-bold text-[#059669] dark:text-emerald-400">{count}</td>
+                    </tr>
+                  ))}
+                  <tr className="font-bold border-t-2 border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-900">
+                    <td className="py-3 px-6 text-slate-800 dark:text-slate-200">Grand Total</td>
+                    <td className="py-3 px-6 text-center text-[#059669] dark:text-emerald-400">{locationPivotDataR2.total}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </Card>
+
         {/* Deploy Stage Table */}
           <Card className="rounded-xl shadow-sm bg-white dark:bg-slate-900 overflow-hidden border border-slate-200 dark:border-slate-800">
             <div className="flex items-center gap-2 px-6 py-4 border-b border-slate-100 dark:border-slate-800 text-[#9b1c1c] dark:text-red-500 font-bold text-sm tracking-wide uppercase">
@@ -2470,6 +2524,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
               </table>
             </div>
           </Card>
+
       </div>
     </div>
   );
