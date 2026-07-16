@@ -2064,8 +2064,8 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
           <h1 className="text-3xl font-extrabold font-heading tracking-tight text-foreground">
             AI Builder Intern — Applicant Funnel
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            <strong className="text-[#800020]">{rawTotal} applications</strong> received · {evaluatedCount} evaluated · {duplicatesRemoved} duplicates removed · {awaitingEvaluation} Application Pending review rubric
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            <strong className="text-[#800020]">{rawTotal} applications</strong> received · {evaluatedCount} Reviewed · {duplicatesRemoved} duplicates removed · {awaitingEvaluation} Application Pending review rubric
           </p>
         </div>
         <div className="flex flex-wrap gap-2 md:items-end justify-end self-stretch md:self-auto">
