@@ -195,7 +195,8 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
   const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [graduationDecisionFilter, setGraduationDecisionFilter] = useState('Yes');
+  const [graduationDecisionFilterR1, setGraduationDecisionFilterR1] = useState('Yes');
+  const [graduationDecisionFilterR2, setGraduationDecisionFilterR2] = useState('Yes');
 
   // Helper selectors
   const getR1 = (c) => {
@@ -363,7 +364,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     return total;
   }, [reviewerPivotData]);
 
-  const graduationPivotData = useMemo(() => {
+  const graduationPivotDataR1 = useMemo(() => {
     const tiersList = ['Tier 1', 'Tier 1+', 'Tier 2', 'Tier 2+', 'Tier 3', 'Tier 4', 'Other'];
     
     // Deduplicated list of candidates filtered by decision
@@ -371,12 +372,12 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       const r1 = getR1(c);
       if (r1.app_status === 'Duplicate') return false;
       
-      const moved = getR2(c).moved_to_round_3 || '';
-      if (moved.endsWith('_draft')) return false;
-      if (graduationDecisionFilter === 'All') return true;
-      if (graduationDecisionFilter === 'Maybe') return moved === 'Maybe';
-      if (graduationDecisionFilter === 'No') return moved === 'No';
-      return moved === 'Yes';
+      const appStatus = r1.app_status || 'Pending';
+      if (graduationDecisionFilterR1 === 'All') return true;
+      if (graduationDecisionFilterR1 === 'Yes') return appStatus === 'Yes';
+      if (graduationDecisionFilterR1 === 'No') return ['No', 'Reject', 'Rejected', 'Invalid'].includes(appStatus);
+      if (graduationDecisionFilterR1 === 'Pending') return appStatus === 'Pending' || appStatus.toLowerCase() === 'access requested';
+      return false;
     });
 
     const years = [];
@@ -388,7 +389,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     filteredCandidates.forEach(c => {
       const r1 = getR1(c);
       
-      // Restore the check to exclude unassigned candidates (which brings total to 737)
+      // Restore the check to exclude unassigned candidates
       const reviewer = r1.eval_group && r1.eval_group !== 'None' ? r1.eval_group : 'Unassigned';
       if (reviewer === 'Unassigned') return;
       
@@ -425,7 +426,71 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     });
 
     return { counts, years, grandTotal };
-  }, [uniqueDeduplicatedCandidates, graduationDecisionFilter]);
+  }, [uniqueDeduplicatedCandidates, graduationDecisionFilterR1]);
+
+  const graduationPivotDataR2 = useMemo(() => {
+    const tiersList = ['Tier 1', 'Tier 1+', 'Tier 2', 'Tier 2+', 'Tier 3', 'Tier 4', 'Other'];
+    
+    // Deduplicated list of candidates filtered by decision
+    const filteredCandidates = uniqueDeduplicatedCandidates.filter(c => {
+      const r1 = getR1(c);
+      if (r1.app_status === 'Duplicate') return false;
+      
+      const moved = getR2(c).moved_to_round_3 || '';
+      if (moved.endsWith('_draft')) return false;
+      if (graduationDecisionFilterR2 === 'All') return true;
+      if (graduationDecisionFilterR2 === 'Maybe') return moved === 'Maybe';
+      if (graduationDecisionFilterR2 === 'No') return moved === 'No';
+      return moved === 'Yes';
+    });
+
+    const years = [];
+    const counts = tiersList.reduce((acc, name) => {
+      acc[name] = { total: 0 };
+      return acc;
+    }, {});
+
+    filteredCandidates.forEach(c => {
+      const r1 = getR1(c);
+      
+      // Restore the check to exclude unassigned candidates
+      const reviewer = r1.eval_group && r1.eval_group !== 'None' ? r1.eval_group : 'Unassigned';
+      if (reviewer === 'Unassigned') return;
+      
+      let tier = (r1.tier || '').trim();
+      if (tier === 'Tier 1-') tier = 'Tier 1+';
+      if (tier === 'Tier 2-') tier = 'Tier 2+';
+      if (!tiersList.includes(tier)) tier = 'Other';
+      
+      const grad = r1.graduation || '-';
+      const year = grad.match(/\d{4}/)?.[0] || '-';
+
+      if (!years.includes(year) && year !== '-') {
+        years.push(year);
+      }
+      years.sort();
+
+      const target = counts[tier];
+      if (target) {
+        if (!target[year]) target[year] = 0;
+        if (year !== '-') {
+          target[year]++;
+        }
+        target.total++;
+      }
+    });
+
+    const grandTotal = { total: 0 };
+    Object.values(counts).forEach(val => {
+      grandTotal.total += val.total;
+      years.forEach(y => {
+        if (!grandTotal[y]) grandTotal[y] = 0;
+        grandTotal[y] += (val[y] || 0);
+      });
+    });
+
+    return { counts, years, grandTotal };
+  }, [uniqueDeduplicatedCandidates, graduationDecisionFilterR2]);
 
   const deployStagePivotData = useMemo(() => {
     const yesCandidates = uniqueDeduplicatedCandidates.filter(c => {
@@ -2076,50 +2141,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
             </div>
           </Card>
 
-          {/* Table 2: Screened By (Status = Yes) */}
-          <Card className="rounded-xl shadow-sm bg-white dark:bg-slate-900 overflow-hidden border border-slate-200 dark:border-slate-800">
-            <div className="flex items-center gap-2 px-6 py-4 border-b border-slate-100 dark:border-slate-800 text-[#9b1c1c] dark:text-red-500 font-bold text-sm tracking-wide uppercase">
-              <Users className="w-4 h-4" /> SCREENED BY (YES)
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left whitespace-nowrap">
-                <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-800">
-                    <th className="py-3 px-6 font-bold text-xs uppercase tracking-wider text-slate-400 border-r border-slate-200 dark:border-slate-700">
-                      To be screened by
-                    </th>
-                    <th className="py-3 px-6 font-bold text-xs uppercase tracking-wider text-slate-400 text-center">
-                      Total Assigned
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(() => {
-                    const dynamicReviewers = Object.keys(r1ReviewerPivotData)
-                      .filter(k => k !== 'Unassigned' && k !== 'None')
-                      .sort();
-                    
-                    return dynamicReviewers.map(name => {
-                      const data = r1ReviewerPivotData[name] || { dedupTotal: 0 };
-                      if (data.dedupTotal === 0) return null;
-                      return (
-                        <tr key={name} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                          <td className="py-3 px-6 font-bold text-slate-700 dark:text-slate-300">{name}</td>
-                          <td className="py-3 px-6 text-center font-bold text-[#059669] dark:text-emerald-400">{data.dedupTotal || 0}</td>
-                        </tr>
-                      );
-                    });
-                  })()}
-                  <tr className="font-bold border-t-2 border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-900">
-                    <td className="py-3 px-6 text-slate-800 dark:text-slate-200">Grand Total</td>
-                    <td className="py-3 px-6 text-center text-[#059669] dark:text-emerald-400">
-                      {Object.values(r1ReviewerPivotData).reduce((acc, d) => acc + (d.dedupTotal || 0), 0)}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </Card>
+          
 
         {/* Table 3 Decision Analysis */}
           <Card className="rounded-xl shadow-sm bg-white dark:bg-slate-900 overflow-hidden border border-slate-200 dark:border-slate-800">
@@ -2201,21 +2223,21 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
         {/* Graduation Wise Table */}
           <Card className="rounded-xl shadow-sm bg-white dark:bg-slate-900 overflow-hidden border border-slate-200 dark:border-slate-800">
             <div className="flex items-center gap-2 px-6 py-4 border-b border-slate-100 dark:border-slate-800 text-[#9b1c1c] dark:text-red-500 font-bold text-sm tracking-wide uppercase">
-              <Users className="w-4 h-4" /> GRADUATION WISE TABLE
+              <Users className="w-4 h-4" /> GRADUATION WISE TABLE (ROUND 1)
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left whitespace-nowrap">
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-slate-800 bg-[#e2e8f0]/40 dark:bg-slate-800/40">
                     <th className="py-2 px-6 font-semibold text-xs text-slate-600 dark:text-slate-300">Decision</th>
-                    <th className="py-2 px-6 font-semibold text-xs text-slate-600 dark:text-slate-300 text-center" colSpan={graduationPivotData.years.length + 1}>
+                    <th className="py-2 px-6 font-semibold text-xs text-slate-600 dark:text-slate-300 text-center" colSpan={graduationPivotDataR1.years.length + 1}>
                       <select 
-                        value={graduationDecisionFilter} 
-                        onChange={(e) => setGraduationDecisionFilter(e.target.value)}
+                        value={graduationDecisionFilterR1} 
+                        onChange={(e) => setGraduationDecisionFilterR1(e.target.value)}
                         className="bg-transparent border-none font-semibold text-slate-600 dark:text-slate-300 cursor-pointer outline-none appearance-none hover:opacity-80 transition-opacity"
                       >
                         <option value="Yes">Yes ▼</option>
-                        <option value="Maybe">Maybe ▼</option>
+                        <option value="Pending">Pending ▼</option>
                         <option value="No">No ▼</option>
                         <option value="All">All ▼</option>
                       </select>
@@ -2223,13 +2245,13 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
                   </tr>
                   <tr className="border-b border-slate-200 dark:border-slate-800 bg-[#e2e8f0]/20 dark:bg-slate-800/20">
                     <th className="py-2 px-6 font-semibold text-xs text-slate-600 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700">Count of Name</th>
-                    <th className="py-2 px-6 font-semibold text-xs text-slate-600 dark:text-slate-300 text-center" colSpan={graduationPivotData.years.length + 1}>Graduation ▼</th>
+                    <th className="py-2 px-6 font-semibold text-xs text-slate-600 dark:text-slate-300 text-center" colSpan={graduationPivotDataR1.years.length + 1}>Graduation ▼</th>
                   </tr>
                   <tr className="border-b border-slate-200 dark:border-slate-800">
                     <th className="py-3 px-6 font-bold text-xs uppercase tracking-wider text-slate-400 border-r border-slate-200 dark:border-slate-700">
                       Tier
                     </th>
-                    {graduationPivotData.years.map(y => (
+                    {graduationPivotDataR1.years.map(y => (
                       <th key={y} className="py-3 px-6 font-bold text-xs uppercase tracking-wider text-slate-400 text-center">
                         {y}
                       </th>
@@ -2241,16 +2263,16 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
                 </thead>
                 <tbody>
                   {(() => {
-                    const dynamicReviewers = Object.keys(graduationPivotData.counts)
+                    const dynamicReviewers = Object.keys(graduationPivotDataR1.counts)
                       .filter(k => k !== 'Unassigned' && k !== 'None');
                     // We don't sort here because the keys are already in the order of `tiersList` array.
                     
                     return dynamicReviewers.map(name => {
-                      const data = graduationPivotData.counts[name] || { total: 0 };
+                      const data = graduationPivotDataR1.counts[name] || { total: 0 };
                       return (
                         <tr key={name} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50">
                           <td className="py-3 px-6 font-bold text-slate-700 dark:text-slate-300">{name}</td>
-                          {graduationPivotData.years.map(y => (
+                          {graduationPivotDataR1.years.map(y => (
                             <td key={y} className="py-3 px-6 text-center font-bold text-[#2563eb] dark:text-blue-400">
                               {data[y] || 0}
                             </td>
@@ -2262,10 +2284,84 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
                   })()}
                   <tr className="font-bold border-t-2 border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-900">
                     <td className="py-3 px-6 text-slate-800 dark:text-slate-200">Grand Total</td>
-                    {graduationPivotData.years.map(y => (
-                      <td key={y} className="py-3 px-6 text-center text-slate-800 dark:text-slate-200">{graduationPivotData.grandTotal[y] || 0}</td>
+                    {graduationPivotDataR1.years.map(y => (
+                      <td key={y} className="py-3 px-6 text-center text-slate-800 dark:text-slate-200">{graduationPivotDataR1.grandTotal[y] || 0}</td>
                     ))}
-                    <td className="py-3 px-6 text-center text-slate-800 dark:text-slate-200">{graduationPivotData.grandTotal.total || 0}</td>
+                    <td className="py-3 px-6 text-center text-slate-800 dark:text-slate-200">{graduationPivotDataR1.grandTotal.total || 0}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </Card>
+
+          {/* Graduation Wise Table */}
+          <Card className="rounded-xl shadow-sm bg-white dark:bg-slate-900 overflow-hidden border border-slate-200 dark:border-slate-800">
+            <div className="flex items-center gap-2 px-6 py-4 border-b border-slate-100 dark:border-slate-800 text-[#9b1c1c] dark:text-red-500 font-bold text-sm tracking-wide uppercase">
+              <Users className="w-4 h-4" /> GRADUATION WISE TABLE (ROUND 2)
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left whitespace-nowrap">
+                <thead>
+                  <tr className="border-b border-slate-200 dark:border-slate-800 bg-[#e2e8f0]/40 dark:bg-slate-800/40">
+                    <th className="py-2 px-6 font-semibold text-xs text-slate-600 dark:text-slate-300">Decision</th>
+                    <th className="py-2 px-6 font-semibold text-xs text-slate-600 dark:text-slate-300 text-center" colSpan={graduationPivotDataR2.years.length + 1}>
+                      <select 
+                        value={graduationDecisionFilterR2} 
+                        onChange={(e) => setGraduationDecisionFilterR2(e.target.value)}
+                        className="bg-transparent border-none font-semibold text-slate-600 dark:text-slate-300 cursor-pointer outline-none appearance-none hover:opacity-80 transition-opacity"
+                      >
+                        <option value="Yes">Yes ▼</option>
+                        <option value="Maybe">Maybe ▼</option>
+                        <option value="No">No ▼</option>
+                        <option value="All">All ▼</option>
+                      </select>
+                    </th>
+                  </tr>
+                  <tr className="border-b border-slate-200 dark:border-slate-800 bg-[#e2e8f0]/20 dark:bg-slate-800/20">
+                    <th className="py-2 px-6 font-semibold text-xs text-slate-600 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700">Count of Name</th>
+                    <th className="py-2 px-6 font-semibold text-xs text-slate-600 dark:text-slate-300 text-center" colSpan={graduationPivotDataR2.years.length + 1}>Graduation ▼</th>
+                  </tr>
+                  <tr className="border-b border-slate-200 dark:border-slate-800">
+                    <th className="py-3 px-6 font-bold text-xs uppercase tracking-wider text-slate-400 border-r border-slate-200 dark:border-slate-700">
+                      Tier
+                    </th>
+                    {graduationPivotDataR2.years.map(y => (
+                      <th key={y} className="py-3 px-6 font-bold text-xs uppercase tracking-wider text-slate-400 text-center">
+                        {y}
+                      </th>
+                    ))}
+                    <th className="py-3 px-6 font-bold text-xs uppercase tracking-wider text-slate-400 text-center">
+                      Grand Total
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(() => {
+                    const dynamicReviewers = Object.keys(graduationPivotDataR2.counts)
+                      .filter(k => k !== 'Unassigned' && k !== 'None');
+                    // We don't sort here because the keys are already in the order of `tiersList` array.
+                    
+                    return dynamicReviewers.map(name => {
+                      const data = graduationPivotDataR2.counts[name] || { total: 0 };
+                      return (
+                        <tr key={name} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                          <td className="py-3 px-6 font-bold text-slate-700 dark:text-slate-300">{name}</td>
+                          {graduationPivotDataR2.years.map(y => (
+                            <td key={y} className="py-3 px-6 text-center font-bold text-[#2563eb] dark:text-blue-400">
+                              {data[y] || 0}
+                            </td>
+                          ))}
+                          <td className="py-3 px-6 text-center font-bold text-slate-800 dark:text-slate-200">{data.total || 0}</td>
+                        </tr>
+                      );
+                    });
+                  })()}
+                  <tr className="font-bold border-t-2 border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-900">
+                    <td className="py-3 px-6 text-slate-800 dark:text-slate-200">Grand Total</td>
+                    {graduationPivotDataR2.years.map(y => (
+                      <td key={y} className="py-3 px-6 text-center text-slate-800 dark:text-slate-200">{graduationPivotDataR2.grandTotal[y] || 0}</td>
+                    ))}
+                    <td className="py-3 px-6 text-center text-slate-800 dark:text-slate-200">{graduationPivotDataR2.grandTotal.total || 0}</td>
                   </tr>
                 </tbody>
               </table>
