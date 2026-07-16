@@ -387,6 +387,11 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
 
     filteredCandidates.forEach(c => {
       const r1 = getR1(c);
+      
+      // Restore the check to exclude unassigned candidates (which brings total to 737)
+      const reviewer = r1.eval_group && r1.eval_group !== 'None' ? r1.eval_group : 'Unassigned';
+      if (reviewer === 'Unassigned') return;
+      
       let tier = (r1.tier || '').trim();
       if (tier === 'Tier 1-') tier = 'Tier 1+';
       if (tier === 'Tier 2-') tier = 'Tier 2+';
