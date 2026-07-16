@@ -195,6 +195,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
   const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [graduationDecisionFilter, setGraduationDecisionFilter] = useState('Yes');
 
   // Helper selectors
   const getR1 = (c) => {
@@ -363,24 +364,30 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
   }, [reviewerPivotData]);
 
   const graduationPivotData = useMemo(() => {
-    const reviewers = ['Akash', 'Aman', 'Ankita', 'Anmol', 'Basvaraj', 'Pushkaraj', 'Sachin', 'Sohan', 'Tejaswini', 'Vedant'];
+    const tiersList = ['Tier 1', 'Tier 1+', 'Tier 2', 'Tier 2+', 'Tier 3', 'Tier 4', 'Other'];
     
-    // Deduplicated list of candidates that made it to Round 3
-    const yesCandidates = uniqueDeduplicatedCandidates.filter(c => {
+    // Deduplicated list of candidates filtered by decision
+    const filteredCandidates = uniqueDeduplicatedCandidates.filter(c => {
       const moved = getR2(c).moved_to_round_3 || '';
-      return moved === 'Yes' && !moved.endsWith('_draft');
+      if (moved.endsWith('_draft')) return false;
+      if (graduationDecisionFilter === 'All') return true;
+      if (graduationDecisionFilter === 'Maybe') return moved === 'Maybe';
+      if (graduationDecisionFilter === 'No') return moved === 'No';
+      return moved === 'Yes';
     });
 
     const years = [];
-    const counts = reviewers.reduce((acc, name) => {
+    const counts = tiersList.reduce((acc, name) => {
       acc[name] = { total: 0 };
       return acc;
     }, {});
 
-    yesCandidates.forEach(c => {
+    filteredCandidates.forEach(c => {
       const r1 = getR1(c);
-      const reviewer = r1.eval_group && r1.eval_group !== 'None' ? r1.eval_group : 'Unassigned';
-      if (reviewer === 'Unassigned') return;
+      let tier = (r1.tier || '').trim();
+      if (tier === 'Tier 1-') tier = 'Tier 1+';
+      if (tier === 'Tier 2-') tier = 'Tier 2+';
+      if (!tiersList.includes(tier)) tier = 'Other';
       
       const grad = r1.graduation || '-';
       const year = grad.match(/\d{4}/)?.[0] || '-';
@@ -390,7 +397,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       }
       years.sort();
 
-      const target = counts[reviewer];
+      const target = counts[tier];
       if (target) {
         if (!target[year]) target[year] = 0;
         if (year !== '-') {
@@ -410,7 +417,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     });
 
     return { counts, years, grandTotal };
-  }, [uniqueDeduplicatedCandidates]);
+  }, [uniqueDeduplicatedCandidates, graduationDecisionFilter]);
 
   const deployStagePivotData = useMemo(() => {
     const yesCandidates = uniqueDeduplicatedCandidates.filter(c => {
@@ -2193,7 +2200,18 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-slate-800 bg-[#e2e8f0]/40 dark:bg-slate-800/40">
                     <th className="py-2 px-6 font-semibold text-xs text-slate-600 dark:text-slate-300">Decision</th>
-                    <th className="py-2 px-6 font-semibold text-xs text-slate-600 dark:text-slate-300 text-center" colSpan={graduationPivotData.years.length + 1}>Yes ▼</th>
+                    <th className="py-2 px-6 font-semibold text-xs text-slate-600 dark:text-slate-300 text-center" colSpan={graduationPivotData.years.length + 1}>
+                      <select 
+                        value={graduationDecisionFilter} 
+                        onChange={(e) => setGraduationDecisionFilter(e.target.value)}
+                        className="bg-transparent border-none font-semibold text-slate-600 dark:text-slate-300 cursor-pointer outline-none appearance-none hover:opacity-80 transition-opacity"
+                      >
+                        <option value="Yes">Yes ▼</option>
+                        <option value="Maybe">Maybe ▼</option>
+                        <option value="No">No ▼</option>
+                        <option value="All">All ▼</option>
+                      </select>
+                    </th>
                   </tr>
                   <tr className="border-b border-slate-200 dark:border-slate-800 bg-[#e2e8f0]/20 dark:bg-slate-800/20">
                     <th className="py-2 px-6 font-semibold text-xs text-slate-600 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700">Count of Name</th>
@@ -2201,7 +2219,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
                   </tr>
                   <tr className="border-b border-slate-200 dark:border-slate-800">
                     <th className="py-3 px-6 font-bold text-xs uppercase tracking-wider text-slate-400 border-r border-slate-200 dark:border-slate-700">
-                      To be screened by
+                      Tier
                     </th>
                     {graduationPivotData.years.map(y => (
                       <th key={y} className="py-3 px-6 font-bold text-xs uppercase tracking-wider text-slate-400 text-center">
