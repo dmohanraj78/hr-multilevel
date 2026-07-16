@@ -2242,12 +2242,11 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
                 <tbody>
                   {(() => {
                     const dynamicReviewers = Object.keys(graduationPivotData.counts)
-                      .filter(k => k !== 'Unassigned' && k !== 'None')
-                      .sort();
+                      .filter(k => k !== 'Unassigned' && k !== 'None');
+                    // We don't sort here because the keys are already in the order of `tiersList` array.
                     
                     return dynamicReviewers.map(name => {
                       const data = graduationPivotData.counts[name] || { total: 0 };
-                      if (data.total === 0) return null;
                       return (
                         <tr key={name} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50">
                           <td className="py-3 px-6 font-bold text-slate-700 dark:text-slate-300">{name}</td>
