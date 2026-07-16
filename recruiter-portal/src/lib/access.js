@@ -46,7 +46,7 @@ export const ACCESS = {
   'asahu@mondee.com': ['evaluator'], // Anmol
   'bpatil@mondee.com': ['evaluator'], // Basavraj
   'pbaradkar@mondee.com': ['evaluator'], // Pushkaraj
-  'smehndiratta@mondee.com': ['evaluator'], // Sachin
+  'sjeyakkumaran@mondee.com': ['evaluator'], // Sachin
   'shanagandi@mondee.com': ['evaluator'], // Sohan
   'tkambaiahgari@mondee.com': ['evaluator'], // Tejaswini
   'vranade@mondee.com': ['evaluator'], // Vedant
@@ -63,7 +63,7 @@ export const EVALUATOR_NAMES = {
   'asahu@mondee.com': 'Anmol',
   'bpatil@mondee.com': 'Basvaraj',
   'pbaradkar@mondee.com': 'Pushkaraj',
-  'smehndiratta@mondee.com': 'Sachin',
+  'sjeyakkumaran@mondee.com': 'Sachin',
   'shanagandi@mondee.com': 'Sohan',
   'tkambaiahgari@mondee.com': 'Tejaswini',
   'vranade@mondee.com': 'Vedant',
