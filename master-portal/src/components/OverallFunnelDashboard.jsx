@@ -236,6 +236,40 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
     return Array.from(map.values());
   }, [globalData]);
 
+    const normalizeLocation = (loc) => {
+    if (!loc) return 'Unknown';
+    loc = loc.toString().toLowerCase().trim();
+    if (loc.includes('bangalore') || loc.includes('bengaluru')) return 'Bengaluru';
+    if (loc.includes('pune')) return 'Pune';
+    if (loc.includes('mumbai') || loc.includes('bombay') || loc.includes('navi mumbai')) return 'Mumbai';
+    if (loc.includes('delhi') || loc.includes('ncr') || loc.includes('noida') || loc.includes('gurugram') || loc.includes('gurgaon')) return 'Delhi NCR';
+    if (loc.includes('hyderabad')) return 'Hyderabad';
+    if (loc.includes('chennai')) return 'Chennai';
+    if (loc.includes('remote') || loc.includes('anywhere') || loc.includes('wfh')) return 'Remote';
+    return loc.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  };
+
+  const locationPivotData = useMemo(() => {
+    const filteredCandidates = uniqueDeduplicatedCandidates.filter(c => {
+      const r1 = getR1(c);
+      if (r1.app_status === 'Duplicate') return false;
+      return (r1.app_status || 'Pending') === 'Yes';
+    });
+    const counts = {};
+    let total = 0;
+    filteredCandidates.forEach(c => {
+      const r1 = getR1(c);
+      const reviewer = r1.eval_group && r1.eval_group !== 'None' ? r1.eval_group : 'Unassigned';
+      if (reviewer === 'Unassigned') return;
+      const loc = c.location || c.Location || r1.location || r1.Location || c.current_location;
+      const normalized = normalizeLocation(loc);
+      if (!counts[normalized]) counts[normalized] = 0;
+      counts[normalized]++;
+      total++;
+    });
+    return { data: Object.entries(counts).sort((a,b) => b[1] - a[1]), total };
+  }, [uniqueDeduplicatedCandidates]);
+
   const r1ReviewerPivotData = useMemo(() => {
     const reviewers = ['Akash', 'Aman', 'Ankita', 'Anmol', 'Basvaraj', 'Pushkaraj', 'Sachin', 'Sohan', 'Tejaswini', 'Vedant'];
     const counts = reviewers.reduce((acc, name) => {
@@ -277,8 +311,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       const r1 = getR1(c);
       let tier = (r1.tier || '').trim();
       // Keep the exact names requested by standardizing variants
-      if (tier === 'Tier 1-') tier = 'Tier 1+';
-      if (tier === 'Tier 2-') tier = 'Tier 2+';
+      
       const appStatus = r1.app_status || 'Pending';
       
       if (counts[tier]) {
@@ -365,7 +398,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
   }, [reviewerPivotData]);
 
   const graduationPivotDataR1 = useMemo(() => {
-    const tiersList = ['Tier 1', 'Tier 1+', 'Tier 2', 'Tier 2+', 'Tier 3', 'Tier 4', 'Other'];
+    const tiersList = ['Tier 1', 'Tier 1-', 'Tier 2', 'Tier 2-', 'Tier 3', 'Tier 4', 'Other'];
     
     // Deduplicated list of candidates filtered by decision
     const filteredCandidates = uniqueDeduplicatedCandidates.filter(c => {
@@ -394,8 +427,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       if (reviewer === 'Unassigned') return;
       
       let tier = (r1.tier || '').trim();
-      if (tier === 'Tier 1-') tier = 'Tier 1+';
-      if (tier === 'Tier 2-') tier = 'Tier 2+';
+      
       if (!tiersList.includes(tier)) tier = 'Other';
       
       const grad = r1.graduation || '-';
@@ -429,7 +461,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
   }, [uniqueDeduplicatedCandidates, graduationDecisionFilterR1]);
 
   const graduationPivotDataR2 = useMemo(() => {
-    const tiersList = ['Tier 1', 'Tier 1+', 'Tier 2', 'Tier 2+', 'Tier 3', 'Tier 4', 'Other'];
+    const tiersList = ['Tier 1', 'Tier 1-', 'Tier 2', 'Tier 2-', 'Tier 3', 'Tier 4', 'Other'];
     
     // Deduplicated list of candidates filtered by decision
     const filteredCandidates = uniqueDeduplicatedCandidates.filter(c => {
@@ -458,8 +490,7 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
       if (reviewer === 'Unassigned') return;
       
       let tier = (r1.tier || '').trim();
-      if (tier === 'Tier 1-') tier = 'Tier 1+';
-      if (tier === 'Tier 2-') tier = 'Tier 2+';
+      
       if (!tiersList.includes(tier)) tier = 'Other';
       
       const grad = r1.graduation || '-';
@@ -2220,7 +2251,37 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
             </div>
           </Card>
 
-        {/* Graduation Wise Table */}
+                  {/* Table 3: Location Wise Table */}
+          <Card className="rounded-xl shadow-sm bg-white dark:bg-slate-900 overflow-hidden border border-slate-200 dark:border-slate-800">
+            <div className="flex items-center gap-2 px-6 py-4 border-b border-slate-100 dark:border-slate-800 text-[#9b1c1c] dark:text-red-500 font-bold text-sm tracking-wide uppercase">
+              <Users className="w-4 h-4" /> LOCATION WISE TABLE (ROUND 1 YES)
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left whitespace-nowrap">
+                <thead>
+                  <tr className="border-b border-slate-200 dark:border-slate-800 bg-[#e2e8f0]/40 dark:bg-slate-800/40">
+                    <th className="py-3 px-6 font-bold text-xs uppercase tracking-wider text-slate-400 border-r border-slate-200 dark:border-slate-700">Location</th>
+                    <th className="py-3 px-6 font-bold text-xs uppercase tracking-wider text-slate-400 text-center">Candidates Passed</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {locationPivotData.data.map(([loc, count]) => (
+                    <tr key={loc} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                      <td className="py-3 px-6 font-bold text-slate-700 dark:text-slate-300 border-r border-slate-100 dark:border-slate-700">{loc}</td>
+                      <td className="py-3 px-6 text-center font-bold text-[#059669] dark:text-emerald-400">{count}</td>
+                    </tr>
+                  ))}
+                  <tr className="font-bold border-t-2 border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-900">
+                    <td className="py-3 px-6 text-slate-800 dark:text-slate-200">Grand Total</td>
+                    <td className="py-3 px-6 text-center text-[#059669] dark:text-emerald-400">{locationPivotData.total}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </Card>
+
+
+          {/* Graduation Wise Table */}
           <Card className="rounded-xl shadow-sm bg-white dark:bg-slate-900 overflow-hidden border border-slate-200 dark:border-slate-800">
             <div className="flex items-center gap-2 px-6 py-4 border-b border-slate-100 dark:border-slate-800 text-[#9b1c1c] dark:text-red-500 font-bold text-sm tracking-wide uppercase">
               <Users className="w-4 h-4" /> GRADUATION WISE TABLE (ROUND 1)
@@ -2293,6 +2354,36 @@ export default function OverallFunnelDashboard({ globalData, onViewCandidate, on
               </table>
             </div>
           </Card>
+
+                    {/* Table 3: Location Wise Table */}
+          <Card className="rounded-xl shadow-sm bg-white dark:bg-slate-900 overflow-hidden border border-slate-200 dark:border-slate-800">
+            <div className="flex items-center gap-2 px-6 py-4 border-b border-slate-100 dark:border-slate-800 text-[#9b1c1c] dark:text-red-500 font-bold text-sm tracking-wide uppercase">
+              <Users className="w-4 h-4" /> LOCATION WISE TABLE (ROUND 1 YES)
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left whitespace-nowrap">
+                <thead>
+                  <tr className="border-b border-slate-200 dark:border-slate-800 bg-[#e2e8f0]/40 dark:bg-slate-800/40">
+                    <th className="py-3 px-6 font-bold text-xs uppercase tracking-wider text-slate-400 border-r border-slate-200 dark:border-slate-700">Location</th>
+                    <th className="py-3 px-6 font-bold text-xs uppercase tracking-wider text-slate-400 text-center">Candidates Passed</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {locationPivotData.data.map(([loc, count]) => (
+                    <tr key={loc} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                      <td className="py-3 px-6 font-bold text-slate-700 dark:text-slate-300 border-r border-slate-100 dark:border-slate-700">{loc}</td>
+                      <td className="py-3 px-6 text-center font-bold text-[#059669] dark:text-emerald-400">{count}</td>
+                    </tr>
+                  ))}
+                  <tr className="font-bold border-t-2 border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-900">
+                    <td className="py-3 px-6 text-slate-800 dark:text-slate-200">Grand Total</td>
+                    <td className="py-3 px-6 text-center text-[#059669] dark:text-emerald-400">{locationPivotData.total}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </Card>
+
 
           {/* Graduation Wise Table */}
           <Card className="rounded-xl shadow-sm bg-white dark:bg-slate-900 overflow-hidden border border-slate-200 dark:border-slate-800">
